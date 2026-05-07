@@ -145,6 +145,19 @@ class XrayCommonClass {
         return this;
     }
 
+    // Build a clean Xray fallback entry. Per docs, name/alpn/path empty = "any",
+    // and xver=0 means PROXY protocol off — omit them so the generated config
+    // stays minimal and readable. dest is required and always emitted.
+    static fallbackToJson(fb) {
+        const out = { dest: fb.dest };
+        if (fb.name) out.name = fb.name;
+        if (fb.alpn) out.alpn = fb.alpn;
+        if (fb.path) out.path = fb.path;
+        const xver = Number(fb.xver);
+        if (Number.isInteger(xver) && xver > 0) out.xver = xver;
+        return out;
+    }
+
     toString(format = true) {
         return format ? JSON.stringify(this.toJson(), null, 2) : JSON.stringify(this.toJson());
     }
@@ -2733,31 +2746,13 @@ Inbound.VLESSSettings.Fallback = class extends XrayCommonClass {
     }
 
     toJson() {
-        let xver = this.xver;
-        if (!Number.isInteger(xver)) {
-            xver = 0;
-        }
-        return {
-            name: this.name,
-            alpn: this.alpn,
-            path: this.path,
-            dest: this.dest,
-            xver: xver,
-        }
+        return XrayCommonClass.fallbackToJson(this);
     }
 
     static fromJson(json = []) {
-        const fallbacks = [];
-        for (let fallback of json) {
-            fallbacks.push(new Inbound.VLESSSettings.Fallback(
-                fallback.name,
-                fallback.alpn,
-                fallback.path,
-                fallback.dest,
-                fallback.xver,
-            ))
-        }
-        return fallbacks;
+        return (json || []).map(f => new Inbound.VLESSSettings.Fallback(
+            f.name, f.alpn, f.path, f.dest, f.xver,
+        ));
     }
 };
 
@@ -2786,10 +2781,13 @@ Inbound.TrojanSettings = class extends Inbound.Settings {
     }
 
     toJson() {
-        return {
+        const json = {
             clients: Inbound.TrojanSettings.toJsonArray(this.trojans),
-            fallbacks: Inbound.TrojanSettings.toJsonArray(this.fallbacks)
         };
+        if (this.fallbacks && this.fallbacks.length > 0) {
+            json.fallbacks = Inbound.TrojanSettings.toJsonArray(this.fallbacks);
+        }
+        return json;
     }
 };
 
@@ -2828,31 +2826,13 @@ Inbound.TrojanSettings.Fallback = class extends XrayCommonClass {
     }
 
     toJson() {
-        let xver = this.xver;
-        if (!Number.isInteger(xver)) {
-            xver = 0;
-        }
-        return {
-            name: this.name,
-            alpn: this.alpn,
-            path: this.path,
-            dest: this.dest,
-            xver: xver,
-        }
+        return XrayCommonClass.fallbackToJson(this);
     }
 
     static fromJson(json = []) {
-        const fallbacks = [];
-        for (let fallback of json) {
-            fallbacks.push(new Inbound.TrojanSettings.Fallback(
-                fallback.name,
-                fallback.alpn,
-                fallback.path,
-                fallback.dest,
-                fallback.xver,
-            ))
-        }
-        return fallbacks;
+        return (json || []).map(f => new Inbound.TrojanSettings.Fallback(
+            f.name, f.alpn, f.path, f.dest, f.xver,
+        ));
     }
 };
 
