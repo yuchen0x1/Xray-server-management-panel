@@ -12,6 +12,7 @@ export const Protocols = {
     Hysteria: "hysteria",
     Socks: "socks",
     HTTP: "http",
+    Loopback: "loopback",
 };
 
 export const SSMethods = {
@@ -1586,6 +1587,7 @@ Outbound.Settings = class extends CommonClass {
             case Protocols.HTTP: return new Outbound.HttpSettings();
             case Protocols.Wireguard: return new Outbound.WireguardSettings();
             case Protocols.Hysteria: return new Outbound.HysteriaSettings();
+            case Protocols.Loopback: return new Outbound.LoopbackSettings();
             default: return null;
         }
     }
@@ -1603,6 +1605,7 @@ Outbound.Settings = class extends CommonClass {
             case Protocols.HTTP: return Outbound.HttpSettings.fromJson(json);
             case Protocols.Wireguard: return Outbound.WireguardSettings.fromJson(json);
             case Protocols.Hysteria: return Outbound.HysteriaSettings.fromJson(json);
+            case Protocols.Loopback: return Outbound.LoopbackSettings.fromJson(json);
             default: return null;
         }
     }
@@ -1778,6 +1781,23 @@ Outbound.BlackholeSettings = class extends CommonClass {
     toJson() {
         return {
             response: ObjectUtil.isEmpty(this.type) ? undefined : { type: this.type },
+        };
+    }
+};
+
+Outbound.LoopbackSettings = class extends CommonClass {
+    constructor(inboundTag = '') {
+        super();
+        this.inboundTag = inboundTag;
+    }
+
+    static fromJson(json = {}) {
+        return new Outbound.LoopbackSettings(json.inboundTag || '');
+    }
+
+    toJson() {
+        return {
+            inboundTag: this.inboundTag || undefined,
         };
     }
 };

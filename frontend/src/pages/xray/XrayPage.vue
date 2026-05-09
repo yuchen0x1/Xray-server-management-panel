@@ -294,6 +294,7 @@ function confirmRestart() {
                         :template-settings="templateSettings"
                         :outbounds-traffic="outboundsTraffic"
                         :outbound-test-states="outboundTestStates"
+                        :inbound-tags="inboundTags"
                         :is-mobile="isMobile"
                         @reset-traffic="resetOutboundsTraffic"
                         @test="onTestOutbound"

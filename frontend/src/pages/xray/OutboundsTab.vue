@@ -35,7 +35,17 @@ const props = defineProps({
   templateSettings: { type: Object, default: null },
   outboundsTraffic: { type: Array, default: () => [] },
   outboundTestStates: { type: Object, default: () => ({}) },
+  inboundTags: { type: Array, default: () => [] },
   isMobile: { type: Boolean, default: false },
+});
+
+const inboundTagOptions = computed(() => {
+  const out = new Set();
+  for (const ib of props.templateSettings?.inbounds || []) {
+    if (ib.tag) out.add(ib.tag);
+  }
+  for (const t of props.inboundTags || []) out.add(t);
+  return [...out];
 });
 
 const emit = defineEmits(['reset-traffic', 'test', 'show-warp', 'show-nord']);
@@ -129,7 +139,9 @@ function outboundAddresses(o) {
 }
 
 function isUntestable(o) {
-  return o.protocol === 'blackhole' || o.tag === 'blocked';
+  return o.protocol === Protocols.Blackhole
+    || o.protocol === Protocols.Loopback
+    || o.tag === 'blocked';
 }
 function isTesting(idx) {
   return !!props.outboundTestStates?.[idx]?.testing;
@@ -377,6 +389,7 @@ const rows = computed(() => {
       v-model:open="modalOpen"
       :outbound="editingOutbound"
       :existing-tags="existingTags"
+      :inbound-tags="inboundTagOptions"
       @confirm="onConfirm"
     />
   </a-space>
