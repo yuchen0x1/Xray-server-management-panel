@@ -492,13 +492,15 @@ func (s *ServerService) sampleCPUUtilization() (float64, error) {
 	return s.emaCPU, nil
 }
 
+var xrayVersionsClient = &http.Client{Timeout: 10 * time.Second}
+
 func (s *ServerService) GetXrayVersions() ([]string, error) {
 	const (
 		XrayURL    = "https://api.github.com/repos/XTLS/Xray-core/releases"
 		bufferSize = 8192
 	)
 
-	resp, err := http.Get(XrayURL)
+	resp, err := xrayVersionsClient.Get(XrayURL)
 	if err != nil {
 		return nil, err
 	}

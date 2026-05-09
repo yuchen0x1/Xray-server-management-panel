@@ -143,16 +143,22 @@ func (a *ServerController) getMetricHistoryBucket(c *gin.Context) {
 	jsonObj(c, a.serverService.AggregateSystemMetric(metric, bucket, 60), nil)
 }
 
-// getXrayVersion retrieves available Xray versions, with caching for 1 minute.
 func (a *ServerController) getXrayVersion(c *gin.Context) {
+	const cacheTTLSeconds = 15 * 60
+
 	now := time.Now().Unix()
-	if now-a.lastGetVersionsTime <= 60 { // 1 minute cache
+	if a.lastVersions != nil && now-a.lastGetVersionsTime <= cacheTTLSeconds {
 		jsonObj(c, a.lastVersions, nil)
 		return
 	}
 
 	versions, err := a.serverService.GetXrayVersions()
 	if err != nil {
+		if a.lastVersions != nil {
+			logger.Warning("getXrayVersion failed; serving cached list:", err)
+			jsonObj(c, a.lastVersions, nil)
+			return
+		}
 		jsonMsg(c, I18nWeb(c, "getVersion"), err)
 		return
 	}
