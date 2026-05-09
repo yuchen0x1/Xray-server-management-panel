@@ -1,19 +1,13 @@
 # ========================================================
 # Stage: Frontend (Vite)
 # ========================================================
-# web/dist/ is .gitignored and embedded into the Go binary via
-# //go:embed all:dist in web/web.go, so the SPA bundle MUST be built
-# before the Go compile step. We build it in its own stage so the
-# Go builder image doesn't need Node installed.
 FROM node:22-alpine AS frontend
 WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
+COPY web/translation /src/web/translation
 RUN npm run build
-# Vite outDir is set to ../web/dist (see frontend/vite.config.js), so
-# the bundle lands at /src/web/dist — that's what we copy into the
-# next stage.
 
 # ========================================================
 # Stage: Builder
@@ -54,6 +48,7 @@ RUN apk add --no-cache --update \
 COPY --from=builder /app/build/ /app/
 COPY --from=builder /app/DockerEntrypoint.sh /app/
 COPY --from=builder /app/x-ui.sh /usr/bin/x-ui
+COPY --from=builder /app/web/translation /app/web/translation
 
 
 # Configure fail2ban
