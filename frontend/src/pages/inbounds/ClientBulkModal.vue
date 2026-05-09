@@ -175,7 +175,7 @@ async function submit() {
 <template>
   <a-modal :open="open" :title="t('pages.client.bulk')" :ok-text="t('create')" :cancel-text="t('close')"
     :confirm-loading="saving" :mask-closable="false" @ok="submit" @cancel="close">
-    <a-form v-if="inbound" :colon="false" :label-col="{ md: { span: 8 } }" :wrapper-col="{ md: { span: 14 } }">
+    <a-form v-if="inbound" :colon="false" :label-col="{ sm: { span: 8 } }" :wrapper-col="{ sm: { span: 14 } }">
       <a-form-item :label="t('pages.client.method')">
         <a-select v-model:value="form.emailMethod">
           <a-select-option :value="0">Random</a-select-option>

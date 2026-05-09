@@ -242,8 +242,8 @@ const title = computed(() =>
       {{ t('depleted') }}
     </a-tag>
 
-    <a-form v-if="client && inbound" layout="horizontal" :colon="false" :label-col="{ md: { span: 8 } }"
-      :wrapper-col="{ md: { span: 14 } }">
+    <a-form v-if="client && inbound" layout="horizontal" :colon="false" :label-col="{ sm: { span: 8 } }"
+      :wrapper-col="{ sm: { span: 14 } }">
       <a-form-item :label="t('enable')">
         <a-switch v-model:checked="client.enable" />
       </a-form-item>
