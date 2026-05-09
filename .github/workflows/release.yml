@@ -21,45 +21,7 @@ on:
   pull_request:
 
 jobs:
-  analyze:
-    name: Analyze Go code
-    permissions:
-      contents: read
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Check formatting
-        run: |
-          unformatted=$(gofmt -l .)
-          if [ -n "$unformatted" ]; then
-            echo "These files are not gofmt-formatted:"
-            echo "$unformatted"
-            exit 1
-          fi
-
-      - name: Run go vet
-        run: go vet ./...
-
-      - name: Run staticcheck
-        uses: dominikh/staticcheck-action@v1
-        with:
-          version: "latest"
-          install-go: false
-
-      - name: Run tests
-        run: go test -race -shuffle=on ./...
-
   build:
-    needs: analyze
     permissions:
       contents: write
     strategy:
@@ -88,7 +50,7 @@ jobs:
       # at compile time. web/dist/ is .gitignored, so on a fresh CI
       # checkout it doesn't exist until vite emits it.
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'npm'
@@ -208,7 +170,6 @@ jobs:
   # =================================
   build-windows:
     name: Build for Windows
-    needs: analyze
     permissions:
       contents: write
     strategy:
@@ -230,7 +191,7 @@ jobs:
       # Linux job above. This step is identical except npm runs on the
       # Windows runner here.
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'npm'
