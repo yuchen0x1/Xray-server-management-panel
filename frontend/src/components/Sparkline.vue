@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 const props = defineProps({
   data: { type: Array, required: true },
@@ -36,8 +36,37 @@ const props = defineProps({
 
 const hoverIdx = ref(-1);
 
-const viewBoxAttr = computed(() => `0 0 ${props.vbWidth} ${props.height}`);
-const drawWidth = computed(() => Math.max(1, props.vbWidth - props.paddingLeft - props.paddingRight));
+// Measured CSS width of the SVG. Drives the viewBox so SVG units stay
+// 1:1 with rendered pixels — otherwise `preserveAspectRatio="none"`
+// stretches the X axis and squashes axis text horizontally on narrow
+// containers (mobile). Falls back to the prop until the first measure.
+const svgRef = ref(null);
+const measuredWidth = ref(0);
+const effectiveVbWidth = computed(() => measuredWidth.value > 0 ? measuredWidth.value : props.vbWidth);
+
+let resizeObserver = null;
+function measure() {
+  const el = svgRef.value;
+  if (!el) return;
+  const w = el.getBoundingClientRect?.().width || 0;
+  if (w > 0) measuredWidth.value = Math.round(w);
+}
+onMounted(() => {
+  measure();
+  if (typeof ResizeObserver !== 'undefined' && svgRef.value) {
+    resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(svgRef.value);
+  } else {
+    window.addEventListener('resize', measure);
+  }
+});
+onBeforeUnmount(() => {
+  if (resizeObserver) resizeObserver.disconnect();
+  else window.removeEventListener('resize', measure);
+});
+
+const viewBoxAttr = computed(() => `0 0 ${effectiveVbWidth.value} ${props.height}`);
+const drawWidth = computed(() => Math.max(1, effectiveVbWidth.value - props.paddingLeft - props.paddingRight));
 const drawHeight = computed(() => Math.max(1, props.height - props.paddingTop - props.paddingBottom));
 const nPoints = computed(() => Math.min(props.data.length, props.maxPoints));
 
@@ -164,7 +193,7 @@ function onMouseMove(evt) {
   if (!props.showTooltip || pointsArr.value.length === 0) return;
   const rect = evt.currentTarget.getBoundingClientRect();
   const px = evt.clientX - rect.left;
-  const x = (px / rect.width) * props.vbWidth;
+  const x = (px / rect.width) * effectiveVbWidth.value;
   const n = nPoints.value;
   const dx = n > 1 ? drawWidth.value / (n - 1) : 0;
   const idx = Math.max(0, Math.min(n - 1, Math.round((x - props.paddingLeft) / (dx || 1))));
@@ -192,6 +221,7 @@ const gradId = `spkGrad-${Math.random().toString(36).slice(2, 9)}`;
 
 <template>
   <svg
+    ref="svgRef"
     width="100%"
     :height="height"
     :viewBox="viewBoxAttr"

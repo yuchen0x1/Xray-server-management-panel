@@ -27,7 +27,7 @@ const trailColor = 'rgba(128, 128, 128, 0.25)';
   <a-card hoverable>
     <a-row :gutter="[0, isMobile ? 16 : 0]">
       <!-- CPU + Memory -->
-      <a-col :sm="24" :md="12">
+      <a-col :xs="24" :md="12">
         <a-row>
           <a-col :span="12" class="text-center">
             <a-progress type="dashboard" status="normal" :stroke-color="status.cpu.color"
@@ -57,7 +57,7 @@ const trailColor = 'rgba(128, 128, 128, 0.25)';
       </a-col>
 
       <!-- Swap + Disk -->
-      <a-col :sm="24" :md="12">
+      <a-col :xs="24" :md="12">
         <a-row>
           <a-col :span="12" class="text-center">
             <a-progress type="dashboard" status="normal" :stroke-color="status.swap.color"

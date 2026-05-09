@@ -3,8 +3,11 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { HttpUtil, SizeFormatter } from '@/utils';
 import Sparkline from '@/components/Sparkline.vue';
+import { useMediaQuery } from '@/composables/useMediaQuery.js';
 
 const { t } = useI18n();
+const { isMobile } = useMediaQuery();
+const modalWidth = computed(() => (isMobile.value ? '95vw' : '900px'));
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -106,7 +109,7 @@ watch([activeKey, bucket], () => {
 </script>
 
 <template>
-  <a-modal :open="open" :closable="true" :footer="null" width="900px" @cancel="close">
+  <a-modal :open="open" :closable="true" :footer="null" :width="modalWidth" @cancel="close">
     <template #title>
       {{ t('pages.index.systemHistoryTitle') }}
       <a-select v-model:value="bucket" size="small" class="bucket-select">
