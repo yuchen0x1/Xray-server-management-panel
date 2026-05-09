@@ -164,17 +164,11 @@ func (a *ServerController) getXrayVersion(c *gin.Context) {
 }
 
 // getPanelUpdateInfo retrieves the current and latest panel version.
-// Network failures (e.g. no internet, GitHub blocked) are logged at debug
-// level only — the panel keeps working offline and we don't want to spam
-// WARN every time a user opens the page.
 func (a *ServerController) getPanelUpdateInfo(c *gin.Context) {
 	info, err := a.panelService.GetUpdateInfo()
 	if err != nil {
 		logger.Debug("panel update check failed:", err)
-		c.JSON(http.StatusOK, entity.Msg{
-			Success: false,
-			Msg:     I18nWeb(c, "pages.index.panelUpdateCheckPopover"),
-		})
+		c.JSON(http.StatusOK, entity.Msg{Success: false})
 		return
 	}
 	jsonObj(c, info, nil)

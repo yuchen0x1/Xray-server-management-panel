@@ -22,7 +22,11 @@ function readMetaToken() {
 // recurse through this same interceptor.
 async function fetchCsrfToken() {
   try {
-    const res = await fetch(CSRF_TOKEN_PATH, {
+    const basePath = window.__X_UI_BASE_PATH__;
+    const url = (typeof basePath === 'string' && basePath !== '' && basePath !== '/'
+      ? basePath.replace(/\/$/, '') + CSRF_TOKEN_PATH
+      : CSRF_TOKEN_PATH);
+    const res = await fetch(url, {
       method: 'GET',
       credentials: 'same-origin',
       headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -54,6 +58,11 @@ async function ensureCsrfToken() {
 export function setupAxios() {
   axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded; charset=UTF-8';
   axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+
+  const basePath = window.__X_UI_BASE_PATH__;
+  if (typeof basePath === 'string' && basePath !== '' && basePath !== '/') {
+    axios.defaults.baseURL = basePath;
+  }
 
   // Seed the cache from the meta tag if a server-rendered page injected
   // one — saves a round trip on legacy templates that still embed it.
