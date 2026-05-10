@@ -1,7 +1,7 @@
 # ========================================================
 # Stage: Frontend (Vite)
 # ========================================================
-FROM node:22-alpine AS frontend
+FROM --platform=$BUILDPLATFORM node:22-alpine AS frontend
 WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
