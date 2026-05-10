@@ -2109,10 +2109,10 @@ actionstop = <iptables> -D <chain> -p <protocol> -j f2b-<name>
 actioncheck = <iptables> -n -L <chain> | grep -q 'f2b-<name>[ \t]'
 
 actionban = <iptables> -I f2b-<name> 1 -s <ip> -j <blocktype>
-            echo "\$(date +"%Y/%m/%d %H:%M:%S")   BAN   [Email] = <F-USER> [IP] = <ip> banned for <bantime> seconds." >> ${iplimit_banned_log_path}
+            echo "\$(date +"%%Y/%%m/%%d %%H:%%M:%%S")   BAN   [Email] = <F-USER> [IP] = <ip> banned for <bantime> seconds." >> ${iplimit_banned_log_path}
 
 actionunban = <iptables> -D f2b-<name> -s <ip> -j <blocktype>
-              echo "\$(date +"%Y/%m/%d %H:%M:%S")   UNBAN   [Email] = <F-USER> [IP] = <ip> unbanned." >> ${iplimit_banned_log_path}
+              echo "\$(date +"%%Y/%%m/%%d %%H:%%M:%%S")   UNBAN   [Email] = <F-USER> [IP] = <ip> unbanned." >> ${iplimit_banned_log_path}
 
 [Init]
 name = default
