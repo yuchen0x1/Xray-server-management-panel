@@ -1,9 +1,17 @@
 <script setup>
-import { computed, defineAsyncComponent } from 'vue';
+import { computed } from 'vue';
 import dayjs from 'dayjs';
+import PersianDatePicker from 'vue3-persian-datetime-picker';
 import { useDatepicker } from '@/composables/useDatepicker.js';
 
-const PersianDatePicker = defineAsyncComponent(() => import('vue3-persian-datetime-picker'));
+// Drop-in replacement for <a-date-picker> that swaps to a real Jalali
+// calendar (vue3-persian-datetime-picker, backed by moment-jalaali)
+// when the panel's "Calendar Type" setting is `jalalian`.
+//
+// The v-model contract matches AD-Vue: the parent works with a dayjs
+// object (or null). For the persian picker we serialize to/from the
+// `YYYY-MM-DD HH:mm:ss` string it expects so callers don't need to
+// know which renderer is active.
 
 const props = defineProps({
   value: { type: [Object, null], default: null },
