@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   BarsOutlined,
@@ -9,7 +10,7 @@ import {
 
 const { t } = useI18n();
 
-defineProps({
+const props = defineProps({
   status: { type: Object, required: true },
   isMobile: { type: Boolean, default: false },
   ipLimitEnable: { type: Boolean, default: false },
@@ -17,10 +18,16 @@ defineProps({
 
 defineEmits(['stop-xray', 'restart-xray', 'open-logs', 'open-xray-logs', 'open-version-switch']);
 
-// Map xray.color → which animation class to apply on the badge dot.
-// The legacy .xray-*-animation classes only override the badge ring
-// color; the actual pulsing comes from .xray-processing-animation
-// (which animates .ant-badge-status-dot via @keyframes runningAnimation).
+const XRAY_STATE_KEYS = {
+  running: 'pages.index.xrayStatusRunning',
+  stop: 'pages.index.xrayStatusStop',
+  error: 'pages.index.xrayStatusError',
+};
+
+const stateText = computed(() =>
+  t(XRAY_STATE_KEYS[props.status.xray.state] ?? 'pages.index.xrayStatusUnknown'),
+);
+
 function badgeAnimationClass(color) {
   if (color === 'green') return 'xray-running-animation';
   if (color === 'orange') return 'xray-stop-animation';
@@ -43,7 +50,7 @@ function badgeAnimationClass(color) {
     <template #extra>
       <template v-if="status.xray.state !== 'error'">
         <a-badge status="processing" :class="['xray-processing-animation', badgeAnimationClass(status.xray.color)]"
-          :text="status.xray.stateMsg" :color="status.xray.color" />
+          :text="stateText" :color="status.xray.color" />
       </template>
       <template v-else>
         <a-popover>
@@ -60,7 +67,7 @@ function badgeAnimationClass(color) {
               {{ line }}
             </span>
           </template>
-          <a-badge status="processing" :text="status.xray.stateMsg" :color="status.xray.color"
+          <a-badge status="processing" :text="stateText" :color="status.xray.color"
             :class="['xray-processing-animation', 'xray-error-animation']" />
         </a-popover>
       </template>

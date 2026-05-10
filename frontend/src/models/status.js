@@ -27,12 +27,6 @@ const XRAY_STATE_COLORS = {
   error: 'red',
 };
 
-const XRAY_STATE_MESSAGES = {
-  running: 'Xray is running',
-  stop: 'Xray is stopped',
-  error: 'Xray error',
-};
-
 export class Status {
   constructor(data) {
     this.cpu = new CurTotal(0, 0);
@@ -51,7 +45,7 @@ export class Status {
     this.uptime = 0;
     this.appUptime = 0;
     this.appStats = { threads: 0, mem: 0, uptime: 0 };
-    this.xray = { state: 'stop', stateMsg: '', errorMsg: '', version: '', color: '' };
+    this.xray = { state: 'stop', errorMsg: '', version: '', color: '' };
 
     if (data == null) return;
 
@@ -73,6 +67,5 @@ export class Status {
     this.appStats = data.appStats ?? this.appStats;
     this.xray = { ...this.xray, ...(data.xray || {}) };
     this.xray.color = XRAY_STATE_COLORS[this.xray.state] ?? 'gray';
-    this.xray.stateMsg = XRAY_STATE_MESSAGES[this.xray.state] ?? 'Unknown';
   }
 }
