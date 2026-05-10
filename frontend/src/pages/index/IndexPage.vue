@@ -336,8 +336,8 @@ async function openConfig() {
 }
 
 .index-page.is-dark {
-  --bg-page: #0a1222;
-  --bg-card: #151f31;
+  --bg-page: #1e1e1e;
+  --bg-card: #252526;
 }
 
 .index-page.is-dark.is-ultra {
