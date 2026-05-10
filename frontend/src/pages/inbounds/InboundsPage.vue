@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, defineAsyncComponent, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Modal, message } from 'ant-design-vue';
 import {
@@ -18,15 +18,16 @@ import AppSidebar from '@/components/AppSidebar.vue';
 import CustomStatistic from '@/components/CustomStatistic.vue';
 import { useNodeList } from '@/composables/useNodeList.js';
 import InboundList from './InboundList.vue';
-import InboundFormModal from './InboundFormModal.vue';
-import ClientFormModal from './ClientFormModal.vue';
-import ClientBulkModal from './ClientBulkModal.vue';
-import InboundInfoModal from './InboundInfoModal.vue';
-import QrCodeModal from './QrCodeModal.vue';
-import TextModal from '@/components/TextModal.vue';
-import PromptModal from '@/components/PromptModal.vue';
 import { useInbounds } from './useInbounds.js';
 import { useWebSocket } from '@/composables/useWebSocket.js';
+
+const InboundFormModal = defineAsyncComponent(() => import('./InboundFormModal.vue'));
+const ClientFormModal = defineAsyncComponent(() => import('./ClientFormModal.vue'));
+const ClientBulkModal = defineAsyncComponent(() => import('./ClientBulkModal.vue'));
+const InboundInfoModal = defineAsyncComponent(() => import('./InboundInfoModal.vue'));
+const QrCodeModal = defineAsyncComponent(() => import('./QrCodeModal.vue'));
+const TextModal = defineAsyncComponent(() => import('@/components/TextModal.vue'));
+const PromptModal = defineAsyncComponent(() => import('@/components/PromptModal.vue'));
 
 const { t } = useI18n();
 
