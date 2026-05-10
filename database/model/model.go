@@ -128,15 +128,15 @@ type Setting struct {
 // endpoint over HTTP using the per-node ApiToken to populate the runtime
 // status fields below.
 type Node struct {
-	Id       int    `json:"id" gorm:"primaryKey;autoIncrement"`
-	Name     string `json:"name" gorm:"uniqueIndex"`
-	Remark   string `json:"remark"`
-	Scheme   string `json:"scheme"`  // "https" | "http"
-	Address  string `json:"address"` // host or IP
-	Port     int    `json:"port"`
-	BasePath string `json:"basePath"` // "/" or "/myprefix/"
-	ApiToken string `json:"apiToken"` // plaintext, matches existing tg/ldap pattern
-	Enable   bool   `json:"enable" gorm:"default:true"`
+	Id       int    `json:"id" form:"id" gorm:"primaryKey;autoIncrement"`
+	Name     string `json:"name" form:"name" gorm:"uniqueIndex"`
+	Remark   string `json:"remark" form:"remark"`
+	Scheme   string `json:"scheme" form:"scheme"`
+	Address  string `json:"address" form:"address"`
+	Port     int    `json:"port" form:"port"`
+	BasePath string `json:"basePath" form:"basePath"`
+	ApiToken string `json:"apiToken" form:"apiToken"`
+	Enable   bool   `json:"enable" form:"enable" gorm:"default:true"`
 
 	// Heartbeat-updated fields. UpdatedAt advances on every probe even when
 	// the row is otherwise unchanged so the UI's "last seen" tooltip is
