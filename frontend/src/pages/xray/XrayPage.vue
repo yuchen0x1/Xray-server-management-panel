@@ -186,7 +186,7 @@ function onRemoveRoutingRules({ prefix }) {
 void message;
 const { isMobile } = useMediaQuery();
 
-const basePath = window.__X_UI_BASE_PATH__ || '';
+const basePath = window.X_UI_BASE_PATH || '';
 const requestUri = window.location.pathname;
 
 // See SettingsPage scrollTarget — wrap so `document` is in scope.

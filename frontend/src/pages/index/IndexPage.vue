@@ -53,14 +53,14 @@ onMounted(() => {
   });
 });
 
-const basePath = window.__X_UI_BASE_PATH__ || '';
+const basePath = window.X_UI_BASE_PATH || '';
 const requestUri = window.location.pathname;
 
-// In production, dist.go injects window.__X_UI_CUR_VER__ at serve time.
+// In production, dist.go injects window.X_UI_CUR_VER at serve time.
 // In dev, Vite serves the HTML directly so the global is missing — fall
 // back to currentVersion from the panel-update API once it answers.
 const displayVersion = computed(
-  () => panelUpdateInfo.value?.currentVersion || window.__X_UI_CUR_VER__ || '?',
+  () => panelUpdateInfo.value?.currentVersion || window.X_UI_CUR_VER || '?',
 );
 
 // Hide/reveal the public IPv4/IPv6 — same pattern as legacy.

@@ -67,7 +67,7 @@ const { isMobile } = useMediaQuery();
 // the id→node map for the new "Node" column. Fetched once on mount.
 const { byId: nodesById } = useNodeList();
 
-const basePath = window.__X_UI_BASE_PATH__ || '';
+const basePath = window.X_UI_BASE_PATH || '';
 const requestUri = window.location.pathname;
 
 onMounted(async () => {
@@ -631,7 +631,7 @@ function onRowAction({ key, dbInbound }) {
         :ip-limit-enable="ipLimitEnable" :tg-bot-enable="tgBotEnable" :sub-settings="subSettings"
         :last-online-map="lastOnlineMap" :node-address="infoNodeAddress" />
       <QrCodeModal v-model:open="qrOpen" :db-inbound="qrDbInbound" :client="qrClient" :remark-model="remarkModel"
-        :node-address="qrNodeAddress" />
+        :node-address="qrNodeAddress" :sub-settings="subSettings" />
 
       <TextModal v-model:open="textOpen" :title="textTitle" :content="textContent" :file-name="textFileName" />
       <PromptModal v-model:open="promptOpen" :title="promptTitle" :ok-text="promptOkText" :type="promptType"

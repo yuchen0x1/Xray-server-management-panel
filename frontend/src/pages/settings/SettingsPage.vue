@@ -26,7 +26,7 @@ const { t } = useI18n();
 const { fetched, spinning, saveDisabled, allSetting, saveAll } = useAllSetting();
 const { isMobile } = useMediaQuery();
 
-const basePath = window.__X_UI_BASE_PATH__ || '';
+const basePath = window.X_UI_BASE_PATH || '';
 const requestUri = window.location.pathname;
 
 // AD-Vue 4's <a-back-top> calls `target()` after mount to find the

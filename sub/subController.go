@@ -150,7 +150,7 @@ func (a *SUBController) subs(c *gin.Context) {
 
 // serveSubPage renders web/dist/subpage.html for the current subscription
 // request. The Vite-built SPA reads window.__SUB_PAGE_DATA__ on mount —
-// we inject that here, along with window.__X_UI_BASE_PATH__ so the
+// we inject that here, along with window.X_UI_BASE_PATH so the
 // page's static asset references resolve correctly when the panel runs
 // behind a URL prefix.
 func (a *SUBController) serveSubPage(c *gin.Context, basePath string, page PageData) {
@@ -219,7 +219,7 @@ func (a *SUBController) serveSubPage(c *gin.Context, basePath string, page PageD
 	)
 	escapedBase := jsEscape.Replace(basePath)
 
-	inject := []byte(`<script>window.__X_UI_BASE_PATH__="` + escapedBase + `";` +
+	inject := []byte(`<script>window.X_UI_BASE_PATH="` + escapedBase + `";` +
 		`window.__SUB_PAGE_DATA__=` + string(subDataJSON) + `;</script></head>`)
 	out := bytes.Replace(body, []byte("</head>"), inject, 1)
 

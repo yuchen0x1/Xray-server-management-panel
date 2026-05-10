@@ -39,7 +39,7 @@ useWebSocket({ nodes: applyNodesEvent });
 
 const { isMobile } = useMediaQuery();
 
-const basePath = window.__X_UI_BASE_PATH__ || '';
+const basePath = window.X_UI_BASE_PATH || '';
 const requestUri = window.location.pathname;
 
 // === Form modal state =================================================

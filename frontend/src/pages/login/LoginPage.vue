@@ -38,7 +38,7 @@ const user = reactive({
   twoFactorCode: '',
 });
 
-const basePath = window.__X_UI_BASE_PATH__ || '';
+const basePath = window.X_UI_BASE_PATH || '';
 
 onMounted(async () => {
   const msg = await HttpUtil.post('/getTwoFactorEnable');
