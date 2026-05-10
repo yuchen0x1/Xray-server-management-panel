@@ -286,12 +286,9 @@ func (s *Server) startTask() {
 	// check client ips from log file every 10 sec
 	s.cron.AddJob("@every 10s", job.NewCheckClientIpJob())
 
-	// Probe every enabled remote node every 10 sec
-	s.cron.AddJob("@every 10s", job.NewNodeHeartbeatJob())
+	s.cron.AddJob("@every 5s", job.NewNodeHeartbeatJob())
 
-	// Pull traffic + online-clients from every online node every 10 sec
-	// and merge absolute counters into the central DB.
-	s.cron.AddJob("@every 10s", job.NewNodeTrafficSyncJob())
+	s.cron.AddJob("@every 5s", job.NewNodeTrafficSyncJob())
 
 	// check client ips from log file every day
 	s.cron.AddJob("@daily", job.NewClearLogsJob())
@@ -362,6 +359,8 @@ func (s *Server) Start() (err error) {
 	if err != nil {
 		return err
 	}
+	service.StartTrafficWriter()
+
 	s.cron = cron.New(cron.WithLocation(loc), cron.WithSeconds())
 	s.cron.Start()
 
@@ -446,6 +445,7 @@ func (s *Server) Stop() error {
 	if s.cron != nil {
 		s.cron.Stop()
 	}
+	service.StopTrafficWriter()
 	if s.tgbotService.IsRunning() {
 		s.tgbotService.Stop()
 	}

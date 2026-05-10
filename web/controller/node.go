@@ -13,15 +13,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// NodeController exposes CRUD + probe endpoints for managing remote
-// 3x-ui panels registered as nodes. All routes mount under
-// /panel/api/nodes/ via APIController.initRouter and inherit its
-// session-or-bearer auth from checkAPIAuth.
 type NodeController struct {
 	nodeService service.NodeService
 }
 
-// NewNodeController creates the controller and wires its routes onto g.
 func NewNodeController(g *gin.RouterGroup) *NodeController {
 	a := &NodeController{}
 	a.initRouter(g)
@@ -37,14 +32,8 @@ func (a *NodeController) initRouter(g *gin.RouterGroup) {
 	g.POST("/del/:id", a.del)
 	g.POST("/setEnable/:id", a.setEnable)
 
-	// /test takes a transient payload (no DB write) so the user can
-	// validate connectivity before saving the node.
 	g.POST("/test", a.test)
-	// /probe/:id triggers a synchronous probe of an already-saved node
-	// without waiting for the next 10s heartbeat tick.
 	g.POST("/probe/:id", a.probe)
-	// /history/:id/:metric/:bucket returns up to 60 averaged buckets of
-	// the per-node CPU or Mem time series collected by the heartbeat job.
 	g.GET("/history/:id/:metric/:bucket", a.history)
 }
 
@@ -115,8 +104,6 @@ func (a *NodeController) del(c *gin.Context) {
 	jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.delete"), nil)
 }
 
-// setEnable accepts a JSON body { "enable": bool } so the toggle
-// switch can flip a node without sending the whole record back.
 func (a *NodeController) setEnable(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -137,18 +124,12 @@ func (a *NodeController) setEnable(c *gin.Context) {
 	jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.update"), nil)
 }
 
-// test runs Probe against a transient Node payload without writing to
-// the DB. Used by the form modal to validate connectivity before save.
 func (a *NodeController) test(c *gin.Context) {
 	n := &model.Node{}
 	if err := c.ShouldBind(n); err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.test"), err)
 		return
 	}
-	// Reuse normalize-style defaults so the form can leave scheme/basePath
-	// blank and still get a sensible probe URL. We do this by round-tripping
-	// through Create's validator without the DB write — a tiny duplication
-	// here vs. exposing normalize publicly.
 	if n.Scheme == "" {
 		n.Scheme = "https"
 	}
@@ -162,9 +143,6 @@ func (a *NodeController) test(c *gin.Context) {
 	jsonObj(c, patch.ToUI(err == nil), nil)
 }
 
-// probe triggers a one-off probe against a saved node and persists
-// the result so the dashboard updates immediately, without waiting
-// for the next heartbeat tick.
 func (a *NodeController) probe(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -188,9 +166,6 @@ func (a *NodeController) probe(c *gin.Context) {
 	jsonObj(c, patch.ToUI(probeErr == nil), nil)
 }
 
-// history returns averaged buckets of the per-node CPU/Mem time-series.
-// Mirrors the system-level /panel/api/server/history/:metric/:bucket
-// endpoint so the frontend can reuse the same fetch logic.
 func (a *NodeController) history(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

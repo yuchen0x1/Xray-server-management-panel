@@ -50,6 +50,7 @@ const {
   applyTrafficEvent,
   applyClientStatsEvent,
   applyInvalidate,
+  applyInboundsEvent,
 } = useInbounds();
 
 // Live updates over WebSocket — replaces the old 5s polling loop.
@@ -60,6 +61,7 @@ useWebSocket({
   traffic: applyTrafficEvent,
   client_stats: applyClientStatsEvent,
   invalidate: applyInvalidate,
+  inbounds: applyInboundsEvent,
 });
 const { isMobile } = useMediaQuery();
 // Node list lives on the central panel; the Inbounds page consumes

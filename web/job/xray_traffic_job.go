@@ -54,6 +54,7 @@ func (j *XrayTrafficJob) Run() {
 				j.xrayService.SetToNeedRestart()
 			}
 		}
+		websocket.BroadcastInvalidate(websocket.MessageTypeInbounds)
 	}
 	if ExternalTrafficInformEnable, err := j.settingService.GetExternalTrafficInformEnable(); ExternalTrafficInformEnable {
 		j.informTrafficToExternalAPI(traffics, clientTraffics)

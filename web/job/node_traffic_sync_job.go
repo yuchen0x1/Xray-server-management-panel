@@ -12,41 +12,67 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/web/websocket"
 )
 
-// nodeTrafficSyncConcurrency caps how many nodes we sync simultaneously.
-// Each sync does three HTTP calls in series, so the wall-clock budget
-// per node is the request timeout below — keeping the cap modest avoids
-// flooding the network while still getting through dozens of nodes
-// inside a 10s tick.
-const nodeTrafficSyncConcurrency = 8
+const (
+	nodeTrafficSyncConcurrency    = 8
+	nodeTrafficSyncRequestTimeout = 4 * time.Second
+)
 
-// nodeTrafficSyncRequestTimeout bounds the per-node sync. Three probes
-// in series at 8s each would blow past the cron interval, so the budget
-// here covers the whole snapshot — FetchTrafficSnapshot internally caps
-// each HTTP call at the runtime's own 10s ceiling but uses ctx for the
-// outer total.
-const nodeTrafficSyncRequestTimeout = 8 * time.Second
-
-// NodeTrafficSyncJob pulls absolute traffic + online stats from every
-// enabled, currently-online remote node and merges them into the central
-// DB. Mirrors NodeHeartbeatJob's structure: TryLock to skip pile-ups,
-// errgroup-style fan-out with a concurrency cap, per-node ctx timeout.
-//
-// Offline nodes are skipped entirely — the heartbeat job already owns
-// status tracking, and we'd just waste sockets retrying a node we know
-// is unreachable. As soon as heartbeat marks a node online again, the
-// next traffic tick picks it up.
 type NodeTrafficSyncJob struct {
 	nodeService    service.NodeService
 	inboundService service.InboundService
-
-	// Coarse mutex prevents two ticks running concurrently if a single
-	// sync stalls past the 10s cron interval (rare but possible when
-	// many nodes are slow simultaneously).
-	running sync.Mutex
+	running        sync.Mutex
+	structural     atomicBool
 }
 
-// NewNodeTrafficSyncJob builds a singleton sync job. Cron hands the same
-// instance to every tick so the running mutex is preserved across runs.
+type atomicBool struct {
+	mu sync.Mutex
+	v  bool
+}
+
+func (a *atomicBool) set() {
+	a.mu.Lock()
+	a.v = true
+	a.mu.Unlock()
+}
+
+func (a *atomicBool) takeAndReset() bool {
+	a.mu.Lock()
+	v := a.v
+	a.v = false
+	a.mu.Unlock()
+	return v
+}
+
+type emailSet struct {
+	mu sync.Mutex
+	m  map[string]struct{}
+}
+
+func newEmailSet() *emailSet { return &emailSet{m: make(map[string]struct{})} }
+
+func (s *emailSet) addAll(emails []string) {
+	if len(emails) == 0 {
+		return
+	}
+	s.mu.Lock()
+	for _, e := range emails {
+		if e != "" {
+			s.m[e] = struct{}{}
+		}
+	}
+	s.mu.Unlock()
+}
+
+func (s *emailSet) slice() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := make([]string, 0, len(s.m))
+	for e := range s.m {
+		out = append(out, e)
+	}
+	return out
+}
+
 func NewNodeTrafficSyncJob() *NodeTrafficSyncJob {
 	return &NodeTrafficSyncJob{}
 }
@@ -59,8 +85,6 @@ func (j *NodeTrafficSyncJob) Run() {
 
 	mgr := runtime.GetManager()
 	if mgr == nil {
-		// Server still booting — pre-Manager runs are normal during
-		// the first few seconds of startup.
 		return
 	}
 
@@ -73,6 +97,7 @@ func (j *NodeTrafficSyncJob) Run() {
 		return
 	}
 
+	touched := newEmailSet()
 	sem := make(chan struct{}, nodeTrafficSyncConcurrency)
 	var wg sync.WaitGroup
 	for _, n := range nodes {
@@ -84,37 +109,54 @@ func (j *NodeTrafficSyncJob) Run() {
 		go func(n *model.Node) {
 			defer wg.Done()
 			defer func() { <-sem }()
-			j.syncOne(mgr, n)
+			j.syncOne(mgr, n, touched)
 		}(n)
 	}
 	wg.Wait()
 
-	// One broadcast per tick, batched across all nodes — frontend code
-	// is invariant to whether the rows came from local xray or a node,
-	// so we reuse the same WebSocket envelope XrayTrafficJob uses.
-	if websocket.HasClients() {
-		online := j.inboundService.GetOnlineClients()
-		if online == nil {
-			online = []string{}
+	if !websocket.HasClients() {
+		return
+	}
+
+	online := j.inboundService.GetOnlineClients()
+	if online == nil {
+		online = []string{}
+	}
+	lastOnline, err := j.inboundService.GetClientsLastOnline()
+	if err != nil {
+		logger.Warning("node traffic sync: get last-online failed:", err)
+	}
+	if lastOnline == nil {
+		lastOnline = map[string]int64{}
+	}
+	websocket.BroadcastTraffic(map[string]any{
+		"onlineClients": online,
+		"lastOnlineMap": lastOnline,
+	})
+
+	clientStats := map[string]any{}
+	if emails := touched.slice(); len(emails) > 0 {
+		if stats, err := j.inboundService.GetActiveClientTraffics(emails); err != nil {
+			logger.Warning("node traffic sync: get client traffics for websocket failed:", err)
+		} else if len(stats) > 0 {
+			clientStats["clients"] = stats
 		}
-		lastOnline, err := j.inboundService.GetClientsLastOnline()
-		if err != nil {
-			logger.Warning("node traffic sync: get last-online failed:", err)
-		}
-		if lastOnline == nil {
-			lastOnline = map[string]int64{}
-		}
-		websocket.BroadcastTraffic(map[string]any{
-			"onlineClients": online,
-			"lastOnlineMap": lastOnline,
-		})
+	}
+	if summary, err := j.inboundService.GetInboundsTrafficSummary(); err != nil {
+		logger.Warning("node traffic sync: get inbounds summary for websocket failed:", err)
+	} else if len(summary) > 0 {
+		clientStats["inbounds"] = summary
+	}
+	if len(clientStats) > 0 {
+		websocket.BroadcastClientStats(clientStats)
+	}
+
+	if j.structural.takeAndReset() {
+		websocket.BroadcastInvalidate(websocket.MessageTypeInbounds)
 	}
 }
 
-// syncOne fetches and merges one node's snapshot. Errors are logged
-// per-node and don't propagate; one slow node shouldn't keep the rest
-// from running.
-func (j *NodeTrafficSyncJob) syncOne(mgr *runtime.Manager, n *model.Node) {
+func (j *NodeTrafficSyncJob) syncOne(mgr *runtime.Manager, n *model.Node, touched *emailSet) {
 	ctx, cancel := context.WithTimeout(context.Background(), nodeTrafficSyncRequestTimeout)
 	defer cancel()
 
@@ -126,12 +168,27 @@ func (j *NodeTrafficSyncJob) syncOne(mgr *runtime.Manager, n *model.Node) {
 	snap, err := rt.FetchTrafficSnapshot(ctx)
 	if err != nil {
 		logger.Warning("node traffic sync: fetch from", n.Name, "failed:", err)
-		// Drop node-online contribution so a hiccup doesn't leave the
-		// online filter showing stale clients indefinitely.
 		j.inboundService.ClearNodeOnlineClients(n.Id)
 		return
 	}
-	if err := j.inboundService.SetRemoteTraffic(n.Id, snap); err != nil {
+	changed, err := j.inboundService.SetRemoteTraffic(n.Id, snap)
+	if err != nil {
 		logger.Warning("node traffic sync: merge for", n.Name, "failed:", err)
+		return
+	}
+	if changed {
+		j.structural.set()
+	}
+	for _, ib := range snap.Inbounds {
+		if ib == nil {
+			continue
+		}
+		emails := make([]string, 0, len(ib.ClientStats))
+		for _, cs := range ib.ClientStats {
+			if cs.Email != "" {
+				emails = append(emails, cs.Email)
+			}
+		}
+		touched.addAll(emails)
 	}
 }

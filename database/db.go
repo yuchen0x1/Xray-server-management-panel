@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"slices"
+	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/config"
 	"github.com/mhsanaei/3x-ui/v3/database/model"
@@ -148,10 +149,28 @@ func InitDB(dbPath string) error {
 	c := &gorm.Config{
 		Logger: gormLogger,
 	}
-	db, err = gorm.Open(sqlite.Open(dbPath), c)
+	dsn := dbPath + "?_journal_mode=WAL&_busy_timeout=10000&_synchronous=NORMAL&_txlock=immediate"
+	db, err = gorm.Open(sqlite.Open(dsn), c)
 	if err != nil {
 		return err
 	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+	if _, err := sqlDB.Exec("PRAGMA journal_mode=WAL"); err != nil {
+		return err
+	}
+	if _, err := sqlDB.Exec("PRAGMA busy_timeout=10000"); err != nil {
+		return err
+	}
+	if _, err := sqlDB.Exec("PRAGMA synchronous=NORMAL"); err != nil {
+		return err
+	}
+	sqlDB.SetMaxOpenConns(8)
+	sqlDB.SetMaxIdleConns(4)
+	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	if err := initModels(); err != nil {
 		return err

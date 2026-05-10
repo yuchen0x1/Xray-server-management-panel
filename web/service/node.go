@@ -16,10 +16,6 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/web/runtime"
 )
 
-// HeartbeatPatch is the slice of fields a single Probe() result writes
-// back to a Node row. We pass it as a struct (not a *model.Node) so the
-// heartbeat path can't accidentally clobber configuration columns the
-// user just edited.
 type HeartbeatPatch struct {
 	Status        string
 	LastHeartbeat int64
@@ -31,13 +27,8 @@ type HeartbeatPatch struct {
 	LastError     string
 }
 
-// NodeService manages remote 3x-ui nodes registered with this panel.
-// It owns CRUD for the Node model and the HTTP probe used by both the
-// heartbeat job and the on-demand "test connection" UI action.
 type NodeService struct{}
 
-// httpClient is shared so repeated probes reuse TCP/TLS connections.
-// Timeout is per-request, set on each Do() via context.
 var nodeHTTPClient = &http.Client{
 	Transport: &http.Transport{
 		MaxIdleConns:        64,
@@ -62,8 +53,6 @@ func (s *NodeService) GetById(id int) (*model.Node, error) {
 	return n, nil
 }
 
-// normalize fills in defaults and trims accidental whitespace before save.
-// Pulled out so Create and Update share the same rules.
 func (s *NodeService) normalize(n *model.Node) error {
 	n.Name = strings.TrimSpace(n.Name)
 	n.Address = strings.TrimSpace(n.Address)
@@ -109,9 +98,6 @@ func (s *NodeService) Update(id int, in *model.Node) error {
 	if err := db.Where("id = ?", id).First(existing).Error; err != nil {
 		return err
 	}
-	// Only persist user-controlled columns. Heartbeat fields stay where
-	// the heartbeat job last wrote them so a no-op edit doesn't blank
-	// the dashboard out for ten seconds.
 	updates := map[string]any{
 		"name":      in.Name,
 		"remark":    in.Remark,
@@ -125,8 +111,6 @@ func (s *NodeService) Update(id int, in *model.Node) error {
 	if err := db.Model(model.Node{}).Where("id = ?", id).Updates(updates).Error; err != nil {
 		return err
 	}
-	// Drop any cached Remote so the next inbound op picks up the fresh
-	// address/token. Cheap to do unconditionally — the next miss rebuilds.
 	if mgr := runtime.GetManager(); mgr != nil {
 		mgr.InvalidateNode(id)
 	}
@@ -141,8 +125,6 @@ func (s *NodeService) Delete(id int) error {
 	if mgr := runtime.GetManager(); mgr != nil {
 		mgr.InvalidateNode(id)
 	}
-	// Drop in-memory series so a freshly created node with the same id
-	// doesn't inherit stale points (sqlite reuses ids freely).
 	nodeMetrics.drop(nodeMetricKey(id, "cpu"))
 	nodeMetrics.drop(nodeMetricKey(id, "mem"))
 	return nil
@@ -153,9 +135,6 @@ func (s *NodeService) SetEnable(id int, enable bool) error {
 	return db.Model(model.Node{}).Where("id = ?", id).Update("enable", enable).Error
 }
 
-// UpdateHeartbeat persists the slice of fields written by a probe. We
-// don't touch updated_at via gorm autoUpdateTime here — that field is
-// reserved for user-driven config edits.
 func (s *NodeService) UpdateHeartbeat(id int, p HeartbeatPatch) error {
 	db := database.GetDB()
 	updates := map[string]any{
@@ -171,9 +150,6 @@ func (s *NodeService) UpdateHeartbeat(id int, p HeartbeatPatch) error {
 	if err := db.Model(model.Node{}).Where("id = ?", id).Updates(updates).Error; err != nil {
 		return err
 	}
-	// Only record online ticks. Offline probes carry zeroed cpu/mem and
-	// would draw a misleading dip on the chart; the gap on the x-axis is
-	// the truthful representation of "we couldn't reach the node".
 	if p.Status == "online" {
 		now := time.Unix(p.LastHeartbeat, 0)
 		nodeMetrics.append(nodeMetricKey(id, "cpu"), now, p.CpuPct)
@@ -182,28 +158,14 @@ func (s *NodeService) UpdateHeartbeat(id int, p HeartbeatPatch) error {
 	return nil
 }
 
-// nodeMetricKey is the namespacing used inside the singleton ring buffer
-// so per-node metrics don't collide with each other or with the system
-// metrics in the sibling singleton.
 func nodeMetricKey(id int, metric string) string {
 	return "node:" + strconv.Itoa(id) + ":" + metric
 }
 
-// AggregateNodeMetric returns up to maxPoints averaged buckets for one
-// node's metric (currently "cpu" or "mem"). Output shape matches
-// AggregateSystemMetric: {"t": unixSec, "v": value}.
 func (s *NodeService) AggregateNodeMetric(id int, metric string, bucketSeconds int, maxPoints int) []map[string]any {
 	return nodeMetrics.aggregate(nodeMetricKey(id, metric), bucketSeconds, maxPoints)
 }
 
-// Probe issues a single GET to the node's /panel/api/server/status and
-// returns a HeartbeatPatch. On error the patch is zero-valued except
-// for LastError; the caller is responsible for setting Status="offline".
-//
-// The remote endpoint requires authentication: we send the per-node
-// ApiToken as a Bearer token, which the remote APIController.checkAPIAuth
-// validates. Calls without a token would just get a 404, which masks
-// the existence of the API entirely.
 func (s *NodeService) Probe(ctx context.Context, n *model.Node) (HeartbeatPatch, error) {
 	patch := HeartbeatPatch{LastHeartbeat: time.Now().Unix()}
 	url := fmt.Sprintf("%s://%s:%d%spanel/api/server/status",
@@ -233,16 +195,10 @@ func (s *NodeService) Probe(ctx context.Context, n *model.Node) (HeartbeatPatch,
 		return patch, errors.New(patch.LastError)
 	}
 
-	// The remote wraps Status in entity.Msg. We decode into a typed
-	// envelope rather than map[string]any so a schema change on the
-	// remote shows up as a Go error instead of a silent zero-fill.
 	var envelope struct {
 		Success bool   `json:"success"`
 		Msg     string `json:"msg"`
 		Obj     *struct {
-			Cpu uint64 `json:"-"`
-			// Status fields we care about. Decode CPU/Mem nested
-			// structs minimally — anything else gets discarded.
 			CpuPct float64 `json:"cpu"`
 			Mem    struct {
 				Current uint64 `json:"current"`
@@ -272,8 +228,6 @@ func (s *NodeService) Probe(ctx context.Context, n *model.Node) (HeartbeatPatch,
 	return patch, nil
 }
 
-// EnvelopeForUI is the shape a frontend test-connection action expects.
-// Pulling it out keeps the controller dumb.
 type ProbeResultUI struct {
 	Status      string  `json:"status"`
 	LatencyMs   int     `json:"latencyMs"`
