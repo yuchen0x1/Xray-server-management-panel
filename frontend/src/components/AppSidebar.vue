@@ -12,8 +12,7 @@ import {
   MenuOutlined,
 } from '@ant-design/icons-vue';
 
-import { currentTheme } from '@/composables/useTheme.js';
-import ThemeSwitch from '@/components/ThemeSwitch.vue';
+import { theme, currentTheme, toggleTheme, toggleUltra, pauseAnimationsUntilLeave } from '@/composables/useTheme.js';
 
 const { t } = useI18n();
 
@@ -98,17 +97,60 @@ function toggleDrawer() {
 function closeDrawer() {
   drawerOpen.value = false;
 }
+
+/* 3-state theme cycle driven by the brand-row icon button.
+ *   Light  → Dark   (turn dark on, ensure ultra off)
+ *   Dark   → Ultra  (turn ultra on)
+ *   Ultra  → Light  (turn ultra off, turn dark off)
+ * Using a single button keeps the sider header clean — the old
+ * ThemeSwitch a-sub-menu plus its expandable items lived here. */
+function cycleTheme() {
+  pauseAnimationsUntilLeave('theme-cycle');
+  if (!theme.isDark) {
+    toggleTheme();
+    if (theme.isUltra) toggleUltra();
+  } else if (!theme.isUltra) {
+    toggleUltra();
+  } else {
+    toggleUltra();
+    toggleTheme();
+  }
+}
 </script>
 
 <template>
   <div class="ant-sidebar">
     <a-layout-sider :theme="currentTheme" collapsible :collapsed="collapsed" breakpoint="md" @collapse="onCollapse">
       <div class="sider-brand" :class="{ 'sider-brand-collapsed': collapsed }">
-        {{ collapsed ? '3X' : '3X-UI' }}
+        <span class="brand-text">{{ collapsed ? '3X' : '3X-UI' }}</span>
+        <button v-if="!collapsed" id="theme-cycle" type="button" class="theme-cycle" :aria-label="t('menu.theme')"
+          :title="t('menu.theme')" @click="cycleTheme">
+          <svg v-if="!theme.isDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+          </svg>
+          <svg v-else-if="!theme.isUltra" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+          <svg v-else viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            <path fill="none" d="M19 3l0.7 1.4 1.4 0.7-1.4 0.7L19 7.2l-0.7-1.4-1.4-0.7 1.4-0.7z" />
+          </svg>
+        </button>
       </div>
-      <ThemeSwitch />
-      <a-menu :theme="currentTheme" mode="inline" :selected-keys="activeTab" @click="({ key }) => openLink(key)">
-        <a-menu-item v-for="tab in tabs" :key="tab.key">
+      <a-menu :theme="currentTheme" mode="inline" :selected-keys="activeTab" class="sider-nav"
+        @click="({ key }) => openLink(key)">
+        <a-menu-item v-for="tab in navTabs" :key="tab.key">
+          <component :is="iconByName[tab.icon]" />
+          <span>{{ tab.title }}</span>
+        </a-menu-item>
+      </a-menu>
+      <a-menu :theme="currentTheme" mode="inline" :selected-keys="activeTab" class="sider-utility"
+        @click="({ key }) => openLink(key)">
+        <a-menu-item v-for="tab in utilTabs" :key="tab.key">
           <component :is="iconByName[tab.icon]" />
           <span>{{ tab.title }}</span>
         </a-menu-item>
@@ -121,11 +163,29 @@ function closeDrawer() {
       :header-style="{ display: 'none' }" @close="closeDrawer">
       <div class="drawer-header">
         <span class="drawer-brand">3X-UI</span>
-        <button class="drawer-close" type="button" :aria-label="t('close')" @click="closeDrawer">
-          <CloseOutlined />
-        </button>
+        <div class="drawer-header-actions">
+          <button id="theme-cycle-drawer" type="button" class="theme-cycle" :aria-label="t('menu.theme')"
+            :title="t('menu.theme')" @click="cycleTheme">
+            <svg v-if="!theme.isDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+            </svg>
+            <svg v-else-if="!theme.isUltra" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+            </svg>
+            <svg v-else viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              <path fill="none" d="M19 3l0.7 1.4 1.4 0.7-1.4 0.7L19 7.2l-0.7-1.4-1.4-0.7 1.4-0.7z" />
+            </svg>
+          </button>
+          <button class="drawer-close" type="button" :aria-label="t('close')" @click="closeDrawer">
+            <CloseOutlined />
+          </button>
+        </div>
       </div>
-      <ThemeSwitch />
       <a-menu :theme="currentTheme" mode="inline" :selected-keys="activeTab" class="drawer-menu drawer-nav"
         @click="({ key }) => openLink(key)">
         <a-menu-item v-for="tab in navTabs" :key="tab.key">
@@ -150,8 +210,18 @@ function closeDrawer() {
 </template>
 
 <style scoped>
+/* Pin the desktop sider to the viewport. Without this, AD-Vue's
+ * `<a-layout-sider>` stretches to match the flex row's height — which
+ * equals the page height on tall dashboards (cards stack into one
+ * column below `lg` = 992px), so the bottom-anchored
+ * `.ant-layout-sider-trigger` (and Logout right above it) slide off
+ * the screen. Sticky + 100vh keeps the sider exactly viewport-tall;
+ * `align-self: flex-start` stops the flex row from re-stretching it. */
 .ant-sidebar>.ant-layout-sider {
-  height: 100%;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  align-self: flex-start;
 }
 
 /* `.sider-brand` and `.drawer-brand` share the same light-theme colour
@@ -169,16 +239,63 @@ function closeDrawer() {
 }
 
 .sider-brand {
-  text-align: center;
-  padding: 16px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 14px;
   border-bottom: 1px solid rgba(128, 128, 128, 0.15);
   user-select: none;
 }
 
+/* Collapsed sider only has room for the '3X' brand — center it and
+ * hide the theme cycle button (which is `v-if`-ed out in template). */
 .sider-brand-collapsed {
+  justify-content: center;
   font-size: 16px;
-  padding: 16px 4px;
+  padding: 14px 4px;
   letter-spacing: 0;
+}
+
+.brand-text {
+  flex: 1 1 auto;
+}
+
+.sider-brand-collapsed .brand-text {
+  flex: 0 0 auto;
+}
+
+.theme-cycle {
+  background: transparent;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: inherit;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background-color 0.2s, transform 0.15s;
+}
+
+.theme-cycle:hover,
+.theme-cycle:focus-visible {
+  background: rgba(128, 128, 128, 0.18);
+  transform: scale(1.08);
+}
+
+.theme-cycle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.drawer-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .drawer-handle {
@@ -246,6 +363,41 @@ function closeDrawer() {
   border-top: 1px solid rgba(128, 128, 128, 0.15);
 }
 
+/* Pin Logout exactly above AD-Vue's `.ant-layout-sider-trigger` (the
+ * collapse bar at the bottom, position: absolute; height: 48px). The
+ * old `margin-top: auto` approach only pushed the utility down when the
+ * content was shorter than the container — on short viewports the
+ * Logout got hidden behind the trigger. Switching to a flex layout
+ * where `.sider-nav` consumes all spare space (flex: 1) and
+ * `.sider-utility` stays at content height pins it consistently. The
+ * padding-bottom: 48px on the parent reserves the trigger's strip so
+ * Logout sits directly above it.
+ *
+ * The mobile @media rule below still hides the whole sider on phones;
+ * this block only kicks in once that override no longer matches. */
+.ant-sidebar>.ant-layout-sider :deep(.ant-layout-sider-children) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-bottom: 48px;
+}
+
+.sider-brand {
+  flex: 0 0 auto;
+}
+
+.sider-nav {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+.sider-utility {
+  flex: 0 0 auto;
+  border-top: 1px solid rgba(128, 128, 128, 0.15);
+}
+
 @media (max-width: 768px) {
   .drawer-handle {
     display: inline-flex;
@@ -310,5 +462,30 @@ body.dark .ant-drawer .ant-drawer-body {
 html[data-theme='ultra-dark'] .ant-drawer .ant-drawer-content,
 html[data-theme='ultra-dark'] .ant-drawer .ant-drawer-body {
   background: #0a0a0a !important;
+}
+
+/* Force the same light-blue tint on selected + hover/active across
+ * all three themes. AD-Vue's defaults read too subtle on the dark
+ * sider, and the light-theme variant looked inconsistent vs. dark —
+ * applying the same RGBA tint over all backgrounds gives the active
+ * page the same visual weight everywhere. `!important` is required to
+ * beat AD-Vue's CSS-in-JS specificity; scoped to .sider-nav /
+ * .sider-utility / .drawer-menu so only the navigation menus pick up
+ * the override (other a-menu instances keep AD-Vue defaults). */
+.sider-nav .ant-menu-item-selected,
+.sider-utility .ant-menu-item-selected,
+.drawer-menu .ant-menu-item-selected {
+  background-color: rgba(64, 150, 255, 0.2) !important;
+  color: #4096ff !important;
+}
+
+.sider-nav .ant-menu-item-active:not(.ant-menu-item-selected),
+.sider-utility .ant-menu-item-active:not(.ant-menu-item-selected),
+.drawer-menu .ant-menu-item-active:not(.ant-menu-item-selected),
+.sider-nav .ant-menu-item:not(.ant-menu-item-selected):not(.ant-menu-item-disabled):hover,
+.sider-utility .ant-menu-item:not(.ant-menu-item-selected):not(.ant-menu-item-disabled):hover,
+.drawer-menu .ant-menu-item:not(.ant-menu-item-selected):not(.ant-menu-item-disabled):hover {
+  background-color: rgba(64, 150, 255, 0.1) !important;
+  color: #4096ff !important;
 }
 </style>
