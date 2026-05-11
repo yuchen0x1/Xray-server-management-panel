@@ -219,14 +219,30 @@ watch(clients, (list) => {
 function confirmBulkDelete() {
   const picked = clients.value.filter((c) => selected.value.has(rowKey(c)));
   if (picked.length === 0) return;
+
+  const total = clients.value.length;
+  const keepLast = picked.length === total;
+  const toDelete = keepLast ? picked.slice(0, -1) : picked;
+
+  if (toDelete.length === 0) {
+    Modal.warning({
+      title: t('pages.inbounds.deleteClient'),
+      content: 'Inbound must keep at least one client — delete the inbound to remove all.',
+      okText: t('confirm'),
+    });
+    return;
+  }
+
   Modal.confirm({
-    title: t('pages.inbounds.deleteClient') + ` — ${picked.length}`,
-    content: t('pages.inbounds.deleteClientContent'),
+    title: `${t('pages.inbounds.deleteClient')} — ${toDelete.length}${keepLast ? ` / ${total}` : ''}`,
+    content: keepLast
+      ? 'Inbound must keep at least one client — the last selected will remain. Delete the inbound to remove all.'
+      : t('pages.inbounds.deleteClientContent'),
     okText: t('delete'),
     okType: 'danger',
     cancelText: t('cancel'),
     onOk: () => {
-      emit('delete-clients', { dbInbound: props.dbInbound, clients: picked });
+      emit('delete-clients', { dbInbound: props.dbInbound, clients: toDelete });
       clearSelection();
     },
   });
