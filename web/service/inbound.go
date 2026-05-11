@@ -291,12 +291,7 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 		return inbound, false, common.NewError("Port already exists:", inbound.Port)
 	}
 
-	// pick a tag that won't collide with an existing row. for the common
-	// case this is the same "inbound-<port>" string the controller already
-	// set; only when this port already has another inbound on a different
-	// transport (now possible after the transport-aware port check) does
-	// this disambiguate with a -tcp/-udp suffix. see #4103.
-	inbound.Tag, err = s.generateInboundTag(inbound, 0)
+	inbound.Tag, err = s.resolveInboundTag(inbound, 0)
 	if err != nil {
 		return inbound, false, err
 	}
@@ -636,9 +631,7 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 	oldInbound.Settings = inbound.Settings
 	oldInbound.StreamSettings = inbound.StreamSettings
 	oldInbound.Sniffing = inbound.Sniffing
-	// regenerate tag with collision-aware logic. for this row we pass
-	// inbound.Id as ignoreId so it doesn't see its own old tag in the db.
-	oldInbound.Tag, err = s.generateInboundTag(inbound, inbound.Id)
+	oldInbound.Tag, err = s.resolveInboundTag(inbound, inbound.Id)
 	if err != nil {
 		return inbound, false, err
 	}
