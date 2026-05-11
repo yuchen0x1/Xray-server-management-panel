@@ -122,13 +122,19 @@ const visibleInbounds = computed(() => {
 // `key`-driven so we can render via the body-cell slot below. AD-Vue 4's
 // `responsive` array still works on column defs. Computed so column
 // labels react to live locale switches.
+const hasAnyRemark = computed(() =>
+  props.dbInbounds.some((i) => typeof i?.remark === 'string' && i.remark.trim() !== ''),
+);
+
 const desktopColumns = computed(() => {
   const cols = [
-    { title: 'ID', dataIndex: 'id', key: 'id', align: 'right', width: 30, responsive: ['xs'] },
+    { title: 'ID', dataIndex: 'id', key: 'id', align: 'right', width: 30 },
     { title: t('pages.inbounds.operate'), key: 'action', align: 'center', width: 30 },
     { title: t('pages.inbounds.enable'), key: 'enable', align: 'center', width: 35 },
-    { title: t('pages.inbounds.remark'), dataIndex: 'remark', key: 'remark', align: 'center', width: 60 },
   ];
+  if (hasAnyRemark.value) {
+    cols.push({ title: t('pages.inbounds.remark'), dataIndex: 'remark', key: 'remark', align: 'center', width: 60 });
+  }
   if (props.nodesById.size > 0) {
     cols.push({ title: t('pages.inbounds.node'), key: 'node', align: 'center', width: 60 });
   }
@@ -401,6 +407,7 @@ function showQrCodeMenu(dbInbound) {
           <div v-if="record.isMultiUser() && isExpanded(record.id)" class="card-clients">
             <ClientRowTable :db-inbound="record" :is-mobile="true" :traffic-diff="trafficDiff" :expire-diff="expireDiff"
               :online-clients="onlineClients" :last-online-map="lastOnlineMap" :is-dark-theme="isDarkTheme"
+              :page-size="pageSize"
               @edit-client="(p) => emit('edit-client', p)" @qrcode-client="(p) => emit('qrcode-client', p)"
               @info-client="(p) => emit('info-client', p)"
               @reset-traffic-client="(p) => emit('reset-traffic-client', p)"
@@ -421,7 +428,8 @@ function showQrCodeMenu(dbInbound) {
         <template #expandedRowRender="{ record }">
           <ClientRowTable v-if="record.isMultiUser()" :db-inbound="record" :is-mobile="isMobile"
             :traffic-diff="trafficDiff" :expire-diff="expireDiff" :online-clients="onlineClients"
-            :last-online-map="lastOnlineMap" :is-dark-theme="isDarkTheme" @edit-client="(p) => emit('edit-client', p)"
+            :last-online-map="lastOnlineMap" :is-dark-theme="isDarkTheme" :page-size="pageSize"
+            @edit-client="(p) => emit('edit-client', p)"
             @qrcode-client="(p) => emit('qrcode-client', p)" @info-client="(p) => emit('info-client', p)"
             @reset-traffic-client="(p) => emit('reset-traffic-client', p)"
             @delete-client="(p) => emit('delete-client', p)"
