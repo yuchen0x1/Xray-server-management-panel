@@ -128,7 +128,8 @@ function cycleTheme() {
           <svg v-if="!theme.isDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+            <path
+              d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
           </svg>
           <svg v-else-if="!theme.isUltra" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -169,7 +170,8 @@ function cycleTheme() {
             <svg v-if="!theme.isDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+              <path
+                d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
             </svg>
             <svg v-else-if="!theme.isUltra" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -275,16 +277,18 @@ function cycleTheme() {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: inherit;
+  color: rgba(0, 0, 0, 0.75);
   padding: 0;
   flex-shrink: 0;
-  transition: background-color 0.2s, transform 0.15s;
+  transition: background-color 0.2s, transform 0.15s, color 0.2s;
 }
 
 .theme-cycle:hover,
 .theme-cycle:focus-visible {
-  background: rgba(128, 128, 128, 0.18);
+  background-color: rgba(64, 150, 255, 0.1);
+  color: #4096ff;
   transform: scale(1.08);
+  outline: none;
 }
 
 .theme-cycle svg {
@@ -444,6 +448,19 @@ body.dark .drawer-close {
 
 html[data-theme='ultra-dark'] .drawer-close {
   color: rgba(255, 255, 255, 0.85);
+}
+
+/* Force a visible icon colour on the theme cycle button across themes.
+ * The scoped `color: inherit` previously relied on parent chain to
+ * cascade — fine on the desktop sider where `.sider-brand` is themed,
+ * but inside the teleported drawer body the cascade didn't reach and
+ * the icon merged into the dark background on mobile. */
+body.dark .theme-cycle {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+html[data-theme='ultra-dark'] .theme-cycle {
+  color: rgba(255, 255, 255, 0.92);
 }
 
 /* Pin the drawer surface to the same colour the desktop sider uses

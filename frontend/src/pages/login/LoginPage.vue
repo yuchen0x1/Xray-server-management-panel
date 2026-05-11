@@ -93,7 +93,8 @@ function cycleTheme() {
             <svg v-if="!themeState.isDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+              <path
+                d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
             </svg>
             <svg v-else-if="!themeState.isUltra" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -277,24 +278,49 @@ function cycleTheme() {
 }
 
 @keyframes blob-drift-a {
-  0%   { transform: translate(0, 0) scale(1); }
-  50%  { transform: translate(18vw, 10vh) scale(1.15); }
-  100% { transform: translate(34vw, 22vh) scale(1.25); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(18vw, 10vh) scale(1.15);
+  }
+
+  100% {
+    transform: translate(34vw, 22vh) scale(1.25);
+  }
 }
 
 @keyframes blob-drift-b {
-  0%   { transform: translate(0, 0) scale(1); }
-  50%  { transform: translate(-16vw, -10vh) scale(1.12); }
-  100% { transform: translate(-30vw, -22vh) scale(1.2); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(-16vw, -10vh) scale(1.12);
+  }
+
+  100% {
+    transform: translate(-30vw, -22vh) scale(1.2);
+  }
 }
 
 @keyframes blob-drift-c {
-  0%   { transform: translate(-50%, -50%) scale(1); }
-  50%  { transform: translate(-20%, -20%) scale(1.1); }
-  100% { transform: translate(-80%, -10%) scale(1.05); }
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  50% {
+    transform: translate(-20%, -20%) scale(1.1);
+  }
+
+  100% {
+    transform: translate(-80%, -10%) scale(1.05);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .login-app::before,
   .login-app::after,
   .login-content::before {
@@ -310,7 +336,7 @@ function cycleTheme() {
   position: relative;
 }
 
-.login-content > * {
+.login-content>* {
   position: relative;
   z-index: 1;
 }
@@ -347,7 +373,8 @@ function cycleTheme() {
 
 .theme-cycle:hover,
 .theme-cycle:focus-visible {
-  color: var(--color-accent);
+  background-color: rgba(64, 150, 255, 0.1);
+  color: #4096ff;
   transform: scale(1.05);
   outline: none;
 }
@@ -428,10 +455,12 @@ function cycleTheme() {
 .headline-leave-active {
   transition: opacity 280ms ease, transform 280ms ease;
 }
+
 .headline-enter-from {
   opacity: 0;
   transform: translateY(6px);
 }
+
 .headline-leave-to {
   opacity: 0;
   transform: translateY(-6px);
