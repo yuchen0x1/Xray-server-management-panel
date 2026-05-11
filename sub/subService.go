@@ -98,7 +98,7 @@ func (s *SubService) GetSubs(subId string, host string) ([]string, int64, xray.C
 				if client.Enable {
 					hasEnabledClient = true
 				}
-				result = append(result, s.getLink(inbound, client.Email))
+				result = append(result, s.GetLink(inbound, client.Email))
 				var ct xray.ClientTraffic
 				ct, clientTraffics = s.appendUniqueTraffic(seenEmails, clientTraffics, inbound.ClientStats, client.Email)
 				if ct.LastOnline > lastOnline {
@@ -198,7 +198,11 @@ func (s *SubService) getFallbackMaster(dest string, streamSettings string) (stri
 	return inbound.Listen, inbound.Port, string(modifiedStream), nil
 }
 
-func (s *SubService) getLink(inbound *model.Inbound, email string) string {
+// GetLink dispatches to the protocol-specific generator for one (inbound, client)
+// pair. Returns "" when the inbound's protocol doesn't produce a subscription URL
+// (socks, http, mixed, wireguard, dokodemo, tunnel). The returned string may
+// contain multiple `\n`-separated URLs when the inbound has externalProxy set.
+func (s *SubService) GetLink(inbound *model.Inbound, email string) string {
 	switch inbound.Protocol {
 	case "vmess":
 		return s.genVmessLink(inbound, email)

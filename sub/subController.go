@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	webpkg "github.com/mhsanaei/3x-ui/v3/web"
 	"github.com/mhsanaei/3x-ui/v3/web/service"
 
 	"github.com/gin-gonic/gin"
@@ -159,8 +158,7 @@ func (a *SUBController) serveSubPage(c *gin.Context, basePath string, page PageD
 	if diskBody, diskErr := os.ReadFile("web/dist/subpage.html"); diskErr == nil {
 		body = diskBody
 	} else {
-		dist := webpkg.EmbeddedDist()
-		readBody, err := dist.ReadFile("dist/subpage.html")
+		readBody, err := distFS.ReadFile("dist/subpage.html")
 		if err != nil {
 			c.String(http.StatusInternalServerError, "missing embedded subpage")
 			return

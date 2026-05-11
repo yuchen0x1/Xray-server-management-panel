@@ -50,7 +50,6 @@ func serveDistPage(c *gin.Context, name string) {
 		"&", `&`,
 	)
 	escapedBase := jsEscape.Replace(basePath)
-	escapedVer := jsEscape.Replace(config.GetVersion())
 	csrfToken, err := session.EnsureCSRFToken(c)
 	if err != nil {
 		logger.Warning("Unable to mint CSRF token for", name+":", err)
@@ -58,8 +57,13 @@ func serveDistPage(c *gin.Context, name string) {
 	}
 	csrfMeta := []byte(`<meta name="csrf-token" content="` + htmlpkg.EscapeString(csrfToken) + `">`)
 
-	inject := []byte(`<script>window.X_UI_BASE_PATH="` + escapedBase +
-		`";window.X_UI_CUR_VER="` + escapedVer + `";</script>`)
+	script := `<script>window.X_UI_BASE_PATH="` + escapedBase + `"`
+	if name != "login.html" {
+		escapedVer := jsEscape.Replace(config.GetVersion())
+		script += `;window.X_UI_CUR_VER="` + escapedVer + `"`
+	}
+	script += `;</script>`
+	inject := []byte(script)
 	inject = append(inject, csrfMeta...)
 	inject = append(inject, []byte(`</head>`)...)
 	out := bytes.Replace(body, []byte("</head>"), inject, 1)

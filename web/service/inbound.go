@@ -3866,3 +3866,31 @@ func (s *InboundService) DelInboundClientByEmail(inboundId int, email string) (b
 
 	return needRestart, db.Save(oldInbound).Error
 }
+
+type SubLinkProvider interface {
+	SubLinksForSubId(host, subId string) ([]string, error)
+	LinksForClient(host string, inbound *model.Inbound, email string) []string
+}
+
+var registeredSubLinkProvider SubLinkProvider
+
+func RegisterSubLinkProvider(p SubLinkProvider) {
+	registeredSubLinkProvider = p
+}
+
+func (s *InboundService) GetSubLinks(host, subId string) ([]string, error) {
+	if registeredSubLinkProvider == nil {
+		return nil, common.NewError("sub link provider not registered")
+	}
+	return registeredSubLinkProvider.SubLinksForSubId(host, subId)
+}
+func (s *InboundService) GetClientLinks(host string, id int, email string) ([]string, error) {
+	inbound, err := s.GetInbound(id)
+	if err != nil {
+		return nil, err
+	}
+	if registeredSubLinkProvider == nil {
+		return nil, common.NewError("sub link provider not registered")
+	}
+	return registeredSubLinkProvider.LinksForClient(host, inbound, email), nil
+}

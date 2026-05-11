@@ -18,7 +18,6 @@ const { t } = useI18n();
 const fetched = ref(false);
 const submitting = ref(false);
 const twoFactorEnable = ref(false);
-const version = computed(() => window.X_UI_CUR_VER || '');
 
 const user = reactive({
   username: '',
@@ -178,7 +177,6 @@ function cycleTheme() {
               </a-form-item>
             </a-form>
 
-            <div v-if="version" class="version">v{{ version }}</div>
           </div>
         </div>
       </a-layout-content>
@@ -473,13 +471,6 @@ function cycleTheme() {
 
 .submit-row {
   margin-bottom: 0;
-}
-
-.version {
-  text-align: center;
-  font-size: 12px;
-  color: var(--color-text-subtle);
-  margin-top: 16px;
 }
 
 .settings-popover {

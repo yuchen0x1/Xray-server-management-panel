@@ -43,7 +43,7 @@ export const sections = [
     id: 'inbounds',
     title: 'Inbounds API',
     description:
-      'Manage inbound configurations and their clients. All endpoints live under /panel/api/inbounds and require a logged-in session or Bearer token.',
+      'Manage inbound configurations and their clients. All endpoints live under /panel/api/inbounds and require a logged-in session or Bearer token. Link-generating endpoints honour X-Forwarded-Host / X-Forwarded-Proto, so callers behind a reverse proxy get the correct external host in returned URLs.',
     endpoints: [
       {
         method: 'GET',
@@ -209,6 +209,29 @@ export const sections = [
         method: 'POST',
         path: '/panel/api/inbounds/lastOnline',
         summary: 'Map of client email → last-seen unix timestamp.',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/inbounds/getSubLinks/:subId',
+        summary:
+          'Return every protocol URL (vless://, vmess://, trojan://, ss://, hysteria://, hy2://) for clients matching the subscription ID. Same result set as /sub/<subId>, but as a JSON array — no base64. When an inbound has streamSettings.externalProxy set, one URL is emitted per external proxy. Empty array when the subId has no enabled clients.',
+        params: [
+          { name: 'subId', in: 'path', type: 'string', desc: "Subscription ID, taken from the client's subId field." },
+        ],
+        response:
+          '{\n  "success": true,\n  "obj": [\n    "vless://uuid@host:443?security=reality&...#user1",\n    "vmess://eyJ2IjoyLC..."\n  ]\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/inbounds/getClientLinks/:id/:email',
+        summary:
+          "Return the URL(s) for one client on one inbound — the same string the Copy URL button copies in the panel UI. Supported protocols: vmess, vless, trojan, shadowsocks, hysteria, hysteria2. If streamSettings.externalProxy is set, returns one URL per external proxy. Protocols without a URL form (socks, http, mixed, wireguard, dokodemo, tunnel) return an empty array.",
+        params: [
+          { name: 'id', in: 'path', type: 'number', desc: 'Inbound ID.' },
+          { name: 'email', in: 'path', type: 'string', desc: 'Client email.' },
+        ],
+        response:
+          '{\n  "success": true,\n  "obj": [\n    "vless://uuid@host:443?...#user1"\n  ]\n}',
       },
       {
         method: 'POST',
