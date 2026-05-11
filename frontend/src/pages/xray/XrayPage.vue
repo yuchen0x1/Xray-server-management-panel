@@ -40,21 +40,26 @@ const {
   restartResult,
   outboundsTraffic,
   outboundTestStates,
+  testingAll,
   fetchAll,
   resetOutboundsTraffic,
   testOutbound,
+  testAllOutbounds,
   saveAll,
   resetToDefault,
   restartXray,
   applyOutboundsEvent,
 } = useXraySetting();
 
-// Live outbounds traffic — pushed by xray_traffic_job every ~10s.
 useWebSocket({ outbounds: applyOutboundsEvent });
 
-async function onTestOutbound(idx) {
+async function onTestOutbound(idx, mode = 'tcp') {
   const outbound = templateSettings.value?.outbounds?.[idx];
-  if (outbound) await testOutbound(idx, outbound);
+  if (outbound) await testOutbound(idx, outbound, mode);
+}
+
+async function onTestAllOutbounds(mode = 'tcp') {
+  await testAllOutbounds(mode);
 }
 
 function onDeleteOutbound(idx) {
@@ -278,8 +283,10 @@ function confirmRestart() {
                         <UploadOutlined /> <span>{{ t('pages.xray.Outbounds') }}</span>
                       </template>
                       <OutboundsTab :template-settings="templateSettings" :outbounds-traffic="outboundsTraffic"
-                        :outbound-test-states="outboundTestStates" :inbound-tags="inboundTags" :is-mobile="isMobile"
-                        @reset-traffic="resetOutboundsTraffic" @test="onTestOutbound" @delete="onDeleteOutbound"
+                        :outbound-test-states="outboundTestStates" :testing-all="testingAll"
+                        :inbound-tags="inboundTags" :is-mobile="isMobile"
+                        @reset-traffic="resetOutboundsTraffic" @test="onTestOutbound"
+                        @test-all="onTestAllOutbounds" @delete="onDeleteOutbound"
                         @show-warp="showWarp" @show-nord="showNord" />
                     </a-tab-pane>
 
