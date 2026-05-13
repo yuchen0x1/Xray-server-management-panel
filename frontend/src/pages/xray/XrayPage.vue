@@ -22,6 +22,7 @@ import BalancersTab from './BalancersTab.vue';
 import DnsTab from './DnsTab.vue';
 import WarpModal from './WarpModal.vue';
 import NordModal from './NordModal.vue';
+import JsonEditor from '@/components/JsonEditor.vue';
 import { useXraySetting } from './useXraySetting.js';
 import { useWebSocket } from '@/composables/useWebSocket.js';
 
@@ -376,8 +377,7 @@ onBeforeUnmount(() => {
                         <a-radio-button value="outboundSettings">{{ t('pages.xray.Outbounds') }}</a-radio-button>
                         <a-radio-button value="routingRuleSettings">{{ t('pages.xray.Routings') }}</a-radio-button>
                       </a-radio-group>
-                      <a-textarea v-model:value="advancedText" :auto-size="{ minRows: 18, maxRows: 40 }"
-                        spellcheck="false" class="json-editor" />
+                      <JsonEditor v-model:value="advancedText" min-height="420px" max-height="720px" />
                     </a-tab-pane>
                   </a-tabs>
                 </a-col>
@@ -462,11 +462,6 @@ onBeforeUnmount(() => {
   white-space: pre-wrap;
   font-size: 12px;
   margin: 0;
-}
-
-.json-editor {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 12px;
 }
 
 .icons-only :deep(.ant-tabs-nav) {

@@ -10,6 +10,7 @@ import {
 import { Modal } from 'ant-design-vue';
 
 import BalancerFormModal from './BalancerFormModal.vue';
+import JsonEditor from '@/components/JsonEditor.vue';
 
 const { t } = useI18n();
 
@@ -305,8 +306,7 @@ const obsText = computed({
           <a-radio-button v-if="hasObservatory" value="observatory">Observatory</a-radio-button>
           <a-radio-button v-if="hasBurstObservatory" value="burstObservatory">Burst Observatory</a-radio-button>
         </a-radio-group>
-        <a-textarea v-model:value="obsText" :auto-size="{ minRows: 8, maxRows: 24 }" spellcheck="false"
-          class="json-editor" />
+        <JsonEditor v-model:value="obsText" min-height="220px" max-height="480px" />
       </template>
     </template>
 
@@ -330,9 +330,4 @@ const obsText = computed({
   color: #ff4d4f;
 }
 
-.json-editor {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 12px;
-  margin-top: 8px;
-}
 </style>
