@@ -2,9 +2,37 @@ name: CI
 
 on:
   pull_request:
+    paths:
+      - "**.go"
+      - "go.mod"
+      - "go.sum"
+      - "**.js"
+      - "**.mjs"
+      - "**.cjs"
+      - "**.ts"
+      - "**.vue"
+      - "**.html"
+      - "**.css"
+      - "frontend/package.json"
+      - "frontend/package-lock.json"
+      - ".nvmrc"
   push:
     branches:
       - main
+    paths:
+      - "**.go"
+      - "go.mod"
+      - "go.sum"
+      - "**.js"
+      - "**.mjs"
+      - "**.cjs"
+      - "**.ts"
+      - "**.vue"
+      - "**.html"
+      - "**.css"
+      - "frontend/package.json"
+      - "frontend/package-lock.json"
+      - ".nvmrc"
 
 permissions:
   contents: read
