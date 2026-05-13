@@ -105,14 +105,15 @@ func (s *NodeService) Update(id int, in *model.Node) error {
 		return err
 	}
 	updates := map[string]any{
-		"name":      in.Name,
-		"remark":    in.Remark,
-		"scheme":    in.Scheme,
-		"address":   in.Address,
-		"port":      in.Port,
-		"base_path": in.BasePath,
-		"api_token": in.ApiToken,
-		"enable":    in.Enable,
+		"name":                  in.Name,
+		"remark":                in.Remark,
+		"scheme":                in.Scheme,
+		"address":               in.Address,
+		"port":                  in.Port,
+		"base_path":             in.BasePath,
+		"api_token":             in.ApiToken,
+		"enable":                in.Enable,
+		"allow_private_address": in.AllowPrivateAddress,
 	}
 	if err := db.Model(model.Node{}).Where("id = ?", id).Updates(updates).Error; err != nil {
 		return err
