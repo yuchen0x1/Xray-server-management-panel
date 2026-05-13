@@ -582,7 +582,7 @@ watch(
           <a-form-item :label="t('pages.inbounds.remark')">
             <a-input v-model:value="dbForm.remark" />
           </a-form-item>
-          <a-form-item :label="t('pages.inbounds.deployTo')">
+          <a-form-item v-if="selectableNodes.length > 0" :label="t('pages.inbounds.deployTo')">
             <a-select v-model:value="dbForm.nodeId" :disabled="mode === 'edit'"
               :placeholder="t('pages.inbounds.localPanel')" allow-clear>
               <a-select-option :value="null">{{ t('pages.inbounds.localPanel') }}</a-select-option>
