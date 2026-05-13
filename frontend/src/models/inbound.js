@@ -2967,37 +2967,45 @@ Inbound.HysteriaSettings.Hysteria = class extends Inbound.ClientBase {
 Inbound.TunnelSettings = class extends Inbound.Settings {
     constructor(
         protocol,
-        address,
-        port,
+        rewriteAddress,
+        rewritePort,
         portMap = [],
-        network = 'tcp,udp',
+        allowedNetwork = 'tcp,udp',
         followRedirect = false
     ) {
         super(protocol);
-        this.address = address;
-        this.port = port;
+        this.rewriteAddress = rewriteAddress;
+        this.rewritePort = rewritePort;
         this.portMap = portMap;
-        this.network = network;
+        this.allowedNetwork = allowedNetwork;
         this.followRedirect = followRedirect;
+    }
+
+    addPortMap(port = '', target = '') {
+        this.portMap.push({ name: port, value: target });
+    }
+
+    removePortMap(index) {
+        this.portMap.splice(index, 1);
     }
 
     static fromJson(json = {}) {
         return new Inbound.TunnelSettings(
             Protocols.TUNNEL,
-            json.address,
-            json.port,
+            json.rewriteAddress,
+            json.rewritePort,
             XrayCommonClass.toHeaders(json.portMap),
-            json.network,
+            json.allowedNetwork,
             json.followRedirect,
         );
     }
 
     toJson() {
         return {
-            address: this.address,
-            port: this.port,
+            rewriteAddress: this.rewriteAddress,
+            rewritePort: this.rewritePort,
             portMap: XrayCommonClass.toV2Headers(this.portMap, false),
-            network: this.network,
+            allowedNetwork: this.allowedNetwork,
             followRedirect: this.followRedirect,
         };
     }
