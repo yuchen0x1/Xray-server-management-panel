@@ -827,8 +827,8 @@ TlsStreamSettings.Cert = class extends XrayCommonClass {
         } else {
             return new TlsStreamSettings.Cert(
                 false, '', '',
-                json.certificate.join('\n'),
-                json.key.join('\n'),
+                Array.isArray(json.certificate) ? json.certificate.join('\n') : (json.certificate ?? ''),
+                Array.isArray(json.key) ? json.key.join('\n') : (json.key ?? ''),
                 json.oneTimeLoading,
                 json.usage,
                 json.buildChain,
