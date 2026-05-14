@@ -195,6 +195,7 @@ function convertLink() {
       return;
     }
     outbound.value = next;
+    primeAdvancedJson();
     linkInput.value = '';
     message.success('Link imported successfully...');
     activeKey.value = '1';
