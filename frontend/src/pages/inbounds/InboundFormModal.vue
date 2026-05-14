@@ -226,9 +226,14 @@ function freshDbForm() {
 
 function primeAdvancedJson() {
   if (!inbound.value) return;
-  try {
-    advancedStreamText.value = JSON.stringify(JSON.parse(inbound.value.stream.toString()), null, 2);
-  } catch (_e) { /* keep prior text */ }
+  // Only set stream text for protocols that support it
+  if (canEnableStream.value) {
+    try {
+      advancedStreamText.value = JSON.stringify(JSON.parse(inbound.value.stream.toString()), null, 2);
+    } catch (_e) { /* keep prior text */ }
+  } else {
+    advancedStreamText.value = '{}';
+  }
   try {
     advancedSniffingText.value = JSON.stringify(JSON.parse(inbound.value.sniffing.toString()), null, 2);
   } catch (_e) { /* keep prior text */ }
@@ -361,15 +366,22 @@ const advancedAllConfig = computed({
         advancedSniffingText.value,
         inbound.value.sniffing?.toJson?.() || {},
       );
-      return JSON.stringify({
+
+      const result = {
         listen: inbound.value.listen,
         port: inbound.value.port,
         protocol: inbound.value.protocol,
         settings,
         sniffing,
-        streamSettings,
         tag: inbound.value.tag,
-      }, null, 2);
+      };
+
+      // Only include streamSettings for protocols that support it
+      if (canEnableStream.value) {
+        result.streamSettings = streamSettings;
+      }
+
+      return JSON.stringify(result, null, 2);
     } catch (_e) {
       return '';
     }
@@ -409,11 +421,17 @@ const advancedAllConfig = computed({
         inbound.value?.settings?.toJson?.() || {},
       );
       const settings = parsed.settings ?? existingSettings;
-      const streamSettings = parsed.streamSettings ?? (inbound.value?.stream?.toJson?.() || {});
       const sniffing = parsed.sniffing ?? (inbound.value?.sniffing?.toJson?.() || {});
       advancedSettingsText.value = JSON.stringify(settings, null, 2);
-      advancedStreamText.value = JSON.stringify(streamSettings, null, 2);
       advancedSniffingText.value = JSON.stringify(sniffing, null, 2);
+
+      // Only update stream settings if protocol supports it
+      if (canEnableStream.value) {
+        const streamSettings = parsed.streamSettings ?? (inbound.value?.stream?.toJson?.() || {});
+        advancedStreamText.value = JSON.stringify(streamSettings, null, 2);
+      } else {
+        advancedStreamText.value = '{}';
+      }
     } catch (e) {
       message.error(`All JSON invalid: ${e.message}`);
     }
@@ -798,6 +816,11 @@ watch(
   () => inbound.value && JSON.stringify(inbound.value.stream?.toJson?.() || {}),
   () => {
     if (!inbound.value?.stream) return;
+    // Only update stream text for protocols that support it
+    if (!canEnableStream.value) {
+      advancedStreamText.value = '{}';
+      return;
+    }
     try {
       advancedStreamText.value = JSON.stringify(JSON.parse(inbound.value.stream.toString()), null, 2);
     } catch (_e) { /* leave as is */ }
@@ -819,6 +842,17 @@ watch(
     try {
       advancedSettingsText.value = JSON.stringify(JSON.parse(inbound.value.settings.toString()), null, 2);
     } catch (_e) { /* leave as is */ }
+  },
+);
+
+// Watch protocol changes to clear stream settings for protocols that don't support it
+watch(
+  () => inbound.value?.protocol,
+  () => {
+    if (!inbound.value) return;
+    if (!canEnableStream.value) {
+      advancedStreamText.value = '{}';
+    }
   },
 );
 </script>
@@ -2177,7 +2211,7 @@ watch(
                 </div>
                 <JsonEditor v-model:value="advancedSniffingConfig" min-height="240px" max-height="420px" />
               </a-tab-pane>
-              <a-tab-pane key="streamSection" tab="Stream">
+              <a-tab-pane v-if="canEnableStream" key="streamSection" tab="Stream">
                 <div class="advanced-editor-meta">
                   Xray stream block wrapper:
                   <code>{ streamSettings: { ... } }</code>.

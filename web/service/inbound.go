@@ -278,11 +278,31 @@ func (s *InboundService) checkEmailsExistForClients(clients []model.Client) (str
 	return "", nil
 }
 
+// normalizeStreamSettings clears StreamSettings for protocols that don't use it.
+// Only vmess, vless, trojan, shadowsocks, and hysteria protocols use streamSettings.
+func (s *InboundService) normalizeStreamSettings(inbound *model.Inbound) {
+	protocolsWithStream := map[model.Protocol]bool{
+		model.VMESS:       true,
+		model.VLESS:       true,
+		model.Trojan:      true,
+		model.Shadowsocks: true,
+		model.Hysteria:    true,
+		model.Hysteria2:   true,
+	}
+	
+	if !protocolsWithStream[inbound.Protocol] {
+		inbound.StreamSettings = ""
+	}
+}
+
 // AddInbound creates a new inbound configuration.
 // It validates port uniqueness, client email uniqueness, and required fields,
 // then saves the inbound to the database and optionally adds it to the running Xray instance.
 // Returns the created inbound, whether Xray needs restart, and any error.
 func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, bool, error) {
+	// Normalize streamSettings based on protocol
+	s.normalizeStreamSettings(inbound)
+	
 	exist, err := s.checkPortConflict(inbound, 0)
 	if err != nil {
 		return inbound, false, err
@@ -530,6 +550,9 @@ func (s *InboundService) SetInboundEnable(id int, enable bool) (bool, error) {
 }
 
 func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, bool, error) {
+	// Normalize streamSettings based on protocol
+	s.normalizeStreamSettings(inbound)
+	
 	exist, err := s.checkPortConflict(inbound, inbound.Id)
 	if err != nil {
 		return inbound, false, err
