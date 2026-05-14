@@ -188,9 +188,9 @@ function onDragPointerMove(ev) {
   dragMoved = true;
   const el = document.elementFromPoint(ev.clientX, ev.clientY);
   if (!el) return;
-  const tr = el.closest('tr[data-row-key]');
-  if (!tr) return;
-  const idx = Number(tr.getAttribute('data-row-key'));
+  const target = el.closest('[data-row-key]');
+  if (!target) return;
+  const idx = Number(target.getAttribute('data-row-key'));
   if (Number.isFinite(idx)) dropTargetIndex.value = idx;
 }
 
