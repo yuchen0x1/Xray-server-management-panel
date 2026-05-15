@@ -521,6 +521,19 @@ func (s *InboundService) SetInboundEnable(id int, enable bool) (bool, error) {
 		return true, nil
 	}
 
+	// Remote nodes interpret DelInbound as a real row delete (it hits
+	// panel/api/inbounds/del/:id on the remote), so toggling the enable
+	// switch on a remote inbound used to wipe the row entirely (#4402).
+	// PATCH the remote row via UpdateInbound instead — preserves the
+	// settings/client history and just flips the enable flag.
+	if inbound.NodeID != nil {
+		if err := rt.UpdateInbound(context.Background(), inbound, inbound); err != nil {
+			logger.Debug("SetInboundEnable: remote UpdateInbound on", rt.Name(), "failed:", err)
+			return false, err
+		}
+		return false, nil
+	}
+
 	if err := rt.DelInbound(context.Background(), inbound); err != nil &&
 		!strings.Contains(err.Error(), "not found") {
 		logger.Debug("SetInboundEnable: DelInbound on", rt.Name(), "failed:", err)
@@ -530,20 +543,13 @@ func (s *InboundService) SetInboundEnable(id int, enable bool) (bool, error) {
 		return needRestart, nil
 	}
 
-	addTarget := inbound
-	if inbound.NodeID == nil {
-		runtimeInbound, err := s.buildRuntimeInboundForAPI(db, inbound)
-		if err != nil {
-			logger.Debug("SetInboundEnable: build runtime config failed:", err)
-			return true, nil
-		}
-		addTarget = runtimeInbound
+	runtimeInbound, err := s.buildRuntimeInboundForAPI(db, inbound)
+	if err != nil {
+		logger.Debug("SetInboundEnable: build runtime config failed:", err)
+		return true, nil
 	}
-	if err := rt.AddInbound(context.Background(), addTarget); err != nil {
+	if err := rt.AddInbound(context.Background(), runtimeInbound); err != nil {
 		logger.Debug("SetInboundEnable: AddInbound on", rt.Name(), "failed:", err)
-		if inbound.NodeID != nil {
-			return false, err
-		}
 		needRestart = true
 	}
 	return needRestart, nil
