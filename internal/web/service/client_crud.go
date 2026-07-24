@@ -375,7 +375,7 @@ func (s *ClientService) Update(inboundSvc *InboundService, id int, updated model
 		}
 	}
 
-	if updated.SubID != "" {
+	if updated.SubID != existing.SubID {
 		var subCollision int64
 		if err := database.GetDB().Model(&model.ClientRecord{}).
 			Where("sub_id = ? AND id <> ?", updated.SubID, id).
