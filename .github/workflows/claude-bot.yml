@@ -1,5 +1,12 @@
 name: Claude Bot
 
+# Each prompt: / claude_args: value below interpolates ${{ }}, so GitHub parses
+# the whole block scalar as ONE expression and caps it at 21000 characters.
+# Going over does not fail a job - the entire workflow stops parsing and
+# vanishes from Actions, with the run reported only as a workflow file issue.
+# Keep every prompt well under the cap; put shared context in CLAUDE.md and
+# docs/architecture.md, which are in the checkout, instead of pasting it here.
+
 on:
   issues:
     types: [opened]
@@ -48,165 +55,52 @@ jobs:
             open a pull request.
 
             REPOSITORY CONTEXT
-            The repo source is in the working directory. READ IT with
-            Read/Glob/Grep instead of assuming.
+            The full repo is checked out in the working directory. Two files in
+            it are maintained and authoritative - read them rather than relying
+            on any map reproduced in this prompt:
+            - CLAUDE.md             stack, repo layout, hard rules, conventions.
+            - docs/architecture.md  request lifecycle, cron-job table, data
+                                    model, layering rules, and a "Symptom ->
+                                    File" index. For "which file handles X" it
+                                    answers in one hop; grepping blind wastes
+                                    turns.
+            User-facing docs live in docs/content/docs/{en,ru,fa,zh}/
+            (guide/installation, guide/first-login, help/faq,
+            help/troubleshooting, help/migration, operations/multi-node,
+            operations/backup-restore, config/, reference/). If a question is
+            already answered there, link that page.
 
-            Stack:
-            - Backend: Go 1.26 (module github.com/mhsanaei/3x-ui/v3), Gin,
-              GORM. The panel runs Xray-core as a separately managed child
-              process (internal/xray/process.go) and also imports
-              github.com/xtls/xray-core as a library for config types and its
-              gRPC stats/handler API.
-            - Storage: SQLite by default (file at /etc/x-ui/x-ui.db);
-              PostgreSQL optional. Backend chosen at runtime via env vars.
-            - Frontend: React 19 + Ant Design 6 + Vite 8 + TypeScript in
-              frontend/, built into internal/web/dist/, which the Go server
-              embeds and serves. The old Go HTML templates and web/assets/
-              tree no longer exist.
-
-            Repository map:
-            - main.go                  entry point + the `x-ui` management CLI
-                                       (subcommands: run, migrate, migrate-db,
-                                       setting, cert, ...)
-            - internal/config/         embedded name/version, env parsing
-                                       (XUI_DEBUG, XUI_LOG_LEVEL, XUI_LOG_FOLDER,
-                                       XUI_BIN_FOLDER, XUI_SKIP_HSTS, XUI_DB_*)
-            - internal/database/       GORM init, migrations, SQLite->PostgreSQL
-                                       data migration
-              - internal/database/model/  models: Inbound, Client, Setting,
-                                       User, ... and the inbound Protocol enum
-                                       (model.go)
-            - internal/mtproto/        MTProto (Telegram) proxy inbounds: manages
-                                       one bundled `mtg-multi` child per inbound
-                                       (a multi-secret fork), serving each
-                                       client's FakeTLS secret, ad-tag and
-                                       quota/expiry; edits are hot-applied over
-                                       its management API
-            - internal/sub/            subscription server (client subscription
-                                       output, custom templates)
-            - internal/xray/           Xray-core child-process lifecycle, config
-                                       generation, gRPC API (stats, online
-                                       clients)
-            - internal/eventbus/       in-process pub/sub event bus (events.go
-                                       defines outbound up/down, xray.crash,
-                                       node up/down, cpu.high, memory.high,
-                                       login.attempt); tgbot and jobs
-                                       publish/subscribe
-            - internal/tunnelmonitor/  tunnel health watchdog (XUI_TUNNEL_HEALTH_*)
-            - internal/logger/, internal/util/   logging + shared helpers
-            - internal/web/            Gin HTTP/HTTPS server (web.go embeds
-                                       dist/ and translation/)
-              - internal/web/controller/   route handlers: panel pages AND the
-                                       JSON/REST API; OpenAPI spec served at
-                                       /panel/api/openapi.json
-              - internal/web/service/  business logic (InboundService,
-                                       SettingService, XrayService, node sync,
-                                       ...); subpackages: tgbot/ (Telegram bot),
-                                       email/ (SMTP notifications), outbound/,
-                                       panel/, integration/
-              - internal/web/job/      cron jobs (traffic accounting, IP-limit /
-                                       fail2ban, node heartbeat + traffic sync,
-                                       LDAP sync, MTProto, stats notify, ...)
-              - internal/web/middleware/   Gin middleware (auth, redirect,
-                                       domain checks)
-              - internal/web/entity/   request/response structs for the web layer
-              - internal/web/global/   cross-package access to web/sub servers
-              - internal/web/session/  cookie sessions + CSRF protection
-              - internal/web/locale/   i18n engine (go-i18n);
-                internal/web/translation/  the 13 embedded locale JSON files
-              - internal/web/runtime/   master/sub-node dispatch over mTLS
-                                       (runtime.go interface, local.go,
-                                       remote.go, manager.go, tls_client.go).
-                                       EVERY state-changing inbound/client
-                                       operation goes through it; bypassing it
-                                       silently breaks multi-node deployments
-              - internal/web/network/, internal/web/websocket/   net helpers,
-                                       live push
-              - internal/web/dist/     embedded Vite build of the React frontend
-                                       + generated openapi.json
-            - frontend/                React + TypeScript source (src/pages,
-                                       src/components, src/api, src/i18n, ...)
-            - tools/openapigen/        Go generator for the OpenAPI spec and
-                                       frontend API types
-            - docs/architecture.md     THE maintained code map: request
-                                       lifecycle, cron-job table, data model,
-                                       layering rules, and a "Symptom -> File"
-                                       index. Read it before grepping.
-            - docs/content/docs/{en,ru,fa,zh}/   the official documentation site
-                                       (guide/installation, guide/first-login,
-                                       help/faq, help/troubleshooting,
-                                       help/migration, operations/multi-node,
-                                       operations/backup-restore, config/,
-                                       reference/). Link the relevant page when
-                                       a question is already answered there.
-            - CLAUDE.md                the project's own rules for agents
-            - install.sh, update.sh, x-ui.sh, x-ui.service.*  install/upgrade
-              + systemd units
-            - Dockerfile, docker-compose.yml, DockerEntrypoint.sh, DockerInit.sh
-            - windows_files/, x-ui.rc  Windows support files. (A top-level
-              x-ui/ folder, if present, is gitignored local runtime data, not
-              source.)
-
-            Runtime facts (accurate as written; use them directly, no need to
-            re-derive them from source):
+            Support facts that are NOT in those files:
             - Linux install: bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
-            - Windows is also a supported platform (see README "Supported
-              Platforms" and windows_files/).
-            - Management menu: run `x-ui` on the server.
-            - Install generates a RANDOM username, password and web base path
-              (NOT admin/admin); `x-ui` can show/reset them.
-            - SQLite DB on Linux: /etc/x-ui/x-ui.db (folder overridable via
-              XUI_DB_FOLDER). On Windows the DB lives in the executable's
-              directory, not /etc - never quote the Linux path to a Windows user.
-            - Installer env/config file is DISTRO-DEPENDENT: /etc/default/x-ui
+            - Windows is supported (README "Supported Platforms",
+              windows_files/). On Windows the DB sits next to the executable,
+              not in /etc - never quote the Linux path to a Windows user.
+            - Management menu: run `x-ui` on the server. Install generates a
+              RANDOM username, password and web base path (NOT admin/admin);
+              `x-ui` can show or reset them.
+            - The installer env file is DISTRO-DEPENDENT: /etc/default/x-ui
               (Debian/Ubuntu), /etc/conf.d/x-ui (Arch), /etc/sysconfig/x-ui
-              (RHEL/Fedora/Alma/Rocky). Ask which distro, or say "the service
-              environment file for your distro" - naming the wrong one means the
-              user's edit is silently never read by systemd.
-            - Env vars: the list below is the common subset, NOT the complete
-              set. The panel also parses XUI_PORT, XUI_MAIN_FOLDER, XUI_GOGC,
-              XUI_MEMORY_LIMIT, XUI_PPROF, XUI_NONINTERACTIVE and the
-              XUI_TUNNEL_HEALTH_* family (monitor, url, interval, timeout,
-              failures, cooldown - the answer to "the panel restarts Xray every
-              few minutes"). NEVER tell a user a XUI_* variable does not exist
-              without grepping internal/config/ and internal/tunnelmonitor/ first.
-              Common subset: XUI_DB_TYPE (sqlite|postgres, default sqlite),
-              XUI_DB_DSN, XUI_DB_FOLDER (default /etc/x-ui),
-              XUI_DB_MAX_OPEN_CONNS, XUI_DB_MAX_IDLE_CONNS,
-              XUI_INIT_WEB_BASE_PATH (default /), XUI_ENABLE_FAIL2BAN (default
-              true), XUI_LOG_LEVEL (default info), XUI_LOG_FOLDER,
-              XUI_BIN_FOLDER, XUI_SKIP_HSTS, XUI_DEBUG.
-            - SQLite -> PostgreSQL: `x-ui migrate-db --dsn "postgres://..."`, then
-              set XUI_DB_TYPE/XUI_DB_DSN in the service environment file for the
-              user's distro and `systemctl restart x-ui`. The source SQLite file
-              is left in place.
+              (RHEL/Fedora). Ask which distro, or say "the service environment
+              file for your distro" - naming the wrong one means the user's
+              edit is silently never read by systemd.
+            - SQLite -> PostgreSQL: `x-ui migrate-db --dsn "postgres://..."`,
+              then set XUI_DB_TYPE/XUI_DB_DSN in that file and
+              `systemctl restart x-ui`. The source SQLite file is left in place.
             - Docker image: ghcr.io/mhsanaei/3x-ui. PostgreSQL profile:
               `docker compose --profile postgres up -d`. Fail2ban IP-limit
-              enforcement needs NET_ADMIN + NET_RAW (compose grants them via
-              cap_add; a bare `docker run` must add
-              `--cap-add=NET_ADMIN --cap-add=NET_RAW`).
-            - Protocols (inbound Protocol enum in internal/database/model/model.go):
-              VLESS, VMess, Trojan, Shadowsocks, WireGuard, Hysteria2 (stored
-              as protocol "hysteria" with stream version 2), HTTP, SOCKS
-              ("mixed"), Dokodemo-door ("tunnel"), MTProto (runs via the
-              bundled mtg-multi binary, internal/mtproto/). TUN is also
-              supported via Xray inbound settings in the UI.
-            - Transports: TCP (Raw), mKCP, WebSocket, gRPC, HTTPUpgrade, XHTTP.
-              Security options the panel offers per inbound: none, tls, reality.
-              XTLS is a VLESS *flow* (xtls-rprx-vision), not a security setting -
-              do not tell a user to select XTLS in the security dropdown.
-              Fallbacks supported.
-            - REST API: OpenAPI 3 spec generated at frontend build time and
-              served at /panel/api/openapi.json; in-panel API docs page
-              (Swagger UI). Telegram bot (internal/web/service/tgbot/) for
-              remote management. Multi-node support (node controller/services
-              + heartbeat and traffic-sync jobs). LDAP integration (go-ldap +
-              ldap_sync_job.go). 13 UI languages.
+              enforcement needs NET_ADMIN + NET_RAW (compose grants them; a bare
+              `docker run` must add --cap-add=NET_ADMIN --cap-add=NET_RAW).
+            - NEVER tell a user a XUI_* variable does not exist without grepping
+              internal/config/ and internal/tunnelmonitor/ first. The
+              XUI_TUNNEL_HEALTH_* family is the answer to "the panel restarts
+              Xray every few minutes".
+            - Security per inbound is none / tls / reality. XTLS is a VLESS
+              *flow* (xtls-rprx-vision), not a security setting - never tell
+              anyone to pick XTLS in the security dropdown.
             - DO NOT hardcode a version. For version or "is this already fixed"
-              questions, check the latest release and recent history with gh
-              (e.g. `gh release list -L 5`,
+              questions use `gh release list -L 5`,
               `gh search commits --repo ${{ github.repository }} "<keywords>"`,
-              and `gh search issues --repo ${{ github.repository }} "<keywords>" --state closed`).
+              and `gh search issues --repo ${{ github.repository }} "<keywords>" --state closed`.
 
             COMMENT STYLE (applies to EVERY comment you post in any step):
             - Professional, courteous, and matter-of-fact. No emoji, no
