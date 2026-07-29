@@ -26,6 +26,28 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 )
 
+const (
+	defaultRealityDest1 = "www.microsoft.com:443"
+	defaultRealityDest2 = "www.cloudflare.com:443"
+)
+
+func toBase64UrlSafe(s string) string {
+	if s == "" {
+		return ""
+	}
+	s = strings.ReplaceAll(s, "+", "-")
+	s = strings.ReplaceAll(s, "/", "_")
+	s = strings.TrimRight(s, "=")
+	return s
+}
+
+func fallbackRealityDest(target string) string {
+	if target == "" {
+		return defaultRealityDest2
+	}
+	return target
+}
+
 // SubService provides business logic for generating subscription links and managing subscription data.
 type SubService struct {
 	address        string
@@ -718,7 +740,7 @@ func (s *SubService) genVmessLink(inbound *model.Inbound, email string) string {
 	if !ok {
 		return ""
 	}
-	obj["id"] = client.ID
+	obj["id"] = strings.ToLower(client.ID)
 	obj["scy"] = normalizeVmessSecurity(client.Security)
 
 	externalProxies, _ := stream["externalProxy"].([]any)
@@ -784,7 +806,7 @@ func (s *SubService) genVlessLink(inbound *model.Inbound, email string) string {
 	if !ok {
 		return ""
 	}
-	uuid := client.ID
+	uuid := strings.ToLower(client.ID)
 	port := inbound.Port
 	streamNetwork, _ := stream["network"].(string)
 	params := make(map[string]string)
@@ -1466,15 +1488,46 @@ func applyShareRealityParams(stream map[string]any, params map[string]string, cl
 	if realitySetting != nil {
 		if sniValue, ok := searchKey(realitySetting, "serverNames"); ok {
 			if sNames, _ := sniValue.([]any); len(sNames) > 0 {
-				params["sni"], _ = sNames[random.Num(len(sNames))].(string)
+				if sni, ok := sNames[random.Num(len(sNames))].(string); ok && sni != "" {
+					params["sni"] = sni
+				}
+			}
+		}
+		if params["sni"] == "" {
+			if sni, ok := searchKey(realitySettings, "serverName"); ok {
+				if sniStr, ok := sni.(string); ok && sniStr != "" {
+					params["sni"] = sniStr
+				}
+			}
+		}
+		if params["sni"] == "" {
+			if target, ok := searchKey(realitySetting, "target"); ok {
+				if targetStr, ok := target.(string); ok && targetStr != "" {
+					if colon := strings.LastIndex(targetStr, ":"); colon > 0 {
+						params["sni"] = targetStr[:colon]
+					}
+				}
+			}
+		}
+		if params["sni"] == "" {
+			if dest, ok := searchKey(realitySetting, "dest"); ok {
+				if destStr, ok := dest.(string); ok && destStr != "" {
+					if colon := strings.LastIndex(destStr, ":"); colon > 0 {
+						params["sni"] = destStr[:colon]
+					}
+				}
 			}
 		}
 		if pbkValue, ok := searchKey(realitySettings, "publicKey"); ok {
-			params["pbk"], _ = pbkValue.(string)
+			if pbk, ok := pbkValue.(string); ok {
+				params["pbk"] = toBase64UrlSafe(pbk)
+			}
 		}
 		if sidValue, ok := searchKey(realitySetting, "shortIds"); ok {
 			if shortIds, _ := sidValue.([]any); len(shortIds) > 0 {
-				params["sid"], _ = shortIds[random.Num(len(shortIds))].(string)
+				if sid, ok := shortIds[random.Num(len(shortIds))].(string); ok {
+					params["sid"] = toBase64UrlSafe(sid)
+				}
 			}
 		}
 		if fpValue, ok := searchKey(realitySettings, "fingerprint"); ok {
@@ -1492,6 +1545,19 @@ func applyShareRealityParams(stream map[string]any, params map[string]string, cl
 			seed, _ = spxValue.(string)
 		}
 		params["spx"] = deriveSpiderX(seed, clientKey)
+		if alpnValue, ok := searchKey(realitySetting, "alpn"); ok {
+			if alpns, _ := alpnValue.([]any); len(alpns) > 0 {
+				var alpnList []string
+				for _, a := range alpns {
+					if s, ok := a.(string); ok && s != "" {
+						alpnList = append(alpnList, s)
+					}
+				}
+				if len(alpnList) > 0 {
+					params["alpn"] = strings.Join(alpnList, ",")
+				}
+			}
+		}
 	}
 }
 

@@ -1316,7 +1316,7 @@ export default function ClientsPage() {
                           rowKey="email"
                           rowSelection={rowSelection}
                           pagination={tablePagination}
-                          size="small"
+                          size="middle"
                           scroll={{ x: 1200 }}
                           onChange={onTableChange}
                           locale={{

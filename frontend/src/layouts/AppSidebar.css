@@ -292,11 +292,48 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
   background-color: transparent;
 }
 
+.sider-nav .ant-menu-item,
+.sider-utility .ant-menu-item,
+.drawer-menu .ant-menu-item {
+  margin: 2px 8px !important;
+  border-radius: 8px !important;
+  height: 44px !important;
+  line-height: 44px !important;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.sider-nav .ant-menu-item .anticon,
+.sider-utility .ant-menu-item .anticon,
+.drawer-menu .ant-menu-item .anticon {
+  margin-inline-end: 14px !important;
+  font-size: 17px !important;
+}
+
 .sider-nav .ant-menu-item-selected,
 .sider-utility .ant-menu-item-selected,
 .drawer-menu .ant-menu-item-selected {
-  background-color: color-mix(in srgb, var(--ant-color-primary) 20%, transparent) !important;
+  position: relative !important;
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--ant-color-primary) 22%, transparent) 0%,
+    color-mix(in srgb, var(--ant-color-primary) 10%, transparent) 100%) !important;
   color: var(--ant-color-primary) !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ant-color-primary) 18%, transparent) !important;
+}
+
+.sider-nav .ant-menu-item-selected::before,
+.sider-utility .ant-menu-item-selected::before,
+.drawer-menu .ant-menu-item-selected::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 24px;
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(180deg, var(--ant-color-primary), color-mix(in srgb, var(--ant-color-primary) 70%, transparent));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--ant-color-primary) 60%, transparent);
 }
 
 .sider-nav .ant-menu-item-active:not(.ant-menu-item-selected),
@@ -307,4 +344,32 @@ body.dark .ant-drawer-body .drawer-menu .ant-menu-item-group-list {
 .drawer-menu .ant-menu-item:not(.ant-menu-item-selected):not(.ant-menu-item-disabled):hover {
   background-color: color-mix(in srgb, var(--ant-color-primary) 10%, transparent) !important;
   color: var(--ant-color-primary) !important;
+  transform: translateX(3px) scale(1.01) !important;
+}
+
+.sider-nav .ant-menu-submenu-title,
+.drawer-menu .ant-menu-submenu-title {
+  margin: 2px 8px !important;
+  border-radius: 8px !important;
+  height: 44px !important;
+  line-height: 44px !important;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease !important;
+}
+
+.sider-nav .ant-menu-submenu-title .anticon,
+.drawer-menu .ant-menu-submenu-title .anticon {
+  margin-inline-end: 14px !important;
+  font-size: 17px !important;
+}
+
+.sider-nav .ant-menu-submenu-title:hover,
+.drawer-menu .ant-menu-submenu-title:hover {
+  background-color: color-mix(in srgb, var(--ant-color-primary) 10%, transparent) !important;
+  transform: translateX(3px) scale(1.01) !important;
+}
+
+.sider-nav .ant-menu-submenu-open > .ant-menu-submenu-title,
+.drawer-menu .ant-menu-submenu-open > .ant-menu-submenu-title {
+  color: var(--ant-color-primary) !important;
+  font-weight: 600 !important;
 }

@@ -9,6 +9,7 @@ import (
 	yaml "github.com/goccy/go-yaml"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/util/random"
 	wgutil "github.com/mhsanaei/3x-ui/v3/internal/util/wireguard"
 )
 
@@ -240,7 +241,7 @@ func (s *SubClashService) buildProxy(subReq *SubService, inbound *model.Inbound,
 	switch inbound.Protocol {
 	case model.VMESS:
 		proxy["type"] = "vmess"
-		proxy["uuid"] = client.ID
+		proxy["uuid"] = strings.ToLower(client.ID)
 		proxy["alterId"] = 0
 		proxy["cipher"] = normalizeVmessSecurity(client.Security)
 	case model.VLESS:
@@ -701,15 +702,25 @@ func (s *SubClashService) applySecurity(proxy map[string]any, security string, s
 		if realitySettings == nil {
 			return false
 		}
-		if serverName, ok := realitySettings["serverName"].(string); ok && serverName != "" {
+		serverName, _ := realitySettings["serverName"].(string)
+		if serverName == "" {
+			if target, ok := realitySettings["target"]; ok {
+				if targetStr, ok := target.(string); ok && targetStr != "" {
+					if colon := strings.LastIndex(targetStr, ":"); colon > 0 {
+						serverName = targetStr[:colon]
+					}
+				}
+			}
+		}
+		if serverName != "" {
 			proxy["servername"] = serverName
 		}
 		realityOpts := map[string]any{}
-		if publicKey, ok := realitySettings["publicKey"].(string); ok && publicKey != "" {
-			realityOpts["public-key"] = publicKey
+		if publicKey, ok := realitySettings["publicKey"].(string); ok {
+			realityOpts["public-key"] = toBase64UrlSafe(publicKey)
 		}
-		if shortID, ok := realitySettings["shortId"].(string); ok && shortID != "" {
-			realityOpts["short-id"] = shortID
+		if shortID, ok := realitySettings["shortId"].(string); ok {
+			realityOpts["short-id"] = toBase64UrlSafe(shortID)
 		}
 		if len(realityOpts) > 0 {
 			proxy["reality-opts"] = realityOpts
@@ -759,16 +770,60 @@ func (s *SubClashService) realityData(rData map[string]any) map[string]any {
 	rDataOut := make(map[string]any, 1)
 	realityClientSettings, _ := rData["settings"].(map[string]any)
 	if publicKey, ok := realityClientSettings["publicKey"].(string); ok {
-		rDataOut["publicKey"] = publicKey
+		rDataOut["publicKey"] = toBase64UrlSafe(publicKey)
 	}
 	if fingerprint, ok := realityClientSettings["fingerprint"].(string); ok {
 		rDataOut["fingerprint"] = fingerprint
 	}
-	if serverNames, ok := rData["serverNames"].([]any); ok && len(serverNames) > 0 {
-		rDataOut["serverName"] = fmt.Sprint(serverNames[0])
+	var serverName string
+	if sni, ok := realityClientSettings["serverName"].(string); ok && sni != "" {
+		serverName = sni
 	}
+	if serverName == "" {
+		if serverNames, ok := rData["serverNames"].([]any); ok && len(serverNames) > 0 {
+			if sn, ok := serverNames[random.Num(len(serverNames))].(string); ok && sn != "" {
+				serverName = sn
+			}
+		}
+	}
+	if serverName == "" {
+		if target, ok := rData["target"]; ok {
+			if targetStr, ok := target.(string); ok && targetStr != "" {
+				if colon := strings.LastIndex(targetStr, ":"); colon > 0 {
+					serverName = targetStr[:colon]
+				}
+			}
+		}
+	}
+	if serverName == "" {
+		if dest, ok := rData["dest"]; ok {
+			if destStr, ok := dest.(string); ok && destStr != "" {
+				if colon := strings.LastIndex(destStr, ":"); colon > 0 {
+					serverName = destStr[:colon]
+				}
+			}
+		}
+	}
+	if serverName != "" {
+		rDataOut["serverName"] = serverName
+	}
+	var shortId string
 	if shortIDs, ok := rData["shortIds"].([]any); ok && len(shortIDs) > 0 {
-		rDataOut["shortId"] = fmt.Sprint(shortIDs[0])
+		if sid, ok := shortIDs[random.Num(len(shortIDs))].(string); ok {
+			shortId = sid
+		}
+	}
+	rDataOut["shortId"] = toBase64UrlSafe(shortId)
+	if target, ok := rData["target"]; ok {
+		if targetStr, ok := target.(string); ok {
+			rDataOut["target"] = fallbackRealityDest(targetStr)
+		}
+	} else if dest, ok := rData["dest"]; ok {
+		if destStr, ok := dest.(string); ok {
+			rDataOut["target"] = fallbackRealityDest(destStr)
+		}
+	} else {
+		rDataOut["target"] = fallbackRealityDest("")
 	}
 	return rDataOut
 }

@@ -56,10 +56,15 @@ export type RowAction =
   | 'export'
   | 'subs'
   | 'clipboard'
+  | 'copyLinks'
   | 'delete'
   | 'resetTraffic'
   | 'delAllClients'
-  | 'clone';
+  | 'clone'
+  | 'attachExisting'
+  | 'attachClients'
+  | 'detachClients'
+  | 'addToGroup';
 
 export type GeneralAction = 'import' | 'export' | 'subs' | 'resetInbounds';
 

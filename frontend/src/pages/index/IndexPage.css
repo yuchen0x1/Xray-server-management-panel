@@ -49,3 +49,45 @@
 .index-page .ip-visible .ant-statistic-content-value {
   filter: none;
 }
+
+.index-page .ant-statistic .ant-statistic-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ant-color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.index-page .ant-statistic .ant-statistic-content {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.index-page .ant-statistic .ant-statistic-content-value {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  background: linear-gradient(135deg, var(--ant-color-text) 0%, color-mix(in srgb, var(--ant-color-primary) 50%, var(--ant-color-text)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.index-page .ant-statistic .ant-statistic-content-suffix,
+.index-page .ant-statistic .ant-statistic-content-prefix {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ant-color-text-secondary);
+  margin-right: 6px;
+}
+
+.index-page .ant-statistic .ant-statistic-content-suffix {
+  margin-left: 6px;
+  margin-right: 0;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.index-page .summary-card .ant-statistic .ant-statistic-content-value {
+  font-size: 26px;
+}

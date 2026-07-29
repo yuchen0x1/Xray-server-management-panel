@@ -44,9 +44,11 @@
 .settings-page .ant-card.ant-card-hoverable:hover,
 .nodes-page .ant-card.ant-card-hoverable:hover,
 .groups-page .ant-card.ant-card-hoverable:hover,
-.api-docs-page .ant-card.ant-card-hoverable:hover {
+.api-docs-page .ant-card.ant-card-hoverable:hover,
+.hosts-page .ant-card.ant-card-hoverable:hover {
   cursor: default;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
 .index-page.is-dark .ant-card.ant-card-hoverable:hover,
@@ -56,10 +58,13 @@
 .settings-page.is-dark .ant-card.ant-card-hoverable:hover,
 .nodes-page.is-dark .ant-card.ant-card-hoverable:hover,
 .groups-page.is-dark .ant-card.ant-card-hoverable:hover,
-.api-docs-page.is-dark .ant-card.ant-card-hoverable:hover {
+.api-docs-page.is-dark .ant-card.ant-card-hoverable:hover,
+.hosts-page.is-dark .ant-card.ant-card-hoverable:hover {
+  transform: translateY(-2px);
   box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    0 10px 30px rgba(0, 0, 0, 0.6),
+    0 3px 8px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .index-page.is-dark.is-ultra .ant-card.ant-card-hoverable:hover,
@@ -69,10 +74,50 @@
 .settings-page.is-dark.is-ultra .ant-card.ant-card-hoverable:hover,
 .nodes-page.is-dark.is-ultra .ant-card.ant-card-hoverable:hover,
 .groups-page.is-dark.is-ultra .ant-card.ant-card-hoverable:hover,
-.api-docs-page.is-dark.is-ultra .ant-card.ant-card-hoverable:hover {
+.api-docs-page.is-dark.is-ultra .ant-card.ant-card-hoverable:hover,
+.hosts-page.is-dark.is-ultra .ant-card.ant-card-hoverable:hover {
+  transform: translateY(-2px);
   box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.75),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    0 10px 30px rgba(0, 0, 0, 0.85),
+    0 3px 10px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.clients-page .ant-statistic .ant-statistic-title,
+.inbounds-page .ant-statistic .ant-statistic-title,
+.nodes-page .ant-statistic .ant-statistic-title,
+.groups-page .ant-statistic .ant-statistic-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ant-color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.clients-page .ant-statistic .ant-statistic-content-value,
+.inbounds-page .ant-statistic .ant-statistic-content-value,
+.nodes-page .ant-statistic .ant-statistic-content-value,
+.groups-page .ant-statistic .ant-statistic-content-value {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  background: linear-gradient(135deg, var(--ant-color-text) 0%, color-mix(in srgb, var(--ant-color-primary) 50%, var(--ant-color-text)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.clients-page .ant-statistic .ant-statistic-content-suffix,
+.clients-page .ant-statistic .ant-statistic-content-prefix,
+.inbounds-page .ant-statistic .ant-statistic-content-suffix,
+.inbounds-page .ant-statistic .ant-statistic-content-prefix,
+.nodes-page .ant-statistic .ant-statistic-content-suffix,
+.nodes-page .ant-statistic .ant-statistic-content-prefix,
+.groups-page .ant-statistic .ant-statistic-content-suffix,
+.groups-page .ant-statistic .ant-statistic-content-prefix {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ant-color-text-secondary);
 }
 
 .index-page .ant-card .ant-card-actions,

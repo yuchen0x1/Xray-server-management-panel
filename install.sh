@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# ============================================================
+# Fork Information:
+# This is a maintained fork.
+# Original project by MHSanaei: https://github.com/MHSanaei/3x-ui
+# Original X-UI project by FranzKafkaYu: https://github.com/FranzKafkaYu/x-ui
+# ============================================================
+
 red='\033[0;31m'
 green='\033[0;32m'
 blue='\033[0;34m'

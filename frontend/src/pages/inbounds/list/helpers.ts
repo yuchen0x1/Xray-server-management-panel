@@ -88,3 +88,14 @@ export function showQrCodeMenu(dbInbound: DBInboundRecord): boolean {
   }
   return false;
 }
+
+export function hasShareableLinks(dbInbound: DBInboundRecord): boolean {
+  return (
+    dbInbound.isVMess
+    || dbInbound.isVLess
+    || dbInbound.isTrojan
+    || dbInbound.isSS
+    || dbInbound.isHysteria
+    || dbInbound.isWireguard
+  );
+}

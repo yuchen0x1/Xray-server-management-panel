@@ -1,5 +1,9 @@
 [English](/README.md) | [فارسی](/README.fa_IR.md) | [العربية](/README.ar_EG.md) | [中文](/README.zh_CN.md) | [Español](/README.es_ES.md) | [Русский](/README.ru_RU.md) | [Türkçe](/README.tr_TR.md)
 
+> [!NOTE]
+> **English:** This is a maintained fork. Original project by MHSanaei at https://github.com/MHSanaei/3x-ui . Original X-UI project by Franz Kafka Yu at https://github.com/FranzKafkaYu/x-ui .
+> **中文：** 本仓库为维护分支（Fork）。原项目作者 MHSanaei：https://github.com/MHSanaei/3x-ui 。最原始 X-UI 项目作者 FranzKafkaYu：https://github.com/FranzKafkaYu/x-ui 。
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./media/3x-ui-dark.png">
@@ -25,19 +29,24 @@ Built as an enhanced fork of the original X-UI project, 3X-UI adds broader proto
 
 ## Features
 
-- **Multi-protocol inbounds** — VLESS, VMess, Trojan, Shadowsocks, WireGuard, Hysteria2, HTTP, SOCKS (Mixed), Dokodemo-door / Tunnel, and TUN.
-- **Modern transports & security** — TCP (Raw), mKCP, WebSocket, gRPC, HTTPUpgrade, and XHTTP, secured with TLS, XTLS, and REALITY.
-- **Fallbacks** — serve multiple protocols on a single port (e.g. VLESS and Trojan on 443) using Xray's fallback support.
-- **Per-client management** — traffic quotas, expiry dates, IP limits, live online status, and one-click share links, QR codes, and subscriptions.
-- **Traffic statistics** — per inbound, per client, and per outbound, with reset controls.
-- **Multi-node support** — manage and scale across multiple servers from a single panel.
-- **Outbound & routing** — WARP, NordVPN, custom routing rules, load balancers, and outbound proxy chaining.
-- **Built-in subscription server** with multiple output formats and [custom page templates](docs/custom-subscription-templates.md).
-- **Telegram bot** for remote monitoring and management.
-- **RESTful API** with in-panel Swagger documentation.
-- **Flexible storage** — SQLite (default) or PostgreSQL.
-- **13 UI languages** with dark and light themes.
-- **Fail2ban integration** for enforcing per-client IP limits.
+### 🔐 Core Protocol Layer
+- 🌐 **Multi-protocol inbounds** — VLESS, VMess, Trojan, Shadowsocks, WireGuard, Hysteria2, HTTP, SOCKS (Mixed), Dokodemo-door / Tunnel, and TUN.
+- 🚀 **Modern transports & security** — TCP (Raw), mKCP, WebSocket, gRPC, HTTPUpgrade, and XHTTP, secured with TLS, XTLS, and REALITY.
+- 🔄 **Fallbacks** — serve multiple protocols on a single port (e.g. VLESS and Trojan on 443) using Xray's fallback support.
+
+### 📊 Ops & Monitoring Layer
+- 📈 **Traffic statistics** — per inbound, per client, and per outbound, with reset controls.
+- 🖥️ **Multi-node support** — manage and scale across multiple servers from a single panel.
+- 🛤️ **Outbound & routing** — WARP, NordVPN, custom routing rules, load balancers, and outbound proxy chaining.
+- 🤖 **Telegram bot** for remote monitoring and management.
+- 🚫 **Fail2ban integration** for enforcing per-client IP limits.
+
+### 💡 User Experience Layer
+- 👤 **Per-client management** — traffic quotas, expiry dates, IP limits, live online status, and one-click share links, QR codes, and subscriptions.
+- 📡 **Built-in subscription server** with multiple output formats and [custom page templates](docs/custom-subscription-templates.md).
+- 🔌 **RESTful API** with in-panel Swagger documentation.
+- 💾 **Flexible storage** — SQLite (default) or PostgreSQL.
+- 🌍 **13 UI languages** with dark and light themes.
 
 ## Screenshots
 

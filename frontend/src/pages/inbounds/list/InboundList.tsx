@@ -288,7 +288,7 @@ export default function InboundList({
             pagination={paginationFor(visibleInbounds)}
             scroll={{ x: tableScrollX }}
             style={{ marginTop: 10 }}
-            size="small"
+            size="middle"
             locale={{
               emptyText: (
                 <div className="card-empty">

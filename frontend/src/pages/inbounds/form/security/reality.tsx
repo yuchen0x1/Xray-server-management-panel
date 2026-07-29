@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Alert, Button, Collapse, Descriptions, Divider, Form, Input, InputNumber, Select, Space, Switch } from 'antd';
-import { RadarChartOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { RadarChartOutlined, ReloadOutlined, SearchOutlined, DownOutlined } from '@ant-design/icons';
 
 import { FormField } from '@/components/form/rhf';
 import { UTLS_FINGERPRINT } from '@/schemas/primitives';
@@ -13,6 +13,14 @@ import {
 } from '@/lib/xray/stream-wire-normalize';
 import type { RealityScanResult } from '@/generated/types';
 import RealityTargetScannerModal from './RealityTargetScannerModal';
+
+const REALITY_COMMON_TARGETS = [
+  'www.cloudflare.com:443',
+  'www.microsoft.com:443',
+  'www.apple.com:443',
+  'www.tesla.com:443',
+  'dl.google.com:443',
+];
 
 interface RealityFormProps {
   saving: boolean;
@@ -44,7 +52,7 @@ export default function RealityForm({
   clearMldsa65,
 }: RealityFormProps) {
   const { t } = useTranslation();
-  const { getFieldState, trigger } = useFormContext();
+  const { getFieldState, trigger, setValue } = useFormContext();
   const [scannerOpen, setScannerOpen] = useState(false);
   const maxClientVerPath = 'streamSettings.realitySettings.maxClientVer';
   const revalidateMaxClientVer = () => {
@@ -89,6 +97,23 @@ export default function RealityForm({
           >
             <Input style={{ flex: 1 }} placeholder="example.com:443" />
           </FormField>
+          <Dropdown
+            menu={{
+              items: REALITY_COMMON_TARGETS.map((t) => ({
+                key: t,
+                label: t,
+              })),
+              onClick: ({ key }) => {
+                setValue(['streamSettings', 'realitySettings', 'target'], key as string, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              },
+            }}
+            trigger={['click']}
+          >
+            <Button icon={<DownOutlined />} />
+          </Dropdown>
           <Button icon={<RadarChartOutlined />} loading={scanning} onClick={scanRealityTarget}>
             {t('pages.inbounds.form.scan')}
           </Button>

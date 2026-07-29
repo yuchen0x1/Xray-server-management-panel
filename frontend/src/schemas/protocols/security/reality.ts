@@ -1,13 +1,14 @@
 import { z } from 'zod';
 
 import { UtlsFingerprintSchema } from '@/schemas/protocols/security/tls';
+import { AlpnSchema } from '@/schemas/protocols/security/tls';
 
 // Reality client-side handshake config (sits under the inbound's
 // realitySettings.settings on the wire — the panel's class names the field
 // `settings` even though it's the "client" half of Reality).
 export const RealityClientSettingsSchema = z.object({
   publicKey: z.string().default(''),
-  fingerprint: UtlsFingerprintSchema.default('chrome'),
+  fingerprint: UtlsFingerprintSchema.default('randomized'),
   serverName: z.string().default(''),
   spiderX: z.string().default('/'),
   mldsa65Verify: z.string().default(''),
@@ -55,7 +56,7 @@ export const RealityStreamSettingsSchema = z.preprocess(
   z.object({
     show: z.boolean().default(false),
     xver: z.number().int().min(0).default(0),
-    target: z.string().default(''),
+    target: z.string().default('www.cloudflare.com:443'),
     serverNames: z.array(z.string()).default([]),
     privateKey: z.string().default(''),
     minClientVer: z.string().default(''),
@@ -63,14 +64,13 @@ export const RealityStreamSettingsSchema = z.preprocess(
     maxTimediff: z.number().int().min(0).default(0),
     shortIds: z.array(z.string()).default([]),
     mldsa65Seed: z.string().default(''),
-    // Server-side TLS master-key log path (xray-core reality.Config). Optional
-    // so existing inbounds round-trip unchanged.
+    alpn: z.array(AlpnSchema).default(['h2', 'http/1.1']),
     masterKeyLog: z.string().optional(),
     limitFallbackUpload: RealityLimitFallbackSchema.optional(),
     limitFallbackDownload: RealityLimitFallbackSchema.optional(),
     settings: RealityClientSettingsSchema.default({
       publicKey: '',
-      fingerprint: 'chrome',
+      fingerprint: 'randomized',
       serverName: '',
       spiderX: '/',
       mldsa65Verify: '',

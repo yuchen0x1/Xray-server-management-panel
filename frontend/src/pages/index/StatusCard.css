@@ -4,6 +4,34 @@
 
 .status-card .ant-progress-text,
 .status-card .ant-progress-indicator {
+  font-size: 14px !important;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.status-card .ant-progress-text .ant-progress-text-value {
+  font-size: 18px !important;
+  font-weight: 800;
+}
+
+.status-card .ant-progress-text .ant-progress-text-suffix {
   font-size: 12px !important;
   font-weight: 500;
+  opacity: 0.75;
+  margin-left: 2px;
+}
+
+.status-card > .ant-card-body {
+  padding: 24px 16px !important;
+}
+
+.status-card .text-center > div:not(.ant-progress) {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--ant-color-text-secondary);
+}
+
+.status-card .text-center > div:not(.ant-progress) b {
+  color: var(--ant-color-text);
+  font-weight: 600;
 }

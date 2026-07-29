@@ -602,6 +602,72 @@ func validateFinalMaskRealityCombo(streamSettings string) error {
 	return common.NewError("Finalmask is not supported with REALITY security — it crashes Xray-core on the first connection (see XTLS/Xray-core#6453). Remove the finalmask configuration or switch security to tls/none.")
 }
 
+var shortIdHexPattern = regexp.MustCompile(`^[0-9a-fA-F]*$`)
+
+// validateRealityConfig validates Reality-specific fields when security is set to reality:
+//  - publicKey must not be empty
+//  - each shortId, if non-empty, must be 0-16 hex characters
+func validateRealityConfig(streamSettings string) error {
+	if streamSettings == "" {
+		return nil
+	}
+	var stream map[string]any
+	if err := json.Unmarshal([]byte(streamSettings), &stream); err != nil {
+		return nil
+	}
+	if stream["security"] != "reality" {
+		return nil
+	}
+	realitySetting, _ := stream["realitySettings"].(map[string]any)
+	if realitySetting == nil {
+		return common.NewError("Reality security requires realitySettings to be configured.")
+	}
+
+	var publicKey string
+	if settings, ok := realitySetting["settings"].(map[string]any); ok {
+		if v, ok := settings["publicKey"].(string); ok {
+			publicKey = strings.TrimSpace(v)
+		}
+	}
+	// Fallback: some configs store publicKey at the realitySetting root.
+	if publicKey == "" {
+		if v, ok := realitySetting["publicKey"].(string); ok {
+			publicKey = strings.TrimSpace(v)
+		}
+	}
+	if publicKey == "" {
+		return common.NewError("Reality publicKey must not be empty. Generate a keypair in the Reality panel before saving.")
+	}
+
+	var shortIds []any
+	if v, ok := realitySetting["shortIds"].([]any); ok {
+		shortIds = v
+	}
+	// Fallback: single shortId field as string
+	if len(shortIds) == 0 {
+		if v, ok := realitySetting["shortId"].(string); ok && strings.TrimSpace(v) != "" {
+			shortIds = []any{v}
+		}
+	}
+	for i, entry := range shortIds {
+		sid, ok := entry.(string)
+		if !ok {
+			return common.NewErrorf("Reality shortId[%d] must be a string.", i)
+		}
+		sid = strings.TrimSpace(sid)
+		if len(sid) == 0 {
+			continue
+		}
+		if len(sid) > 16 {
+			return common.NewErrorf("Reality shortId[%q must be at most 16 hex characters, got %d.", sid, len(sid))
+		}
+		if !shortIdHexPattern.MatchString(sid) {
+			return common.NewErrorf("Reality shortId[%q] is not valid hex (only 0-9 a-f A-F allowed).", sid)
+		}
+	}
+	return nil
+}
+
 var xmcProfileUsernamePattern = regexp.MustCompile(`^[A-Za-z0-9_]{3,16}$`)
 
 // xmcMaskProfilesComplete reports whether an xmc finalmask carries the signed
@@ -916,6 +982,9 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 	// Normalize streamSettings based on protocol
 	s.normalizeStreamSettings(inbound)
 	if err := validateFinalMaskRealityCombo(inbound.StreamSettings); err != nil {
+		return inbound, false, err
+	}
+	if err := validateRealityConfig(inbound.StreamSettings); err != nil {
 		return inbound, false, err
 	}
 	if err := validateFinalMaskXmcProfiles(inbound.StreamSettings); err != nil {
@@ -1343,6 +1412,9 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 	// Normalize streamSettings based on protocol
 	s.normalizeStreamSettings(inbound)
 	if err := validateFinalMaskRealityCombo(inbound.StreamSettings); err != nil {
+		return inbound, false, err
+	}
+	if err := validateRealityConfig(inbound.StreamSettings); err != nil {
 		return inbound, false, err
 	}
 	if err := validateFinalMaskXmcProfiles(inbound.StreamSettings); err != nil {

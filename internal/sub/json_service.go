@@ -356,7 +356,9 @@ func (s *SubJsonService) realityData(rData map[string]any, clientKey string) map
 	rltyClientSettings, _ := rData["settings"].(map[string]any)
 
 	rltyData["show"] = false
-	rltyData["publicKey"] = rltyClientSettings["publicKey"]
+	if pbk, ok := rltyClientSettings["publicKey"].(string); ok {
+		rltyData["publicKey"] = toBase64UrlSafe(pbk)
+	}
 	rltyData["fingerprint"] = rltyClientSettings["fingerprint"]
 	rltyData["mldsa65Verify"] = rltyClientSettings["mldsa65Verify"]
 
@@ -364,7 +366,11 @@ func (s *SubJsonService) realityData(rData map[string]any, clientKey string) map
 	rltyData["spiderX"] = deriveSpiderX(seed, clientKey)
 	shortIds, ok := rData["shortIds"].([]any)
 	if ok && len(shortIds) > 0 {
-		rltyData["shortId"], _ = shortIds[random.Num(len(shortIds))].(string)
+		if sid, ok := shortIds[random.Num(len(shortIds))].(string); ok {
+			rltyData["shortId"] = toBase64UrlSafe(sid)
+		} else {
+			rltyData["shortId"] = ""
+		}
 	} else {
 		rltyData["shortId"] = ""
 	}
@@ -373,6 +379,24 @@ func (s *SubJsonService) realityData(rData map[string]any, clientKey string) map
 		rltyData["serverName"], _ = serverNames[random.Num(len(serverNames))].(string)
 	} else {
 		rltyData["serverName"] = ""
+	}
+	if rltyData["serverName"] == "" {
+		if sni, ok := searchKey(rltyClientSettings, "serverName"); ok {
+			if sniStr, ok := sni.(string); ok && sniStr != "" {
+				rltyData["serverName"] = sniStr
+			}
+		}
+	}
+	if target, ok := rData["target"]; ok {
+		if targetStr, ok := target.(string); ok {
+			rltyData["target"] = fallbackRealityDest(targetStr)
+		}
+	} else if dest, ok := rData["dest"]; ok {
+		if destStr, ok := dest.(string); ok {
+			rltyData["target"] = fallbackRealityDest(destStr)
+		}
+	} else {
+		rltyData["target"] = fallbackRealityDest("")
 	}
 
 	return rltyData
@@ -400,7 +424,7 @@ func (s *SubJsonService) genVnext(inbound *model.Inbound, streamSettings json_ut
 	outbound.Settings = map[string]any{
 		"address":  inbound.Listen,
 		"port":     inbound.Port,
-		"id":       client.ID,
+		"id":       strings.ToLower(client.ID),
 		"security": security,
 		"level":    8,
 	}
@@ -425,7 +449,7 @@ func (s *SubJsonService) genVless(subReq *SubService, inbound *model.Inbound, st
 	settings := map[string]any{
 		"address":    inbound.Listen,
 		"port":       inbound.Port,
-		"id":         client.ID,
+		"id":         strings.ToLower(client.ID),
 		"encryption": encryption,
 		"level":      8,
 	}

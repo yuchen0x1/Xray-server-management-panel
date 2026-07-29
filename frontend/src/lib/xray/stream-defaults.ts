@@ -52,6 +52,26 @@ function securitySchemaFor(security: string): { key: string; schema: SchemaWithP
   }
 }
 
+function extractHostFromTarget(target: string): string {
+  if (!target) return '';
+  const hostPort = target.split('/')[0];
+  const lastColon = hostPort.lastIndexOf(':');
+  if (lastColon === -1) return hostPort;
+  return hostPort.slice(0, lastColon);
+}
+
+function fillRealityServerNames(realitySettings: Record<string, unknown>): Record<string, unknown> {
+  const serverNames = realitySettings.serverNames as string[] | undefined;
+  const target = realitySettings.target as string | undefined;
+  if ((!serverNames || serverNames.length === 0) && target) {
+    const host = extractHostFromTarget(target);
+    if (host) {
+      return { ...realitySettings, serverNames: [host] };
+    }
+  }
+  return realitySettings;
+}
+
 export function fillStreamDefaults(stream: Record<string, unknown>): Record<string, unknown> {
   const network = (stream.network as string | undefined) ?? 'tcp';
   const security = (stream.security as string | undefined) ?? 'none';
@@ -63,7 +83,12 @@ export function fillStreamDefaults(stream: Record<string, unknown>): Record<stri
   }
   const sec = securitySchemaFor(security);
   if (sec) {
-    out[sec.key] = parseOrDefault(sec.schema, out[sec.key]);
+    const parsed = parseOrDefault(sec.schema, out[sec.key]);
+    if (security === 'reality' && parsed && typeof parsed === 'object') {
+      out[sec.key] = fillRealityServerNames(parsed as Record<string, unknown>);
+    } else {
+      out[sec.key] = parsed;
+    }
   }
   return out;
 }

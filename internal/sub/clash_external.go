@@ -43,7 +43,7 @@ func (s *SubClashService) clashProxyFromExternal(rawLink, name string) map[strin
 		proxy["type"] = "vmess"
 		proxy["server"] = fmt.Sprint(vn["address"])
 		proxy["port"] = clashInt(vn["port"])
-		proxy["uuid"] = fmt.Sprint(user["id"])
+		proxy["uuid"] = strings.ToLower(fmt.Sprint(user["id"]))
 		proxy["alterId"] = 0
 		cipher, _ := user["security"].(string)
 		if cipher == "" {
@@ -54,7 +54,7 @@ func (s *SubClashService) clashProxyFromExternal(rawLink, name string) map[strin
 		proxy["type"] = "vless"
 		proxy["server"] = fmt.Sprint(settings["address"])
 		proxy["port"] = clashInt(settings["port"])
-		proxy["uuid"] = fmt.Sprint(settings["id"])
+		proxy["uuid"] = strings.ToLower(fmt.Sprint(settings["id"]))
 		if flow, _ := settings["flow"].(string); flow != "" {
 			proxy["flow"] = flow
 		}

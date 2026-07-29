@@ -17,6 +17,25 @@ export interface ParsedLink {
   params: Record<string, string>;
 }
 
+export const DEFAULT_REALITY_DEST = 'www.cloudflare.com:443';
+export const DEFAULT_REALITY_DEST_ALT = 'www.microsoft.com:443';
+
+export function toBase64UrlSafe(s: string): string {
+  if (!s) return '';
+  return s
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+export function fallbackRealityDest(dest: string): string {
+  return dest && dest.trim() !== '' ? dest : DEFAULT_REALITY_DEST;
+}
+
+export function normalizeUuid(uuid: string): string {
+  return uuid ? uuid.toLowerCase() : uuid;
+}
+
 export function detectProtocol(link: string): Protocol | null {
   const scheme = link.trim().slice(0, link.indexOf('://')).toLowerCase();
   if (scheme === 'vless' || scheme === 'vmess' || scheme === 'trojan' || scheme === 'ss') {
@@ -139,7 +158,11 @@ export interface VlessTrojanInput {
 }
 
 export function buildVless(input: VlessTrojanInput): string {
-  return buildUserinfoLink('vless', input);
+  const normalized: VlessTrojanInput = {
+    ...input,
+    credential: normalizeUuid(input.credential),
+  };
+  return buildUserinfoLink('vless', normalized);
 }
 
 export function buildTrojan(input: VlessTrojanInput): string {
@@ -147,9 +170,12 @@ export function buildTrojan(input: VlessTrojanInput): string {
 }
 
 function buildUserinfoLink(scheme: 'vless' | 'trojan', input: VlessTrojanInput): string {
-  const search = new URLSearchParams(
-    Object.entries(input.params ?? {}).filter(([, v]) => v !== '' && v != null),
-  ).toString();
+  const keepKeys = new Set(['sid', 'pbk', 'sni', 'fp', 'pqv']);
+  const entries = Object.entries(input.params ?? {}).filter(([k, v]) => {
+    if (keepKeys.has(k)) return v != null;
+    return v !== '' && v != null;
+  });
+  const search = new URLSearchParams(entries).toString();
   const host = input.address.includes(':') ? `[${input.address}]` : input.address;
   const query = search ? `?${search}` : '';
   const fragment = input.name ? `#${encodeURIComponent(input.name)}` : '';
@@ -157,7 +183,11 @@ function buildUserinfoLink(scheme: 'vless' | 'trojan', input: VlessTrojanInput):
 }
 
 export function buildVmess(obj: Record<string, string | number>): string {
-  return `vmess://${textToBase64(JSON.stringify({ v: '2', ...obj }))}`;
+  const normalized: Record<string, string | number> = { ...obj };
+  if (typeof normalized.id === 'string') {
+    normalized.id = normalizeUuid(normalized.id);
+  }
+  return `vmess://${textToBase64(JSON.stringify({ v: '2', ...normalized }))}`;
 }
 
 export interface ShadowsocksInput {

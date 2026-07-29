@@ -13,9 +13,10 @@ import {
   TagsOutlined,
   UsergroupAddOutlined,
   UsergroupDeleteOutlined,
+  LinkOutlined,
 } from '@ant-design/icons';
 
-import { isInboundMultiUser, showQrCodeMenu } from './helpers';
+import { hasShareableLinks, isInboundMultiUser, showQrCodeMenu } from './helpers';
 import type { DBInboundRecord, RowAction } from './types';
 
 interface RowActionsMenuProps {
@@ -45,6 +46,9 @@ export function buildRowActionsMenu({ record, subEnable, t, isMobile, hasClients
     }
   } else {
     items.push({ key: 'showInfo', icon: <InfoCircleOutlined />, label: t('pages.inbounds.inboundInfo') });
+  }
+  if (hasShareableLinks(record)) {
+    items.push({ key: 'copyLinks', icon: <LinkOutlined />, label: t('pages.inbounds.copyShareLinks') });
   }
   items.push({ key: 'clipboard', icon: <CopyOutlined />, label: t('pages.inbounds.exportInbound') });
   items.push({ key: 'resetTraffic', icon: <RetweetOutlined />, label: t('pages.inbounds.resetTraffic') });

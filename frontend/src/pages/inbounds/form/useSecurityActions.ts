@@ -127,7 +127,7 @@ export function useSecurityActions({ methods, setSaving, messageApi, nodeId, set
   const randomizeShortIds = () => {
     setValue(
       'streamSettings.realitySettings.shortIds',
-      RandomUtil.randomShortIds().split(',').map((s) => s.trim()).filter(Boolean),
+      RandomUtil.randomShortIds().split(',').map((s) => s.trim()),
     );
   };
 
@@ -287,7 +287,7 @@ export function useSecurityActions({ methods, setSaving, messageApi, nodeId, set
       const reality = RealityStreamSettingsSchema.parse({}) as Record<string, unknown>;
       reality.target = '';
       reality.serverNames = [];
-      reality.shortIds = RandomUtil.randomShortIds().split(',').map((s) => s.trim()).filter(Boolean);
+      reality.shortIds = RandomUtil.randomShortIds().split(',').map((s) => s.trim());
       cleaned.realitySettings = reality;
     }
     setValue('streamSettings', cleaned);

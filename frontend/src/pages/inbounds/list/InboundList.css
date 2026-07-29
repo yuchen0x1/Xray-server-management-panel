@@ -33,29 +33,107 @@
 }
 
 .inbounds-page .ant-table {
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
 .inbounds-page .ant-table-container {
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
+.inbounds-page .ant-table-thead > tr > th {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--ant-color-primary) 8%, var(--ant-color-fill-quaternary)) 0%,
+    var(--ant-color-fill-quaternary) 100%) !important;
+  border-bottom: 2px solid color-mix(in srgb, var(--ant-color-primary) 25%, var(--ant-color-border-secondary)) !important;
+  font-weight: 600 !important;
+  color: var(--ant-color-text) !important;
+  font-size: 13px !important;
+  padding: 14px 12px !important;
+}
+
+.inbounds-page.is-dark .ant-table-thead > tr > th {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--ant-color-primary) 10%, #2a2d33) 0%,
+    #2a2d33 100%) !important;
+  border-bottom: 2px solid color-mix(in srgb, var(--ant-color-primary) 30%, rgba(255, 255, 255, 0.12)) !important;
+}
+
+.inbounds-page.is-dark.is-ultra .ant-table-thead > tr > th {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--ant-color-primary) 12%, #141418) 0%,
+    #141418 100%) !important;
+}
+
 .inbounds-page .ant-table-thead > tr:first-child > *:first-child {
-  border-start-start-radius: 8px;
+  border-start-start-radius: 10px;
 }
 
 .inbounds-page .ant-table-thead > tr:first-child > *:last-child {
-  border-start-end-radius: 8px;
+  border-start-end-radius: 10px;
+}
+
+.inbounds-page .ant-table-tbody > tr {
+  transition: background-color 0.15s ease;
+}
+
+.inbounds-page .ant-table-tbody > tr > td {
+  padding: 14px 12px !important;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--ant-color-border-secondary) !important;
+}
+
+.inbounds-page .ant-table-tbody > tr:hover > td {
+  background: color-mix(in srgb, var(--ant-color-primary) 5%, transparent) !important;
 }
 
 .inbounds-page .ant-table-tbody > tr:last-child > *:first-child {
-  border-end-start-radius: 8px;
+  border-end-start-radius: 10px;
 }
 
 .inbounds-page .ant-table-tbody > tr:last-child > *:last-child {
-  border-end-end-radius: 8px;
+  border-end-end-radius: 10px;
+}
+
+.inbounds-page .action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.inbounds-page .action-buttons .ant-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.inbounds-page .action-buttons .ant-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: color-mix(in srgb, var(--ant-color-primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--ant-color-primary) 20%, var(--ant-color-border));
+}
+
+.inbounds-page .action-buttons .ant-btn-dangerous:hover {
+  background: color-mix(in srgb, var(--ant-color-error) 12%, transparent);
+  border-color: color-mix(in srgb, var(--ant-color-error) 25%, var(--ant-color-error));
+  box-shadow: 0 2px 8px rgba(255, 77, 79, 0.18);
+}
+
+.inbounds-page .action-buttons .ant-btn .anticon {
+  font-size: 15px;
+}
+
+.inbounds-page.is-dark .action-buttons .ant-btn:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .inbound-cards {

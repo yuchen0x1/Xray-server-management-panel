@@ -25,6 +25,25 @@ import { deriveSpiderX } from './spider-x';
 type ForceTls = 'same' | 'tls' | 'none';
 const SHARE_HOSTNAME_RE = /^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$/;
 
+const DEFAULT_REALITY_DEST = 'www.cloudflare.com:443';
+const DEFAULT_REALITY_DEST_ALT = 'www.microsoft.com:443';
+
+function toBase64UrlSafe(s: string): string {
+  if (!s) return '';
+  return s
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+function fallbackRealityDest(dest: string | undefined | null): string {
+  return dest && dest.trim() !== '' ? dest : DEFAULT_REALITY_DEST;
+}
+
+function normalizeUuid(uuid: string): string {
+  return uuid ? uuid.toLowerCase() : uuid;
+}
+
 // Format a host for interpolation into a URL authority. IPv6 literals are
 // wrapped in square brackets per RFC 3986; IPv4 and hostnames are left as-is.
 // Any brackets already present are first stripped so the helper is idempotent.
@@ -211,7 +230,7 @@ export function genVmessLink(input: GenVmessLinkInput): string {
     ps: remark,
     add: address,
     port,
-    id: clientId,
+    id: normalizeUuid(clientId),
     scy: security,
     net: stream.network,
     tls,
@@ -340,11 +359,12 @@ export interface GenVlessLinkInput {
 // 3rd group (bytes 6-7), which xray reads as the vless route. Empty/invalid/non-
 // UUID input is returned unchanged.
 export function applyVlessRoute(id: string, route: string | undefined): string {
+  id = normalizeUuid(id);
   const r = (route ?? '').trim();
   if (r === '' || !/^\d{1,5}$/.test(r)) return id;
   const n = Number(r);
   if (n > 65535) return id;
-  if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id)) return id;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) return id;
   return id.slice(0, 14) + n.toString(16).padStart(4, '0') + id.slice(18);
 }
 
@@ -430,20 +450,31 @@ export function genVlessLink(input: GenVlessLinkInput): string {
     params.set('security', 'reality');
     if (stream.security === 'reality') {
       const reality = stream.realitySettings;
-      params.set('pbk', reality.settings.publicKey);
-      params.set('fp', reality.settings.fingerprint);
+      params.set('pbk', toBase64UrlSafe(reality.settings.publicKey || ''));
+      params.set('fp', reality.settings.fingerprint || '');
 
-      const sni =
-        reality.settings.serverName ||
-        reality.serverNames?.[0] ||
-        reality.target?.split(':')[0];
-
+      const targetOrDest = reality.target || reality.dest || '';
+      let sni = reality.settings.serverName || '';
+      if (!sni && reality.serverNames && reality.serverNames.length > 0) {
+        const nonEmpty = reality.serverNames.filter((n) => n && n.length > 0);
+        sni = nonEmpty[0] ?? '';
+      }
+      if (!sni) {
+        const colonIdx = (targetOrDest || '').lastIndexOf(':');
+        if (colonIdx > 0) sni = (targetOrDest || '').substring(0, colonIdx);
+      }
       if (sni && sni.length > 0) params.set('sni', sni);
 
-      if (reality.shortIds.length > 0) params.set('sid', reality.shortIds[0]);
+      const shortIds = reality.shortIds && reality.shortIds.length > 0 ? reality.shortIds : [''];
+      const sid = shortIds[Math.floor(Math.random() * shortIds.length)] ?? '';
+      params.set('sid', toBase64UrlSafe(sid));
+
       const spx = deriveSpiderX(reality.settings.spiderX, clientKey);
       if (spx.length > 0) params.set('spx', spx);
       if (reality.settings.mldsa65Verify.length > 0) params.set('pqv', reality.settings.mldsa65Verify);
+      if (reality.alpn && reality.alpn.length > 0) {
+        params.set('alpn', reality.alpn.join(','));
+      }
     }
   } else {
     params.set('security', 'none');
@@ -527,20 +558,31 @@ function writeTlsParams(stream: NonNullable<Inbound['streamSettings']>, params: 
 function writeRealityParams(stream: NonNullable<Inbound['streamSettings']>, params: URLSearchParams, clientKey: string): void {
   if (stream.security !== 'reality') return;
   const reality = stream.realitySettings;
-  params.set('pbk', reality.settings.publicKey);
-  params.set('fp', reality.settings.fingerprint);
+  params.set('pbk', toBase64UrlSafe(reality.settings.publicKey || ''));
+  params.set('fp', reality.settings.fingerprint || '');
 
-  const sni =
-    reality.settings.serverName ||
-    reality.serverNames?.[0] ||
-    reality.target?.split(':')[0];
-
+  const targetOrDest = reality.target || reality.dest || '';
+  let sni = reality.settings.serverName || '';
+  if (!sni && reality.serverNames && reality.serverNames.length > 0) {
+    const nonEmpty = reality.serverNames.filter((n) => n && n.length > 0);
+    sni = nonEmpty[0] ?? '';
+  }
+  if (!sni) {
+    const colonIdx = (targetOrDest || '').lastIndexOf(':');
+    if (colonIdx > 0) sni = (targetOrDest || '').substring(0, colonIdx);
+  }
   if (sni && sni.length > 0) params.set('sni', sni);
 
-  if (reality.shortIds.length > 0) params.set('sid', reality.shortIds[0]);
+  const shortIds = reality.shortIds && reality.shortIds.length > 0 ? reality.shortIds : [''];
+  const sid = shortIds[Math.floor(Math.random() * shortIds.length)] ?? '';
+  params.set('sid', toBase64UrlSafe(sid));
+
   const spx = deriveSpiderX(reality.settings.spiderX, clientKey);
   if (spx.length > 0) params.set('spx', spx);
   if (reality.settings.mldsa65Verify.length > 0) params.set('pqv', reality.settings.mldsa65Verify);
+  if (reality.alpn && reality.alpn.length > 0) {
+    params.set('alpn', reality.alpn.join(','));
+  }
 }
 
 export interface GenTrojanLinkInput {

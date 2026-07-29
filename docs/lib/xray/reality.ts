@@ -3,7 +3,7 @@
 // which exposes globalThis.crypto.subtle with X25519).
 
 import { bytesToBase64Url } from './base64';
-import { buildVless } from './links';
+import { buildVless, toBase64UrlSafe, fallbackRealityDest, normalizeUuid, DEFAULT_REALITY_DEST } from './links';
 
 export interface X25519KeyPair {
   /** base64url-encoded 32-byte private scalar (xray's format). */
@@ -47,7 +47,7 @@ export function randomShortId(byteLength = 4): string {
 }
 
 export function randomUuid(): string {
-  return globalThis.crypto.randomUUID();
+  return normalizeUuid(globalThis.crypto.randomUUID());
 }
 
 export interface RealityConfig {
@@ -68,12 +68,14 @@ export interface RealityConfig {
 
 /** Server-side VLESS + REALITY inbound (Xray config shape). */
 export function realityServerInbound(c: RealityConfig): unknown {
+  const serverNames = c.serverNames && c.serverNames.length > 0 ? c.serverNames : [];
+  const shortIds = c.shortIds && c.shortIds.length > 0 ? c.shortIds : [''];
   return {
     listen: null,
     port: c.port,
     protocol: 'vless',
     settings: {
-      clients: [{ id: c.uuid, flow: c.flow }],
+      clients: [{ id: normalizeUuid(c.uuid), flow: c.flow }],
       decryption: 'none',
     },
     streamSettings: {
@@ -81,11 +83,11 @@ export function realityServerInbound(c: RealityConfig): unknown {
       security: 'reality',
       realitySettings: {
         show: false,
-        dest: c.dest,
+        dest: fallbackRealityDest(c.dest),
         xver: 0,
-        serverNames: c.serverNames,
+        serverNames: serverNames,
         privateKey: c.privateKey,
-        shortIds: c.shortIds,
+        shortIds: shortIds,
         fingerprint: c.fingerprint,
       },
     },
@@ -95,6 +97,17 @@ export function realityServerInbound(c: RealityConfig): unknown {
 
 /** Client `vless://` share link carrying the public REALITY parameters. */
 export function realityClientLink(c: RealityConfig): string {
+  const serverNames = c.serverNames && c.serverNames.length > 0 ? c.serverNames : [];
+  const shortIds = c.shortIds && c.shortIds.length > 0 ? c.shortIds : [''];
+  let sni = serverNames[0] ?? '';
+  if (sni === '') {
+    const dest = fallbackRealityDest(c.dest);
+    const colonIdx = dest.lastIndexOf(':');
+    if (colonIdx > 0) {
+      sni = dest.substring(0, colonIdx);
+    }
+  }
+  const sid = shortIds[Math.floor(Math.random() * shortIds.length)] ?? '';
   return buildVless({
     credential: c.uuid,
     address: c.address,
@@ -102,10 +115,10 @@ export function realityClientLink(c: RealityConfig): string {
     params: {
       type: 'tcp',
       security: 'reality',
-      pbk: c.publicKey,
+      pbk: toBase64UrlSafe(c.publicKey),
       fp: c.fingerprint,
-      sni: c.serverNames[0] ?? '',
-      sid: c.shortIds[0] ?? '',
+      sni: sni,
+      sid: toBase64UrlSafe(sid),
       spx: c.spiderX,
       flow: c.flow,
     },
