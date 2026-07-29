@@ -67,7 +67,7 @@ jobs:
             already answered there, link that page.
 
             Support facts that are NOT in those files:
-            - Linux install: bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
+            - Linux install: bash <(curl -Ls https://raw.githubusercontent.com/nhzhongguo/3x-ui/master/install.sh)
             - Windows is supported (README "Supported Platforms",
               windows_files/). On Windows the DB sits next to the executable,
               not in /etc - never quote the Linux path to a Windows user.
@@ -82,7 +82,7 @@ jobs:
             - SQLite -> PostgreSQL: `x-ui migrate-db --dsn "postgres://..."`,
               then set XUI_DB_TYPE/XUI_DB_DSN in that file and
               `systemctl restart x-ui`. The source SQLite file is left in place.
-            - Docker image: ghcr.io/mhsanaei/3x-ui. PostgreSQL profile:
+            - Docker image: ghcr.io/nhzhongguo/3x-ui. PostgreSQL profile:
               `docker compose --profile postgres up -d`. Fail2ban IP-limit
               enforcement needs NET_ADMIN + NET_RAW (compose grants them; a bare
               `docker run` must add --cap-add=NET_ADMIN --cap-add=NET_RAW).

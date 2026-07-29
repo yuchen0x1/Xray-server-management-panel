@@ -1,5 +1,15 @@
 [English](/README.md) | [فارسی](/README.fa_IR.md) | [العربية](/README.ar_EG.md) | [中文](/README.zh_CN.md) | [Español](/README.es_ES.md) | [Русский](/README.ru_RU.md) | [Türkçe](/README.tr_TR.md)
 
+> [!NOTE] Fork Attribution / Fork 归属声明
+>
+> This is a **maintained fork** by nhzhongguo. Always credit the upstreams:
+> - Original 3x-ui project by **MHSanaei** — <https://github.com/MHSanaei/3x-ui>
+> - Original X-UI project by **FranzKafkaYu** — <https://github.com/FranzKafkaYu/x-ui>
+>
+> 本仓库为 **nhzhongguo 维护的 Fork 分支**，贡献时请保留上游原作者信息：
+> - 3x-ui 原作者 **MHSanaei** — <https://github.com/MHSanaei/3x-ui>
+> - X-UI 最原始项目作者 **FranzKafkaYu** — <https://github.com/FranzKafkaYu/x-ui>
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./media/3x-ui-dark.png">
@@ -8,12 +18,12 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/MHSanaei/3x-ui/releases"><img src="https://img.shields.io/github/v/release/mhsanaei/3x-ui" alt="Release"></a>
-  <a href="https://github.com/MHSanaei/3x-ui/actions"><img src="https://img.shields.io/github/actions/workflow/status/mhsanaei/3x-ui/release.yml.svg" alt="Build"></a>
-  <a href="#"><img src="https://img.shields.io/github/go-mod/go-version/mhsanaei/3x-ui.svg" alt="GO Version"></a>
-  <a href="https://github.com/MHSanaei/3x-ui/releases/latest"><img src="https://img.shields.io/github/downloads/mhsanaei/3x-ui/total.svg" alt="Downloads"></a>
+  <a href="https://github.com/MHSanaei/3x-ui/releases"><img src="https://img.shields.io/github/v/release/nhzhongguo/3x-ui" alt="Release"></a>
+  <a href="https://github.com/MHSanaei/3x-ui/actions"><img src="https://img.shields.io/github/actions/workflow/status/nhzhongguo/3x-ui/release.yml.svg" alt="Build"></a>
+  <a href="#"><img src="https://img.shields.io/github/go-mod/go-version/nhzhongguo/3x-ui.svg" alt="GO Version"></a>
+  <a href="https://github.com/MHSanaei/3x-ui/releases/latest"><img src="https://img.shields.io/github/downloads/nhzhongguo/3x-ui/total.svg" alt="Downloads"></a>
   <a href="https://www.gnu.org/licenses/gpl-3.0.en.html"><img src="https://img.shields.io/badge/license-GPL%20V3-blue.svg?longCache=true" alt="License"></a>
-  <a href="https://pkg.go.dev/github.com/mhsanaei/3x-ui/v3"><img src="https://pkg.go.dev/badge/github.com/mhsanaei/3x-ui/v3.svg" alt="Go Reference"></a>
+  <a href="https://pkg.go.dev/github.com/nhzhongguo/3x-ui/v3"><img src="https://pkg.go.dev/badge/github.com/nhzhongguo/3x-ui/v3.svg" alt="Go Reference"></a>
 </p>
 
 **3X-UI** — продвинутая веб-панель управления с открытым исходным кодом для управления серверами [Xray-core](https://github.com/XTLS/Xray-core). Она предоставляет аккуратный многоязычный интерфейс для развёртывания, настройки и мониторинга широкого спектра протоколов прокси и VPN — от одного VPS до развёртываний с несколькими узлами.
@@ -25,19 +35,24 @@
 
 ## Возможности
 
-- **Многопротокольные входящие подключения** — VLESS, VMess, Trojan, Shadowsocks, WireGuard, Hysteria2, HTTP, SOCKS (Mixed), Dokodemo-door / Tunnel и TUN.
-- **Современные транспорты и безопасность** — TCP (Raw), mKCP, WebSocket, gRPC, HTTPUpgrade и XHTTP, защищённые с помощью TLS, XTLS и REALITY.
-- **Fallback** — обслуживание нескольких протоколов на одном порту (например, VLESS и Trojan на 443) с помощью функции fallback в Xray.
-- **Управление по каждому клиенту** — квоты трафика, даты истечения, лимиты IP, статус «онлайн» в реальном времени, а также ссылки для общего доступа, QR-коды и подписки в один клик.
-- **Статистика трафика** — по каждому входящему, по каждому клиенту и по каждому исходящему, с возможностью сброса.
-- **Поддержка нескольких узлов** — управление и масштабирование на несколько серверов из одной панели.
-- **Исходящие подключения и маршрутизация** — WARP, NordVPN, пользовательские правила маршрутизации, балансировщики нагрузки и цепочки исходящих прокси.
-- **Встроенный сервер подписок** с несколькими форматами вывода и [пользовательскими шаблонами страниц](docs/custom-subscription-templates.md).
-- **Telegram-бот** для удалённого мониторинга и управления.
-- **RESTful API** с документацией Swagger внутри панели.
-- **Гибкое хранилище** — SQLite (по умолчанию) или PostgreSQL.
-- **13 языков интерфейса** с тёмной и светлой темами.
-- **Интеграция с Fail2ban** для применения лимитов IP по каждому клиенту.
+### 🔐 Основной уровень протокола (Core Protocol Layer)
+- 🌐 **Многопротокольные входящие подключения** — VLESS, VMess, Trojan, Shadowsocks, WireGuard, Hysteria2, HTTP, SOCKS (Mixed), Dokodemo-door / Tunnel и TUN.
+- 🚀 **Современные транспорты и безопасность** — TCP (Raw), mKCP, WebSocket, gRPC, HTTPUpgrade и XHTTP, защищённые с помощью TLS, XTLS и REALITY.
+- 🔄 **Fallback** — обслуживание нескольких протоколов на одном порту (например, VLESS и Trojan на 443) с помощью функции fallback в Xray.
+
+### 📊 Уровень эксплуатации и мониторинга (Ops & Monitoring Layer)
+- 📈 **Статистика трафика** — по каждому входящему, по каждому клиенту и по каждому исходящему, с возможностью сброса.
+- 🖥️ **Поддержка нескольких узлов** — управление и масштабирование на несколько серверов из одной панели.
+- 🛤️ **Исходящие подключения и маршрутизация** — WARP, NordVPN, пользовательские правила маршрутизации, балансировщики нагрузки и цепочки исходящих прокси.
+- 🤖 **Telegram-бот** для удалённого мониторинга и управления.
+- 🚫 **Интеграция с Fail2ban** для применения лимитов IP по каждому клиенту.
+
+### 💡 Уровень пользовательского опыта (User Experience Layer)
+- 👤 **Управление по каждому клиенту** — квоты трафика, даты истечения, лимиты IP, статус «онлайн» в реальном времени, а также ссылки для общего доступа, QR-коды и подписки в один клик.
+- 📡 **Встроенный сервер подписок** с несколькими форматами вывода и [пользовательскими шаблонами страниц](docs/custom-subscription-templates.md).
+- 🔌 **RESTful API** с документацией Swagger внутри панели.
+- 💾 **Гибкое хранилище** — SQLite (по умолчанию) или PostgreSQL.
+- 🌍 **13 языков интерфейса** с тёмной и светлой темами.
 
 ## Скриншоты
 
@@ -69,19 +84,19 @@
 ## Быстрый старт
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/nhzhongguo/3x-ui/master/install.sh)
 ```
 
 Чтобы установить конкретную версию, добавьте её тег (например, `v3.4.0`):
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) v3.4.0
+bash <(curl -Ls https://raw.githubusercontent.com/nhzhongguo/3x-ui/master/install.sh) v3.4.0
 ```
 
 Чтобы установить скользящую **dev**-сборку (новейший предварительный релиз по каждому коммиту из ветки `main`, а не стабильный релиз), передайте `dev-latest`:
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) dev-latest
+bash <(curl -Ls https://raw.githubusercontent.com/nhzhongguo/3x-ui/master/install.sh) dev-latest
 ```
 
 Во время установки генерируются случайные имя пользователя, пароль и путь доступа. После установки выполните `x-ui`, чтобы открыть меню управления, где можно запускать/останавливать сервис, просматривать или сбрасывать учётные данные для входа, управлять SSL-сертификатами и многое другое.

@@ -1,5 +1,15 @@
 [English](/README.md) | [فارسی](/README.fa_IR.md) | [العربية](/README.ar_EG.md) | [中文](/README.zh_CN.md) | [Español](/README.es_ES.md) | [Русский](/README.ru_RU.md) | [Türkçe](/README.tr_TR.md)
 
+> [!NOTE] Fork Attribution / Fork 归属声明
+>
+> This is a **maintained fork** by nhzhongguo. Always credit the upstreams:
+> - Original 3x-ui project by **MHSanaei** — <https://github.com/MHSanaei/3x-ui>
+> - Original X-UI project by **FranzKafkaYu** — <https://github.com/FranzKafkaYu/x-ui>
+>
+> 本仓库为 **nhzhongguo 维护的 Fork 分支**，贡献时请保留上游原作者信息：
+> - 3x-ui 原作者 **MHSanaei** — <https://github.com/MHSanaei/3x-ui>
+> - X-UI 最原始项目作者 **FranzKafkaYu** — <https://github.com/FranzKafkaYu/x-ui>
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./media/3x-ui-dark.png">
@@ -8,12 +18,12 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/MHSanaei/3x-ui/releases"><img src="https://img.shields.io/github/v/release/mhsanaei/3x-ui" alt="Release"></a>
-  <a href="https://github.com/MHSanaei/3x-ui/actions"><img src="https://img.shields.io/github/actions/workflow/status/mhsanaei/3x-ui/release.yml.svg" alt="Build"></a>
-  <a href="#"><img src="https://img.shields.io/github/go-mod/go-version/mhsanaei/3x-ui.svg" alt="GO Version"></a>
-  <a href="https://github.com/MHSanaei/3x-ui/releases/latest"><img src="https://img.shields.io/github/downloads/mhsanaei/3x-ui/total.svg" alt="Downloads"></a>
+  <a href="https://github.com/MHSanaei/3x-ui/releases"><img src="https://img.shields.io/github/v/release/nhzhongguo/3x-ui" alt="Release"></a>
+  <a href="https://github.com/MHSanaei/3x-ui/actions"><img src="https://img.shields.io/github/actions/workflow/status/nhzhongguo/3x-ui/release.yml.svg" alt="Build"></a>
+  <a href="#"><img src="https://img.shields.io/github/go-mod/go-version/nhzhongguo/3x-ui.svg" alt="GO Version"></a>
+  <a href="https://github.com/MHSanaei/3x-ui/releases/latest"><img src="https://img.shields.io/github/downloads/nhzhongguo/3x-ui/total.svg" alt="Downloads"></a>
   <a href="https://www.gnu.org/licenses/gpl-3.0.en.html"><img src="https://img.shields.io/badge/license-GPL%20V3-blue.svg?longCache=true" alt="License"></a>
-  <a href="https://pkg.go.dev/github.com/mhsanaei/3x-ui/v3"><img src="https://pkg.go.dev/badge/github.com/mhsanaei/3x-ui/v3.svg" alt="Go Reference"></a>
+  <a href="https://pkg.go.dev/github.com/nhzhongguo/3x-ui/v3"><img src="https://pkg.go.dev/badge/github.com/nhzhongguo/3x-ui/v3.svg" alt="Go Reference"></a>
 </p>
 
 **3X-UI** es un panel de control web avanzado y de código abierto para gestionar servidores [Xray-core](https://github.com/XTLS/Xray-core). Ofrece una interfaz limpia y multilingüe para desplegar, configurar y monitorear una amplia gama de protocolos de proxy y VPN — desde un único VPS hasta despliegues multinodo.
@@ -25,19 +35,27 @@ Construido como un fork mejorado del proyecto X-UI original, 3X-UI añade un sop
 
 ## Características
 
-- **Entradas multiprotocolo** — VLESS, VMess, Trojan, Shadowsocks, WireGuard, Hysteria2, HTTP, SOCKS (Mixed), Dokodemo-door / Tunnel y TUN.
-- **Transportes y seguridad modernos** — TCP (Raw), mKCP, WebSocket, gRPC, HTTPUpgrade y XHTTP, protegidos con TLS, XTLS y REALITY.
-- **Fallbacks** — sirve varios protocolos en un solo puerto (p. ej. VLESS y Trojan en el 443) usando la función de fallback de Xray.
-- **Gestión por cliente** — cuotas de tráfico, fechas de caducidad, límites de IP, estado en línea en tiempo real y enlaces de compartición, códigos QR y suscripciones con un solo clic.
-- **Estadísticas de tráfico** — por entrada, por cliente y por salida, con controles de reinicio.
-- **Soporte multinodo** — gestiona y escala a través de varios servidores desde un único panel.
-- **Salida y enrutamiento** — WARP, NordVPN, reglas de enrutamiento personalizadas, balanceadores de carga y encadenamiento de proxy de salida.
-- **Servidor de suscripción integrado** con múltiples formatos de salida y [plantillas de página personalizables](docs/custom-subscription-templates.md).
-- **Bot de Telegram** para monitorización y gestión remotas.
-- **API RESTful** con documentación Swagger dentro del panel.
-- **Almacenamiento flexible** — SQLite (predeterminado) o PostgreSQL.
-- **13 idiomas de interfaz** con temas oscuro y claro.
-- **Integración con Fail2ban** para aplicar límites de IP por cliente.
+### 🔐 Capa de Protocolo Principal（Core Protocol Layer）
+
+- 🌐 **Entradas multiprotocolo** — VLESS, VMess, Trojan, Shadowsocks, WireGuard, Hysteria2, HTTP, SOCKS (Mixed), Dokodemo-door / Tunnel y TUN.
+- 🚀 **Transportes y seguridad modernos** — TCP (Raw), mKCP, WebSocket, gRPC, HTTPUpgrade y XHTTP, protegidos con TLS, XTLS y REALITY.
+- 🔄 **Fallbacks** — sirve varios protocolos en un solo puerto (p. ej. VLESS y Trojan en el 443) usando la función de fallback de Xray.
+
+### 📊 Capa de Operaciones y Monitorización（Ops & Monitoring Layer）
+
+- 📈 **Estadísticas de tráfico** — por entrada, por cliente y por salida, con controles de reinicio.
+- 🖥️ **Soporte multinodo** — gestiona y escala a través de varios servidores desde un único panel.
+- 🛤️ **Salida y enrutamiento** — WARP, NordVPN, reglas de enrutamiento personalizadas, balanceadores de carga y encadenamiento de proxy de salida.
+- 🤖 **Bot de Telegram** para monitorización y gestión remotas.
+- 🚫 **Integración con Fail2ban** para aplicar límites de IP por cliente.
+
+### 💡 Capa de Experiencia de Usuario（User Experience Layer）
+
+- 👤 **Gestión por cliente** — cuotas de tráfico, fechas de caducidad, límites de IP, estado en línea en tiempo real y enlaces de compartición, códigos QR y suscripciones con un solo clic.
+- 📡 **Servidor de suscripción integrado** con múltiples formatos de salida y [plantillas de página personalizables](docs/custom-subscription-templates.md).
+- 🔌 **API RESTful** con documentación Swagger dentro del panel.
+- 💾 **Almacenamiento flexible** — SQLite (predeterminado) o PostgreSQL.
+- 🌍 **13 idiomas de interfaz** con temas oscuro y claro.
 
 ## Capturas de pantalla
 
@@ -69,19 +87,19 @@ Construido como un fork mejorado del proyecto X-UI original, 3X-UI añade un sop
 ## Inicio Rápido
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/nhzhongguo/3x-ui/master/install.sh)
 ```
 
 Para instalar una versión específica, añade su etiqueta (p. ej. `v3.4.0`):
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) v3.4.0
+bash <(curl -Ls https://raw.githubusercontent.com/nhzhongguo/3x-ui/master/install.sh) v3.4.0
 ```
 
 Para instalar la versión **dev** continua (la última prelanzamiento por commit desde `main`, no una versión estable), pasa `dev-latest`:
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) dev-latest
+bash <(curl -Ls https://raw.githubusercontent.com/nhzhongguo/3x-ui/master/install.sh) dev-latest
 ```
 
 Durante la instalación se generan un nombre de usuario, una contraseña y una ruta de acceso aleatorios. Tras la instalación, ejecuta `x-ui` para abrir el menú de gestión, donde puedes iniciar/detener el servicio, ver o restablecer tus credenciales de acceso, gestionar certificados SSL y mucho más.
@@ -139,7 +157,7 @@ docker compose --profile postgres up -d
 La imagen incluye Fail2ban (habilitado de forma predeterminada) para aplicar **límites de IP** por cliente. Fail2ban banea a los infractores con `iptables`, lo que requiere la capacidad `NET_ADMIN`. `docker-compose.yml` ya la concede mediante `cap_add`; si en su lugar inicias el contenedor con `docker run`, añade tú mismo las capacidades, de lo contrario los baneos se registran pero nunca se aplican:
 
 ```bash
-docker run -d --cap-add=NET_ADMIN --cap-add=NET_RAW ... ghcr.io/mhsanaei/3x-ui
+docker run -d --cap-add=NET_ADMIN --cap-add=NET_RAW ... ghcr.io/nhzhongguo/3x-ui
 ```
 
 ## Variables de Entorno
