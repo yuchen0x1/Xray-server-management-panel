@@ -50,7 +50,7 @@ file locations when it can answer in one hop.
   - `middleware/`, `entity/`, `global/`, `session/` (CSRF), `network/`,
     `runtime/` (master/sub-node over mTLS), `websocket/`.
   - `locale/` + `translation/` — i18n, 13 embedded locale JSON files.
-- `frontend/` — React + TS source (see `frontend/CLAUDE.md`).
+- `frontend/` — React + TS source (see `./CLAUDE.md`).
 - `tools/openapigen/` — Go generator that emits frontend types + Zod/JSON schemas
   into `frontend/src/generated/` from Go structs. The OpenAPI doc itself
   (`frontend/public/openapi.json`) is assembled from those + `endpoints.ts` by
@@ -85,7 +85,7 @@ file locations when it can answer in one hop.
   `internal/sub`'s `initSubDB(t)` is the template.
 - Code must pass `golangci-lint run` (gofumpt + goimports formatting): `make lint`.
 
-## Frontend conventions (summary; full version in frontend/CLAUDE.md)
+## Frontend conventions (summary; full version in ./CLAUDE.md)
 - Ant Design 6 only — no Tailwind/shadcn. Targeted tweaks, not rewrites.
 - TS strict; `@typescript-eslint/no-explicit-any` is an error. Zod schemas in
   `src/schemas/` are the source of truth; infer types with `z.infer`, never

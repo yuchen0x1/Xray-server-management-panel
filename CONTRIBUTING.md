@@ -1,5 +1,15 @@
 # Contributing
 
+> [!NOTE] Fork Attribution / Fork 归属声明
+>
+> This is a **maintained fork** by nhzhongguo. Upstreams should always be credited:
+> - Original 3x-ui project by **MHSanaei** — <https://github.com/MHSanaei/3x-ui>
+> - Original X-UI project by **FranzKafkaYu** — <https://github.com/FranzKafkaYu/x-ui>
+>
+> 本仓库为 **nhzhongguo 维护的 Fork 分支**，贡献时请保留上游原作者信息：
+> - 3x-ui 原作者 **MHSanaei** — <https://github.com/MHSanaei/3x-ui>
+> - X-UI 最原始项目作者 **FranzKafkaYu** — <https://github.com/FranzKafkaYu/x-ui>
+
 Thanks for taking the time to contribute to 3x-ui. This guide gets a development panel running locally and explains the conventions the project follows so changes land cleanly.
 
 ## Prerequisites
@@ -50,8 +60,10 @@ Cross-building the Linux SQLite target from Windows (or vice versa) requires a s
 ## First-time setup
 
 ```bash
-git clone https://github.com/MHSanaei/3x-ui.git
+git clone https://github.com/nhzhongguo/3x-ui.git
 cd 3x-ui
+# 如果想同步上游维护分支，额外添加：
+# git remote add upstream https://github.com/MHSanaei/3x-ui.git
 
 cp .env.example .env
 
@@ -281,6 +293,37 @@ CI runs this for you nightly (and on demand) via `.github/workflows/mutation.yml
 
 `.github/workflows/ci.yml` runs per PR: `go-test` (with `-shuffle -count=1`), a `race` job (`-race -shuffle -count=1`), a `fuzz-smoke` job on the critical parsers, and the frontend `typecheck`/`lint`/`test`/`build`/`build-storybook`. Snapshots are regression guards — regenerate them (`npx vitest run -u`) only for intentional output changes, never to make a red test green.
 
+## 贡献指南（中文）
+
+### 分支管理
+
+从 `main` 分支切出工作分支，命名建议：
+- 新功能：`feat/xxx`
+- Bug 修复：`fix/xxx`
+- 文档更新：`docs/xxx`
+- 代码重构：`refactor/xxx`
+
+### 提交信息规范
+
+建议使用 Conventional Commits 前缀，格式：
+```
+<type>: <摘要>
+
+[正文说明 WHY]
+```
+
+可用前缀：`feat / fix / refactor / chore / docs / style / perf / test / ci`
+
+摘要可用中文或英文，正文请说明「为什么这样改」而不是「改了什么」（diff 已经能说明改了什么）。
+
+### 贡献到上游
+
+如果你的改动是通用性质，并且希望贡献回上游 `MHSanaei/3x-ui`，请在 PR 描述里标注 **"wish to upstream"**，维护者会帮忙 cherry-pick 并协助向上游提交。
+
+### 协议
+
+所有贡献默认遵循 GPLv3 协议（见根目录 LICENSE），不得引入 GPLv3 不兼容的专有代码或依赖。
+
 ## Sending a pull request
 
 1. Branch off `main` (e.g. `feat/short-description`).
@@ -314,6 +357,6 @@ must match the override, for example `XUI_PORT: "8080"` with `ports: ["8080:8080
 
 ## Issues
 
-- Bug reports and feature requests: [GitHub Issues](https://github.com/MHSanaei/3x-ui/issues)
+- Bug reports and feature requests: [GitHub Issues](https://github.com/nhzhongguo/3x-ui/issues)
 
 Before filing a bug, include the OS, Go version, panel version (`/panel/api/server/status` or the dashboard footer), and the relevant excerpt from `x-ui/3xui.log`.
