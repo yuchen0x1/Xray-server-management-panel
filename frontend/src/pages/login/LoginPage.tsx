@@ -28,13 +28,12 @@ import { FormField, rhfZodValidate } from '@/components/form/rhf';
 import { setMessageInstance } from '@/utils/messageBus';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { LoginFormSchema, TwoFactorCodeSchema, type LoginFormValues } from '@/schemas/login';
+import { withBasePath } from '@/utils/base-path';
 import './LoginPage.css';
 
 const HEADLINE_INTERVAL_MS = 2000;
 
 type LoginForm = LoginFormValues;
-
-const basePath = window.X_UI_BASE_PATH || '';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -79,7 +78,7 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       const msg = await HttpUtil.post('/login', values);
-      if (msg.success) window.location.href = basePath + 'panel/';
+      if (msg.success) window.location.href = withBasePath('/panel/');
     } finally {
       setSubmitting(false);
     }

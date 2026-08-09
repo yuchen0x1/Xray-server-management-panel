@@ -1,215 +1,161 @@
-[English](/README.md) | [فارسی](/README.fa_IR.md) | [العربية](/README.ar_EG.md) | [中文](/README.zh_CN.md) | [Español](/README.es_ES.md) | [Русский](/README.ru_RU.md) | [Türkçe](/README.tr_TR.md)
+# 3X-UI
 
-> [!NOTE]
-> **English:** This is a maintained fork. Original project by MHSanaei at https://github.com/MHSanaei/3x-ui . Original X-UI project by Franz Kafka Yu at https://github.com/FranzKafkaYu/x-ui .
-> **中文：** 本仓库为维护分支（Fork）。原项目作者 MHSanaei：https://github.com/MHSanaei/3x-ui 。最原始 X-UI 项目作者 FranzKafkaYu：https://github.com/FranzKafkaYu/x-ui 。
+3X-UI is a web control panel for managing Xray-core servers. It provides
+protocol configuration, client and traffic management, subscriptions, node
+coordination, routing tools, and operational monitoring from one interface.
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./media/3x-ui-dark.png">
-    <img alt="3x-ui" src="./media/3x-ui-light.png">
-  </picture>
-</p>
+This repository is a maintained **derivative fork / secondary modification**
+of the original project. It is intended for personal and lawful use only.
 
-<p align="center">
-  <a href="https://github.com/MHSanaei/3x-ui/releases"><img src="https://img.shields.io/github/v/release/mhsanaei/3x-ui" alt="Release"></a>
-  <a href="https://github.com/MHSanaei/3x-ui/actions"><img src="https://img.shields.io/github/actions/workflow/status/mhsanaei/3x-ui/release.yml.svg" alt="Build"></a>
-  <a href="#"><img src="https://img.shields.io/github/go-mod/go-version/mhsanaei/3x-ui.svg" alt="GO Version"></a>
-  <a href="https://github.com/MHSanaei/3x-ui/releases/latest"><img src="https://img.shields.io/github/downloads/mhsanaei/3x-ui/total.svg" alt="Downloads"></a>
-  <a href="https://www.gnu.org/licenses/gpl-3.0.en.html"><img src="https://img.shields.io/badge/license-GPL%20V3-blue.svg?longCache=true" alt="License"></a>
-  <a href="https://pkg.go.dev/github.com/mhsanaei/3x-ui/v3"><img src="https://pkg.go.dev/badge/github.com/mhsanaei/3x-ui/v3.svg" alt="Go Reference"></a>
-</p>
+## Attribution
 
-**3X-UI** is an advanced, open-source web control panel for managing [Xray-core](https://github.com/XTLS/Xray-core) servers. It provides a clean, multi-language interface for deploying, configuring, and monitoring a wide range of proxy and VPN protocols — from a single VPS to multi-node deployments.
+- Current repository: [yuchen0x1/3x-ui](https://github.com/yuchen0x1/3x-ui)
+- Original project: [MHSanaei/3x-ui](https://github.com/MHSanaei/3x-ui), by MHSanaei
+- Earlier X-UI project: [FranzKafkaYu/x-ui](https://github.com/FranzKafkaYu/x-ui), by Franz Kafka Yu
 
-Built as an enhanced fork of the original X-UI project, 3X-UI adds broader protocol support, improved stability, per-client traffic accounting, and many quality-of-life features.
+Please keep this attribution when redistributing modified builds. Features and
+fixes in this repository may differ from the original project.
 
-> [!IMPORTANT]
-> This project is intended for personal use only. Please do not use it for illegal purposes or in a production environment.
+## Community
+
+- QQ group: `1016190748`
+- Telegram: [t.me/lenmoC](https://t.me/lenmoC)
+
+When asking for help, include the exact version, operating system, relevant
+logs, and whether the issue is from the original project or this fork.
 
 ## Features
 
-### 🔐 Core Protocol Layer
-- 🌐 **Multi-protocol inbounds** — VLESS, VMess, Trojan, Shadowsocks, WireGuard, Hysteria2, HTTP, SOCKS (Mixed), Dokodemo-door / Tunnel, and TUN.
-- 🚀 **Modern transports & security** — TCP (Raw), mKCP, WebSocket, gRPC, HTTPUpgrade, and XHTTP, secured with TLS, XTLS, and REALITY.
-- 🔄 **Fallbacks** — serve multiple protocols on a single port (e.g. VLESS and Trojan on 443) using Xray's fallback support.
-
-### 📊 Ops & Monitoring Layer
-- 📈 **Traffic statistics** — per inbound, per client, and per outbound, with reset controls.
-- 🖥️ **Multi-node support** — manage and scale across multiple servers from a single panel.
-- 🛤️ **Outbound & routing** — WARP, NordVPN, custom routing rules, load balancers, and outbound proxy chaining.
-- 🤖 **Telegram bot** for remote monitoring and management.
-- 🚫 **Fail2ban integration** for enforcing per-client IP limits.
-
-### 💡 User Experience Layer
-- 👤 **Per-client management** — traffic quotas, expiry dates, IP limits, live online status, and one-click share links, QR codes, and subscriptions.
-- 📡 **Built-in subscription server** with multiple output formats and [custom page templates](docs/custom-subscription-templates.md).
-- 🔌 **RESTful API** with in-panel Swagger documentation.
-- 💾 **Flexible storage** — SQLite (default) or PostgreSQL.
-- 🌍 **13 UI languages** with dark and light themes.
-
-## Screenshots
-
-<details>
-<summary>Click to expand</summary>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./media/01-overview-dark.png">
-  <img alt="Overview" src="./media/01-overview-light.png">
-</picture>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./media/02-add-inbound-dark.png">
-  <img alt="Inbounds" src="./media/02-add-inbound-light.png">
-</picture>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./media/03-add-client-dark.png">
-  <img alt="Add client" src="./media/03-add-client-light.png">
-</picture>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./media/05-add-nodes-dark.png">
-  <img alt="Configs" src="./media/05-add-nodes-light.png">
-</picture>
-
-</details>
+- VLESS, VMess, Trojan, Shadowsocks, WireGuard, Hysteria2, HTTP, SOCKS,
+  Dokodemo-door, Tunnel, and TUN inbounds
+- TCP Raw, mKCP, WebSocket, gRPC, HTTPUpgrade, and XHTTP transports
+- TLS, XTLS, REALITY, fallbacks, routing rules, balancers, and outbound tools
+- Per-client traffic quotas, expiry dates, IP limits, online status, share links,
+  QR codes, and subscription links
+- Built-in subscription output for raw, JSON, Clash, and custom templates
+- Multi-node management with node health, certificate, and update tooling
+- Telegram bot, email notifications, Fail2ban integration, and system metrics
+- REST API with in-panel OpenAPI documentation
+- SQLite by default, with optional PostgreSQL support
+- Multiple UI languages plus light, dark, and ultra-dark themes
 
 ## Quick Start
 
+### Source or Docker
+
+This fork currently ships source and Docker build instructions rather than
+claiming upstream release artifacts. Use the Docker command below for a
+reproducible local build, or build the binary with `make build`.
+
+### Upstream-compatible installer
+
+The bundled installer remains compatible with the original project's published
+release artifacts:
+
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/MHSanaei/3x-ui/main/install.sh)
 ```
 
-To install a specific version, append its tag (e.g. `v3.4.0`):
+That command installs the original project's release channel, not an
+unpublished binary from this fork. Run `x-ui` after installation to manage the
+service, credentials, certificates, database, and Xray settings.
+
+### Docker
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) v3.4.0
+git clone https://github.com/yuchen0x1/3x-ui.git
+cd 3x-ui
+docker compose up -d
 ```
 
-To install the rolling **dev** build (latest per-commit pre-release from `main`, not a stable release), pass `dev-latest`:
+The default compose setup uses SQLite. PostgreSQL can be enabled through the
+database environment variables documented in `docker-compose.yml`.
 
-```bash
-bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh) dev-latest
-```
+### Windows
 
-During installation a random username, password, and access path are generated. After installation, run `x-ui` to open the management menu, where you can start/stop the service, view or reset your login credentials, manage SSL certificates, and more.
+Windows support is included in the repository. See
+[`windows_files/readme.txt`](windows_files/readme.txt) for the platform-specific
+startup notes.
 
-For full documentation, please visit the [project Wiki](https://github.com/MHSanaei/3x-ui/wiki).
+## Configuration
 
-### Unattended install
+SQLite is the default database and is stored under the configured X-UI data
+directory. PostgreSQL can be selected with:
 
-The installer also runs **non-interactively** for cloud-init.
-Set `XUI_NONINTERACTIVE=1` (or pipe with no TTY) and it installs end-to-end with
-zero prompts, generating random credentials and writing them to
-`/etc/x-ui/install-result.env`. See [`deploy/`](deploy/) for:
-
-- [Cloud-init user-data](deploy/cloud-init/) — unattended install on any cloud (Hetzner/AWS/DO/Vultr/GCP/Azure/Oracle)
-- [Hetzner Cloud notes](deploy/marketplace/hetzner/) — cloud-init deployment on Hetzner
-
-## Supported Platforms
-
-**Operating systems:** Ubuntu, Debian, Armbian, Fedora, CentOS, RHEL, AlmaLinux, Rocky Linux, Oracle Linux, Amazon Linux, Virtuozzo, Arch, Manjaro, Parch, openSUSE (Tumbleweed / Leap), Alpine, and Windows.
-
-**Architectures:** `amd64` · `386` · `arm64` (aarch64) · `armv7` · `armv6` · `armv5` · `s390x`.
-
-## Database Options
-
-3X-UI supports two backends, chosen during the install:
-
-- **SQLite** (default) — a single file at `/etc/x-ui/x-ui.db`. Zero setup, ideal for small and medium deployments.
-- **PostgreSQL** — recommended for high client counts or multi-node setups. The installer can install PostgreSQL locally for you, or accept a DSN to an existing server.
-
-At runtime the backend is selected via environment variables (the installer writes these to `/etc/default/x-ui` for you):
-
-```
+```text
 XUI_DB_TYPE=postgres
 XUI_DB_DSN=postgres://xui:password@127.0.0.1:5432/xui?sslmode=disable
 ```
 
-### Migrating an existing SQLite install to PostgreSQL
+Other commonly used settings include:
+
+| Variable | Purpose |
+| --- | --- |
+| `XUI_INIT_WEB_BASE_PATH` | Initial web panel path |
+| `XUI_PORT` | Panel listen port |
+| `XUI_LOG_LEVEL` | Log verbosity |
+| `XUI_DEBUG` | Enable debug behavior |
+| `XUI_ENABLE_FAIL2BAN` | Enable Fail2ban integration |
+| `XUI_DB_FOLDER` | SQLite data directory |
+| `XUI_DB_MAX_OPEN_CONNS` | PostgreSQL open connection limit |
+| `XUI_DB_MAX_IDLE_CONNS` | PostgreSQL idle connection limit |
+
+See `.env.example`, `docker-compose.yml`, and `docs/` for the complete list.
+
+## Development
+
+### Requirements
+
+- Go 1.26
+- Node.js 24 or newer
+- npm 10 or newer
+- A C compiler for SQLite-enabled Go builds
+
+### Frontend
 
 ```bash
-x-ui migrate-db --dsn "postgres://xui:password@127.0.0.1:5432/xui?sslmode=disable"
-# then set XUI_DB_TYPE and XUI_DB_DSN in /etc/default/x-ui and restart:
-systemctl restart x-ui
+cd frontend
+npm install
+npm run dev
 ```
 
-The source SQLite file is left untouched; remove it manually once you have verified the new backend.
+The Vite server runs on `http://localhost:5173/` and proxies panel API
+requests to a Go server on port `2053`.
 
-### Docker
+### Verification
 
-The default `docker compose up -d` keeps using SQLite. To run with the bundled PostgreSQL service, uncomment the two `XUI_DB_*` env lines in `docker-compose.yml` and start with the profile:
+From the repository root:
 
 ```bash
-docker compose --profile postgres up -d
+make gen
+make lint
+make typecheck
+make test
+make build
+make verify
 ```
 
-The image bundles Fail2ban (enabled by default) to enforce per-client **IP limits**. Fail2ban bans offenders with `iptables`, which requires the `NET_ADMIN` capability. `docker-compose.yml` already grants it via `cap_add`; if you start the container with `docker run` instead, add the capabilities yourself, otherwise bans are logged but never applied:
+`make verify` is the local CI-style gate. The frontend build regenerates
+`internal/web/dist/`, which is embedded into the Go binary.
 
-```bash
-docker run -d --cap-add=NET_ADMIN --cap-add=NET_RAW ... ghcr.io/mhsanaei/3x-ui
-```
+## Repository Layout
 
-## Environment Variables
+- `internal/`: Go backend, database, Xray lifecycle, jobs, API, and services
+- `frontend/`: React, TypeScript, Ant Design, Vite, schemas, and tests
+- `tools/openapigen/`: generated frontend schema and API tooling
+- `deploy/`: cloud-init, marketplace, and smoke-test deployment material
+- `docs/`: architecture and subscription customization documentation
+- `media/`: screenshots and project media
 
-| Variable | Description | Default |
-| --- | --- | --- |
-| `XUI_DB_TYPE` | Database backend: `sqlite` or `postgres` | `sqlite` |
-| `XUI_DB_DSN` | PostgreSQL connection string (when `XUI_DB_TYPE=postgres`) | — |
-| `XUI_DB_FOLDER` | Directory for the SQLite database file | `/etc/x-ui` |
-| `XUI_DB_MAX_OPEN_CONNS` | Maximum open connections (PostgreSQL pool) | — |
-| `XUI_DB_MAX_IDLE_CONNS` | Maximum idle connections (PostgreSQL pool) | — |
-| `XUI_INIT_WEB_BASE_PATH` | The initial URI path for the web panel | `/` |
-| `XUI_ENABLE_FAIL2BAN` | Enable Fail2ban-based IP-limit enforcement | `true` |
-| `XUI_LOG_LEVEL` | Log verbosity (`debug`, `info`, `warning`, `error`) | `info` |
-| `XUI_DEBUG` | Enable debug mode | `false` |
-| `XUI_TUNNEL_HEALTH_MONITOR` | Enable the tunnel health monitor (probes a URL and restarts xray after repeated failures; a restart drops all clients) | `false` |
-| `XUI_TUNNEL_HEALTH_PROXY` | Proxy the probe is sent through; point it at a local xray inbound so the probe tests the tunnel (e.g. `socks5://127.0.0.1:1080`). Empty means the probe only checks host connectivity | — |
-| `XUI_TUNNEL_HEALTH_URL` | URL probed for tunnel health | `https://www.cloudflare.com/cdn-cgi/trace` |
-| `XUI_TUNNEL_HEALTH_INTERVAL` | Interval between probes | `30s` |
-| `XUI_TUNNEL_HEALTH_TIMEOUT` | Per-probe timeout | `10s` |
-| `XUI_TUNNEL_HEALTH_FAILURES` | Consecutive failures before a restart is triggered | `3` |
-| `XUI_TUNNEL_HEALTH_COOLDOWN` | Minimum delay between consecutive restarts | `5m` |
+## Security
 
-## Supported Languages
+Do not expose the panel without authentication and transport protection. Use
+strong credentials, restrict access to trusted networks where possible, rotate
+API tokens, and review generated Xray configurations before applying them.
+Security reports should not contain passwords, API tokens, private keys, or
+subscription URLs.
 
-The panel UI is available in 13 languages:
+## License
 
-English · فارسی · العربية · 中文（简体） · 中文（繁體） · Español · Русский · Українська · Türkçe · Tiếng Việt · 日本語 · Bahasa Indonesia · Português (Brasil)
-
-## Contributing
-
-Contributions are welcome. Please read the [Contributing Guide](/CONTRIBUTING.md) before opening an issue or pull request.
-
-## A Special Thanks to
-
-- [alireza0](https://github.com/alireza0/)
-
-## Acknowledgment
-
-- [Iran v2ray rules](https://github.com/chocolate4u/Iran-v2ray-rules) (License: **GPL-3.0**): _Enhanced v2ray/xray and v2ray/xray-clients routing rules with built-in Iranian domains and a focus on security and adblocking._
-- [Russia v2ray rules](https://github.com/runetfreedom/russia-v2ray-rules-dat) (License: **GPL-3.0**): _This repository contains automatically updated V2Ray routing rules based on data on blocked domains and addresses in Russia._
-
-## Community Tools
-
-Tools and integrations built by the community around 3x-ui.
-
-- [terraform-provider-3x-ui](https://github.com/batonogov/terraform-provider-threexui) (License: **MIT**): _Manage inbounds, clients, panel settings, and Xray configuration as code with Terraform / OpenTofu._
-
-## Support project
-
-**If this project is helpful to you, you may wish to give it a**:star2:
-
-<a href="https://www.buymeacoffee.com/MHSanaei" target="_blank">
-<img src="./media/default-yellow.png" alt="Buy Me A Coffee" style="height: 70px !important;width: 277px !important;" >
-</a>
-
-</br>
-<a href="https://nowpayments.io/donation/hsanaei" target="_blank" rel="noreferrer noopener">
-   <img src="./media/donation-button-black.svg" alt="Crypto donation button by NOWPayments">
-</a>
-
-## Stargazers over Time
-
-[![Stargazers over time](https://starchart.cc/MHSanaei/3x-ui.svg?variant=adaptive)](https://starchart.cc/MHSanaei/3x-ui)
+This project is distributed under the GNU General Public License v3.0. See
+[`LICENSE`](LICENSE) for the full license text.

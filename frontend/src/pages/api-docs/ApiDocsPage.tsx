@@ -6,14 +6,13 @@ import 'swagger-ui-react/swagger-ui.css';
 
 import { useTheme } from '@/hooks/useTheme';
 import AppSidebar from '@/layouts/AppSidebar';
+import { withBasePath } from '@/utils/base-path';
 import './ApiDocsPage.css';
-
-const basePath = window.X_UI_BASE_PATH || '';
-const openApiUrl = `${basePath}panel/api/openapi.json`;
 
 export default function ApiDocsPage() {
   const { isDark, isUltra, antdThemeConfig } = useTheme();
   const { t } = useTranslation();
+  const openApiUrl = withBasePath('/panel/api/openapi.json');
 
   const pageClass = useMemo(() => {
     const classes = ['api-docs-page'];

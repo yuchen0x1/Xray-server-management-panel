@@ -7,13 +7,17 @@ const STORAGE_DARK = 'dark-mode';
 const STORAGE_ULTRA = 'isUltraDarkThemeEnabled';
 
 function readBool(key: string, fallback: boolean): boolean {
-  const raw = localStorage.getItem(key);
-  if (raw === null) return fallback;
-  return raw === 'true';
+  try {
+    const raw = localStorage.getItem(key);
+    return raw === null ? fallback : raw === 'true';
+  } catch {
+    return fallback;
+  }
 }
 
 function applyDom(isDark: boolean, isUltra: boolean) {
-  document.body.setAttribute('class', isDark ? 'dark' : 'light');
+  document.body.classList.toggle('dark', isDark);
+  document.body.classList.toggle('light', !isDark);
   if (isUltra) {
     document.documentElement.setAttribute('data-theme', 'ultra-dark');
   } else {
@@ -116,16 +120,18 @@ export function buildAntdThemeConfig(isDark: boolean, isUltra: boolean): ThemeCo
 }
 
 export function pauseAnimationsUntilLeave(elementId: string): void {
-  document.documentElement.setAttribute('data-theme-animations', 'off');
   const el = document.getElementById(elementId);
   if (!el) return;
+  document.documentElement.setAttribute('data-theme-animations', 'off');
   const restore = () => {
     document.documentElement.removeAttribute('data-theme-animations');
     el.removeEventListener('mouseleave', restore);
     el.removeEventListener('touchend', restore);
+    el.removeEventListener('focusout', restore);
   };
   el.addEventListener('mouseleave', restore);
   el.addEventListener('touchend', restore);
+  el.addEventListener('focusout', restore);
 }
 
 interface ThemeContextValue {
@@ -144,8 +150,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     applyDom(isDark, isUltra);
-    localStorage.setItem(STORAGE_DARK, String(isDark));
-    localStorage.setItem(STORAGE_ULTRA, String(isUltra));
+    try {
+      localStorage.setItem(STORAGE_DARK, String(isDark));
+      localStorage.setItem(STORAGE_ULTRA, String(isUltra));
+    } catch {
+      return;
+    }
   }, [isDark, isUltra]);
 
   const toggleTheme = useCallback(() => setIsDark((v) => !v), []);

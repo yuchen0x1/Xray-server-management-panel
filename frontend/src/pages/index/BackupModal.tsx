@@ -3,6 +3,7 @@ import { Button, Modal } from 'antd';
 import { DownloadOutlined, UploadOutlined } from '@ant-design/icons';
 
 import { HttpUtil, PromiseUtil } from '@/utils';
+import { withBasePath } from '@/utils/base-path';
 import './BackupModal.css';
 
 interface BusyEvent {
@@ -22,11 +23,11 @@ export default function BackupModal({ open, basePath: _basePath, onClose, onBusy
   const isPostgres = window.X_UI_DB_TYPE === 'postgres';
 
   function exportDb() {
-    window.location.href = (window.X_UI_BASE_PATH || '') + 'panel/api/server/getDb';
+    window.location.href = withBasePath('/panel/api/server/getDb');
   }
 
   function exportMigration() {
-    window.location.href = (window.X_UI_BASE_PATH || '') + 'panel/api/server/getMigration';
+    window.location.href = withBasePath('/panel/api/server/getMigration');
   }
 
   function importDb() {
