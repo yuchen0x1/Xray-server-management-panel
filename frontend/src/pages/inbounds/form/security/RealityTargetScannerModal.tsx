@@ -8,7 +8,7 @@ import type { RealityScanResult } from '@/generated/types';
 interface RealityTargetScannerModalProps {
   open: boolean;
   onClose: () => void;
-  scanRealityCandidates: (targets?: string) => Promise<RealityScanResult[]>;
+  scanRealityCandidates: (targets?: string | string[]) => Promise<RealityScanResult[]>;
   onPick: (result: RealityScanResult) => void;
 }
 
@@ -25,7 +25,7 @@ export default function RealityTargetScannerModal({
   const scanRef = useRef(scanRealityCandidates);
   scanRef.current = scanRealityCandidates;
 
-  const runScan = useCallback(async (targets?: string) => {
+  const runScan = useCallback(async (targets?: string | string[]) => {
     setLoading(true);
     try {
       setResults(await scanRef.current(targets));

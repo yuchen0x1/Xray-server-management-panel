@@ -111,10 +111,10 @@ export function useSecurityActions({ methods, setSaving, messageApi, nodeId, set
     }
   };
 
-  const scanRealityCandidates = async (targets?: string): Promise<RealityScanResult[]> => {
+  const scanRealityCandidates = async (targets?: string | string[]): Promise<RealityScanResult[]> => {
     const msg = await HttpUtil.post<RealityScanResult[]>(
       '/panel/api/server/scanRealityTargets',
-      targets ? { targets } : {},
+      targets ? { targets: Array.isArray(targets) ? targets.join(',') : targets } : {},
       { silent: true },
     );
     if (!msg?.success || !Array.isArray(msg.obj)) {

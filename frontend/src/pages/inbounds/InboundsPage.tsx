@@ -38,6 +38,7 @@ const PromptModal = lazy(() => import('@/components/feedback/PromptModal'));
 
 import { useInbounds } from './useInbounds';
 import { InboundList } from './list';
+import type { RowAction as InboundRowAction } from './list/types';
 import { LazyMount } from '@/components/utility';
 const InboundFormModal = lazy(() => import('./form/InboundFormModal'));
 const InboundInfoModal = lazy(() => import('./info/InboundInfoModal'));
@@ -47,21 +48,7 @@ const AttachExistingClientsModal = lazy(() => import('./clients/AttachExistingCl
 const DetachClientsModal = lazy(() => import('./clients/DetachClientsModal'));
 const AddClientsToGroupModal = lazy(() => import('./clients/AddClientsToGroupModal'));
 
-type RowAction =
-  | 'edit'
-  | 'showInfo'
-  | 'qrcode'
-  | 'export'
-  | 'subs'
-  | 'clipboard'
-  | 'delete'
-  | 'resetTraffic'
-  | 'delAllClients'
-  | 'attachClients'
-  | 'attachExisting'
-  | 'detachClients'
-  | 'addToGroup'
-  | 'clone';
+type RowAction = InboundRowAction;
 
 type GeneralAction = 'import' | 'export' | 'subs' | 'resetInbounds';
 

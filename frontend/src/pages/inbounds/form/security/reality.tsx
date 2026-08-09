@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Alert, Button, Collapse, Descriptions, Divider, Form, Input, InputNumber, Select, Space, Switch } from 'antd';
+import { Alert, Button, Collapse, Descriptions, Divider, Dropdown, Form, Input, InputNumber, Select, Space, Switch } from 'antd';
+import type { MenuProps } from 'antd';
 import { RadarChartOutlined, ReloadOutlined, SearchOutlined, DownOutlined } from '@ant-design/icons';
 
 import { FormField } from '@/components/form/rhf';
@@ -27,7 +28,7 @@ interface RealityFormProps {
   scanning: boolean;
   scanResult: RealityScanResult | null;
   scanRealityTarget: () => void;
-  scanRealityCandidates: (targets?: string) => Promise<RealityScanResult[]>;
+  scanRealityCandidates: (targets?: string | string[]) => Promise<RealityScanResult[]>;
   applyRealityScanResult: (result: RealityScanResult) => void;
   randomizeShortIds: () => void;
   randomizeSpiderX: () => void;
@@ -103,8 +104,8 @@ export default function RealityForm({
                 key: t,
                 label: t,
               })),
-              onClick: ({ key }) => {
-                setValue(['streamSettings', 'realitySettings', 'target'], key as string, {
+              onClick: ({ key }: Parameters<NonNullable<MenuProps['onClick']>>[0]) => {
+                setValue('streamSettings.realitySettings.target', key as string, {
                   shouldDirty: true,
                   shouldValidate: true,
                 });

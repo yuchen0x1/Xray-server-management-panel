@@ -6,10 +6,12 @@
 .nodes-page,
 .groups-page,
 .api-docs-page {
-  --bg-page: #e6e8ec;
-  --bg-card: #ffffff;
+  --bg-page: var(--glass-page-bg);
+  --bg-card: var(--glass-surface-bg);
   min-height: 100vh;
-  background: var(--bg-page);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--glass-page-glow) 70%, transparent), transparent 42%),
+    var(--bg-page);
 }
 
 .index-page.is-dark,
@@ -20,8 +22,8 @@
 .nodes-page.is-dark,
 .groups-page.is-dark,
 .api-docs-page.is-dark {
-  --bg-page: #1a1b1f;
-  --bg-card: #23252b;
+  --bg-page: var(--glass-page-bg);
+  --bg-card: var(--glass-surface-bg);
 }
 
 .index-page.is-dark.is-ultra,
@@ -32,8 +34,8 @@
 .nodes-page.is-dark.is-ultra,
 .groups-page.is-dark.is-ultra,
 .api-docs-page.is-dark.is-ultra {
-  --bg-page: #000;
-  --bg-card: #101013;
+  --bg-page: var(--glass-page-bg);
+  --bg-card: var(--glass-surface-bg);
 }
 
 .index-page .ant-layout,
@@ -228,20 +230,20 @@ body.dark .ant-dropdown-menu-item-divider {
 /* Hosts page shares the standard panel page shell (background, transparent
    layout, content padding, summary-card padding). */
 .hosts-page {
-  --bg-page: #e6e8ec;
-  --bg-card: #ffffff;
+  --bg-page: var(--glass-page-bg);
+  --bg-card: var(--glass-surface-bg);
   min-height: 100vh;
   background: var(--bg-page);
 }
 
 .hosts-page.is-dark {
-  --bg-page: #1a1b1f;
-  --bg-card: #23252b;
+  --bg-page: var(--glass-page-bg);
+  --bg-card: var(--glass-surface-bg);
 }
 
 .hosts-page.is-dark.is-ultra {
-  --bg-page: #000;
-  --bg-card: #101013;
+  --bg-page: var(--glass-page-bg);
+  --bg-card: var(--glass-surface-bg);
 }
 
 .hosts-page .ant-layout,
@@ -262,5 +264,121 @@ body.dark .ant-dropdown-menu-item-divider {
   .hosts-page .content-area,
   .hosts-page .summary-card {
     padding: 8px;
+  }
+}
+
+/* Glass layer for low-density panels and overlays. Dense tables keep their
+   own opaque rhythm so operational text remains easy to scan. */
+.index-page .ant-card,
+.clients-page .ant-card,
+.inbounds-page .ant-card,
+.xray-page .ant-card,
+.settings-page .ant-card,
+.nodes-page .ant-card,
+.groups-page .ant-card,
+.api-docs-page .ant-card,
+.hosts-page .ant-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--glass-surface-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(135%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(135%);
+}
+
+.index-page .ant-card::before,
+.clients-page .ant-card::before,
+.inbounds-page .ant-card::before,
+.xray-page .ant-card::before,
+.settings-page .ant-card::before,
+.nodes-page .ant-card::before,
+.groups-page .ant-card::before,
+.api-docs-page .ant-card::before,
+.hosts-page .ant-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-top: 1px solid var(--glass-highlight);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.index-page .ant-card-head,
+.clients-page .ant-card-head,
+.inbounds-page .ant-card-head,
+.xray-page .ant-card-head,
+.settings-page .ant-card-head,
+.nodes-page .ant-card-head,
+.groups-page .ant-card-head,
+.api-docs-page .ant-card-head,
+.hosts-page .ant-card-head {
+  position: relative;
+  z-index: 1;
+  background: color-mix(in srgb, var(--glass-surface-strong-bg) 72%, transparent) !important;
+  border-bottom-color: var(--glass-border) !important;
+  box-shadow: none !important;
+}
+
+.index-page .ant-card-body,
+.clients-page .ant-card-body,
+.inbounds-page .ant-card-body,
+.xray-page .ant-card-body,
+.settings-page .ant-card-body,
+.nodes-page .ant-card-body,
+.groups-page .ant-card-body,
+.api-docs-page .ant-card-body,
+.hosts-page .ant-card-body {
+  position: relative;
+  z-index: 1;
+}
+
+.index-page .ant-card.ant-card-hoverable:hover,
+.clients-page .ant-card.ant-card-hoverable:hover,
+.inbounds-page .ant-card.ant-card-hoverable:hover,
+.xray-page .ant-card.ant-card-hoverable:hover,
+.settings-page .ant-card.ant-card-hoverable:hover,
+.nodes-page .ant-card.ant-card-hoverable:hover,
+.groups-page .ant-card.ant-card-hoverable:hover,
+.api-docs-page .ant-card.ant-card-hoverable:hover,
+.hosts-page .ant-card.ant-card-hoverable:hover {
+  transform: translateY(-2px);
+  border-color: var(--glass-border-strong);
+  box-shadow: var(--glass-shadow-hover);
+}
+
+.ant-modal .ant-modal-content,
+.ant-drawer .ant-drawer-content,
+.ant-popover .ant-popover-inner,
+.ant-dropdown .ant-dropdown-menu {
+  background: var(--glass-surface-strong-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-hover);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(22px) saturate(140%);
+}
+
+.ant-modal .ant-modal-header,
+.ant-modal .ant-modal-footer,
+.ant-drawer .ant-drawer-header {
+  background: transparent;
+  border-color: var(--glass-border);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .index-page .ant-card,
+  .clients-page .ant-card,
+  .inbounds-page .ant-card,
+  .xray-page .ant-card,
+  .settings-page .ant-card,
+  .nodes-page .ant-card,
+  .groups-page .ant-card,
+  .api-docs-page .ant-card,
+  .hosts-page .ant-card,
+  .ant-modal .ant-modal-content,
+  .ant-drawer .ant-drawer-content,
+  .ant-popover .ant-popover-inner,
+  .ant-dropdown .ant-dropdown-menu {
+    background: var(--glass-surface-solid);
   }
 }

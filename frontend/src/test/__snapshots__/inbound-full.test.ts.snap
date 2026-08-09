@@ -283,6 +283,10 @@ exports[`InboundSchema (full) fixtures > parses vless-tcp-reality byte-stably 1`
   "streamSettings": {
     "network": "tcp",
     "realitySettings": {
+      "alpn": [
+        "h2",
+        "http/1.1",
+      ],
       "maxClientVer": "",
       "maxTimediff": 0,
       "minClientVer": "",

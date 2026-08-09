@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   genHysteriaLink,
@@ -16,6 +16,16 @@ import {
 } from '@/lib/xray/inbound-link';
 import { InboundSchema } from '@/schemas/api/inbound';
 import type { WireguardInboundSettings } from '@/schemas/protocols/inbound/wireguard';
+
+// Share links intentionally choose a short ID at random for end users. Tests
+// need a stable first candidate so snapshots describe link shape, not PRNG state.
+beforeEach(() => {
+  vi.spyOn(Math, 'random').mockReturnValue(0);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 // Snapshot baseline for the share-link generators. Snapshots were locked
 // at the close of the legacy class migration — at that point each

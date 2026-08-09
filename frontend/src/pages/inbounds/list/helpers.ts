@@ -90,7 +90,7 @@ export function showQrCodeMenu(dbInbound: DBInboundRecord): boolean {
 }
 
 export function hasShareableLinks(dbInbound: DBInboundRecord): boolean {
-  return (
+  return !!(
     dbInbound.isVMess
     || dbInbound.isVLess
     || dbInbound.isTrojan

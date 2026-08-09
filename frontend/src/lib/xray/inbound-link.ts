@@ -26,7 +26,6 @@ type ForceTls = 'same' | 'tls' | 'none';
 const SHARE_HOSTNAME_RE = /^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$/;
 
 const DEFAULT_REALITY_DEST = 'www.cloudflare.com:443';
-const DEFAULT_REALITY_DEST_ALT = 'www.microsoft.com:443';
 
 function toBase64UrlSafe(s: string): string {
   if (!s) return '';
@@ -34,10 +33,6 @@ function toBase64UrlSafe(s: string): string {
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/g, '');
-}
-
-function fallbackRealityDest(dest: string | undefined | null): string {
-  return dest && dest.trim() !== '' ? dest : DEFAULT_REALITY_DEST;
 }
 
 function normalizeUuid(uuid: string): string {
@@ -453,7 +448,7 @@ export function genVlessLink(input: GenVlessLinkInput): string {
       params.set('pbk', toBase64UrlSafe(reality.settings.publicKey || ''));
       params.set('fp', reality.settings.fingerprint || '');
 
-      const targetOrDest = reality.target || reality.dest || '';
+      const targetOrDest = reality.target || DEFAULT_REALITY_DEST;
       let sni = reality.settings.serverName || '';
       if (!sni && reality.serverNames && reality.serverNames.length > 0) {
         const nonEmpty = reality.serverNames.filter((n) => n && n.length > 0);
@@ -561,7 +556,7 @@ function writeRealityParams(stream: NonNullable<Inbound['streamSettings']>, para
   params.set('pbk', toBase64UrlSafe(reality.settings.publicKey || ''));
   params.set('fp', reality.settings.fingerprint || '');
 
-  const targetOrDest = reality.target || reality.dest || '';
+  const targetOrDest = reality.target || DEFAULT_REALITY_DEST;
   let sni = reality.settings.serverName || '';
   if (!sni && reality.serverNames && reality.serverNames.length > 0) {
     const nonEmpty = reality.serverNames.filter((n) => n && n.length > 0);
