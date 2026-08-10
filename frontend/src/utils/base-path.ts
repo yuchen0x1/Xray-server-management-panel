@@ -1,6 +1,17 @@
 export function normalizeBasePath(basePath: string | null | undefined): string {
   const value = (basePath ?? '').trim();
   if (!value || value === '/') return '';
+
+  if (/^(?:[a-z][a-z\d+.-]*:)?\/\/[^/]/i.test(value)) {
+    try {
+      const pathname = new URL(value, 'http://localhost').pathname;
+      if (pathname === '/') return '';
+      return `/${pathname.replace(/^\/+|\/+$/g, '')}`;
+    } catch {
+      return '';
+    }
+  }
+
   return `/${value.replace(/^\/+|\/+$/g, '')}`;
 }
 

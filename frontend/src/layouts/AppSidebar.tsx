@@ -34,6 +34,7 @@ import {
 } from '@ant-design/icons';
 
 import { HttpUtil } from '@/utils';
+import { withBasePath } from '@/utils/base-path';
 import { formatPanelVersion } from '@/lib/panel-version';
 import { pauseAnimationsUntilLeave, useTheme } from '@/hooks/useTheme';
 import { useAllSettings } from '@/api/queries/useAllSettings';
@@ -225,7 +226,7 @@ export default function AppSidebar() {
   const openLink = useCallback(async (key: string) => {
     if (key === LOGOUT_KEY) {
       await HttpUtil.post('/logout');
-      window.location.href = window.X_UI_BASE_PATH || '/';
+      window.location.href = withBasePath('/');
       return;
     }
     navigate(key);

@@ -1,3 +1,5 @@
+import { normalizeBasePath } from '@/utils/base-path';
+
 type WebSocketListener = (...args: unknown[]) => void;
 
 interface WebSocketMessage {
@@ -118,10 +120,8 @@ export class WebSocketClient {
 
   #buildUrl(): string {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    let basePath = this.basePath || '/';
-    if (!basePath.startsWith('/')) basePath = '/' + basePath;
-    if (!basePath.endsWith('/')) basePath += '/';
-    return `${protocol}//${window.location.host}${basePath}ws`;
+    const basePath = normalizeBasePath(this.basePath);
+    return `${protocol}//${window.location.host}${basePath}/ws`;
   }
 
   #onMessage(event: MessageEvent): void {

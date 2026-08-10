@@ -7,6 +7,8 @@ describe('base path helpers', () => {
     expect(normalizeBasePath(undefined)).toBe('');
     expect(normalizeBasePath('/')).toBe('');
     expect(normalizeBasePath('///xui///')).toBe('/xui');
+    expect(normalizeBasePath('http://localhost')).toBe('');
+    expect(normalizeBasePath('http://localhost/xui/')).toBe('/xui');
   });
 
   it('joins panel paths without losing or duplicating separators', () => {

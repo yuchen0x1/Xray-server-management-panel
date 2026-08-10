@@ -150,7 +150,7 @@ describe('http-init fetch wrapper', () => {
     ]);
     expect(first).toBe(pending);
     expect(replaceMock).toHaveBeenCalledTimes(1);
-    expect(replaceMock).toHaveBeenCalledWith('/xui');
+    expect(replaceMock).toHaveBeenCalledWith('/xui/');
 
     const second = await Promise.race([
       http.httpRequest('POST', '/p', { a: 1 }),

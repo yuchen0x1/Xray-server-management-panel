@@ -1,18 +1,20 @@
 .subscription-page {
-  --bg-page: #e6e8ec;
-  --bg-card: #ffffff;
+  --bg-page: var(--glass-page-bg);
+  --bg-card: var(--glass-surface-bg);
   min-height: 100vh;
-  background: var(--bg-page);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--glass-primary) 7%, transparent), transparent 45%),
+    var(--bg-page);
 }
 
 .subscription-page.is-dark {
-  --bg-page: #1a1b1f;
-  --bg-card: #23252b;
+  --bg-page: var(--glass-page-bg);
+  --bg-card: var(--glass-surface-bg);
 }
 
 .subscription-page.is-dark.is-ultra {
-  --bg-page: #000;
-  --bg-card: #101013;
+  --bg-page: var(--glass-page-bg);
+  --bg-card: var(--glass-surface-bg);
 }
 
 .subscription-page .ant-layout,
@@ -26,6 +28,11 @@
 
 .subscription-card {
   margin-top: 8px;
+  border: 1px solid var(--glass-border) !important;
+  background: var(--bg-card) !important;
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(135%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(135%);
 }
 
 .qr-tag {
@@ -59,24 +66,24 @@
   gap: 8px;
   padding: 8px 12px;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: color-mix(in srgb, var(--glass-surface-strong-bg) 68%, transparent);
+  border: 1px solid var(--glass-border);
   transition: background 120ms ease, border-color 120ms ease;
 }
 
 .sub-link-row:hover {
-  background: rgba(0, 0, 0, 0.05);
-  border-color: rgba(0, 0, 0, 0.14);
+  background: color-mix(in srgb, var(--glass-surface-strong-bg) 86%, transparent);
+  border-color: var(--glass-border-strong);
 }
 
 .is-dark .sub-link-row {
-  background: rgba(0, 0, 0, 0.2);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--glass-surface-strong-bg) 78%, transparent);
+  border-color: var(--glass-border);
 }
 
 .is-dark .sub-link-row:hover {
-  background: rgba(0, 0, 0, 0.3);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--glass-surface-strong-bg) 92%, transparent);
+  border-color: var(--glass-border-strong);
 }
 
 .sub-link-tag {

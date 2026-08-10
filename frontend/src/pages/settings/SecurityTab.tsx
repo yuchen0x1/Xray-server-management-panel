@@ -14,6 +14,7 @@ import {
 } from 'antd';
 import { ApiOutlined, SafetyOutlined, UserOutlined } from '@ant-design/icons';
 import { ClipboardManager, HttpUtil, IntlUtil, RandomUtil } from '@/utils';
+import { withBasePath } from '@/utils/base-path';
 import type { AllSetting } from '@/models/setting';
 import { SettingListItem } from '@/components/ui';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -106,8 +107,7 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
       const msg = await HttpUtil.post('/panel/api/setting/updateUser', { ...user, twoFactorCode }) as ApiMsg;
       if (msg?.success) {
         await HttpUtil.post('/logout');
-        const basePath = window.X_UI_BASE_PATH || '/';
-        window.location.replace(basePath);
+        window.location.replace(withBasePath('/'));
       }
     } finally {
       setUpdating(false);

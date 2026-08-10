@@ -1,3 +1,5 @@
+import { normalizeBasePath, withBasePath } from '@/utils/base-path';
+
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS', 'TRACE']);
 const CSRF_TOKEN_PATH = '/csrf-token';
 
@@ -5,6 +7,20 @@ let csrfToken: string | null = null;
 let csrfFetchPromise: Promise<string | null> | null = null;
 let sessionExpired = false;
 let basePathPrefix = '';
+
+function normalizeRequestBase(basePath: string | null | undefined): string {
+  const value = (basePath ?? '').trim();
+  if (/^https?:\/\//i.test(value)) {
+    try {
+      const parsed = new URL(value);
+      const path = normalizeBasePath(parsed.pathname);
+      return `${parsed.origin}${path}`;
+    } catch {
+      return '';
+    }
+  }
+  return normalizeBasePath(value);
+}
 
 export interface HttpResponse {
   ok: boolean;
@@ -162,7 +178,7 @@ export async function httpRequest(
   if (res.status === 401) {
     if (!sessionExpired) {
       sessionExpired = true;
-      window.location.replace(window.X_UI_BASE_PATH || basePathPrefix || '/');
+      window.location.replace(withBasePath('/'));
     }
     return new Promise<HttpResponse>(() => {});
   }
@@ -178,10 +194,7 @@ export function setupHttp(): void {
     const metaTag = document.querySelector('meta[name="base-path"]');
     basePath = metaTag ? metaTag.getAttribute('content') : null;
   }
-  basePathPrefix =
-    typeof basePath === 'string' && basePath !== '' && basePath !== '/'
-      ? basePath.replace(/\/$/, '')
-      : '';
+  basePathPrefix = normalizeRequestBase(basePath);
 
   csrfToken = readMetaToken();
 }

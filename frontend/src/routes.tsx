@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter, type RouteObject } from 'react-router';
 
 import PanelLayout from '@/layouts/PanelLayout';
+import { normalizeBasePath } from '@/utils/base-path';
 
 const IndexPage = lazy(() => import('@/pages/index/IndexPage'));
 const InboundsPage = lazy(() => import('@/pages/inbounds/InboundsPage'));
@@ -38,9 +39,7 @@ const routes: RouteObject[] = [
 ];
 
 function computeBasename() {
-  const raw = (typeof window !== 'undefined' && window.X_UI_BASE_PATH) || '/';
-  const trimmed = raw.replace(/\/+$/, '');
-  return `${trimmed}/panel`;
+  return `${normalizeBasePath(typeof window !== 'undefined' ? window.X_UI_BASE_PATH : '')}/panel`;
 }
 
 export const router = createBrowserRouter(routes, {

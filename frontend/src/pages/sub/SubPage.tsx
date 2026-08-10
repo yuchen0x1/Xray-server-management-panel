@@ -127,7 +127,7 @@ export default function SubPage() {
 
   const open = useCallback((url: string) => {
     if (!url) return;
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener,noreferrer');
   }, []);
 
   const shadowrocketUrl = useMemo(() => {

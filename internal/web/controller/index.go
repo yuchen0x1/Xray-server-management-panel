@@ -123,6 +123,7 @@ func (a *IndexController) login(c *gin.Context) {
 
 	if err := session.SetLoginUser(c, user); err != nil {
 		logger.Warning("Unable to save session:", err)
+		pureJsonMsg(c, http.StatusInternalServerError, false, I18nWeb(c, "pages.login.toasts.loginFailed"))
 		return
 	}
 
@@ -163,7 +164,9 @@ func (a *IndexController) csrfToken(c *gin.Context) {
 // getTwoFactorEnable retrieves the current status of two-factor authentication.
 func (a *IndexController) getTwoFactorEnable(c *gin.Context) {
 	status, err := a.settingService.GetTwoFactorEnable()
-	if err == nil {
-		jsonObj(c, status, nil)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.login.toasts.loginFailed"), err)
+		return
 	}
+	jsonObj(c, status, nil)
 }

@@ -16,16 +16,20 @@ import (
 // with HTTP 403 Forbidden status.
 func DomainValidatorMiddleware(domain string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		host := c.Request.Host
-		if colonIndex := strings.LastIndex(host, ":"); colonIndex != -1 {
-			host, _, _ = net.SplitHostPort(c.Request.Host)
-		}
+		host := requestHost(c.Request.Host)
 
-		if host != domain {
+		if !strings.EqualFold(host, strings.TrimSpace(domain)) {
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}
 
 		c.Next()
 	}
+}
+
+func requestHost(hostport string) string {
+	if host, _, err := net.SplitHostPort(hostport); err == nil {
+		return host
+	}
+	return strings.Trim(hostport, "[]")
 }
