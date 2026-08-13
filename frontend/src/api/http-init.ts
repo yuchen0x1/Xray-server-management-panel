@@ -178,6 +178,7 @@ export async function httpRequest(
   if (res.status === 401) {
     if (!sessionExpired) {
       sessionExpired = true;
+      sessionStorage.setItem('xui.sessionExpired', '1');
       window.location.replace(withBasePath('/'));
     }
     return new Promise<HttpResponse>(() => {});

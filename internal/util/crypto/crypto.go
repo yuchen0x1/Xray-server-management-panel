@@ -3,8 +3,11 @@ package crypto
 
 import (
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/hex"
+	"time"
 
+	"github.com/xlzd/gotp"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -44,4 +47,21 @@ func IsSHA256Hex(s string) bool {
 		}
 	}
 	return true
+}
+
+// VerifyTOTP reports whether code matches the current TOTP window for secret,
+// allowing one 30-second step of clock skew and comparing in constant time.
+func VerifyTOTP(secret, code string) bool {
+	if secret == "" || code == "" {
+		return false
+	}
+	totp := gotp.NewDefaultTOTP(secret)
+	now := time.Now().Unix()
+	for _, timestamp := range []int64{now - 30, now, now + 30} {
+		expected := totp.At(timestamp)
+		if subtle.ConstantTimeCompare([]byte(expected), []byte(code)) == 1 {
+			return true
+		}
+	}
+	return false
 }

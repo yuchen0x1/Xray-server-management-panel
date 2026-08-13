@@ -2,6 +2,21 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { ReactNode } from 'react';
 import { theme as antdTheme } from 'antd';
 import type { ThemeConfig } from 'antd';
+import type { Locale } from 'antd/es/locale';
+import { useTranslation } from 'react-i18next';
+import arEG from 'antd/locale/ar_EG';
+import enUS from 'antd/locale/en_US';
+import esES from 'antd/locale/es_ES';
+import faIR from 'antd/locale/fa_IR';
+import idID from 'antd/locale/id_ID';
+import jaJP from 'antd/locale/ja_JP';
+import ptBR from 'antd/locale/pt_BR';
+import ruRU from 'antd/locale/ru_RU';
+import trTR from 'antd/locale/tr_TR';
+import ukUA from 'antd/locale/uk_UA';
+import viVN from 'antd/locale/vi_VN';
+import zhCN from 'antd/locale/zh_CN';
+import zhTW from 'antd/locale/zh_TW';
 
 const STORAGE_DARK = 'dark-mode';
 const STORAGE_ULTRA = 'isUltraDarkThemeEnabled';
@@ -96,6 +111,30 @@ const LIGHT_BUTTON_TOKENS = {
   colorPrimaryActive: '#073ea8',
 };
 
+const ANTd_LOCALES: Record<string, Locale> = {
+  'ar-EG': arEG,
+  'en-US': enUS,
+  'es-ES': esES,
+  'fa-IR': faIR,
+  'id-ID': idID,
+  'ja-JP': jaJP,
+  'pt-BR': ptBR,
+  'ru-RU': ruRU,
+  'tr-TR': trTR,
+  'uk-UA': ukUA,
+  'vi-VN': viVN,
+  'zh-CN': zhCN,
+  'zh-TW': zhTW,
+};
+
+const RTL_LANGS = new Set(['ar-EG', 'fa-IR']);
+
+function resolveAntdLocale(lang: string): { locale: Locale; direction: 'ltr' | 'rtl' } {
+  return {
+    locale: ANTd_LOCALES[lang] ?? enUS,
+    direction: RTL_LANGS.has(lang) ? 'rtl' : 'ltr',
+  };
+}
 export function buildAntdThemeConfig(isDark: boolean, isUltra: boolean): ThemeConfig {
   if (!isDark) {
     return {
@@ -140,11 +179,14 @@ interface ThemeContextValue {
   toggleTheme: () => void;
   toggleUltra: () => void;
   antdThemeConfig: ThemeConfig;
+  locale: Locale;
+  direction: 'ltr' | 'rtl';
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  const { i18n } = useTranslation();
   const [isDark, setIsDark] = useState<boolean>(initialDark);
   const [isUltra, setIsUltra] = useState<boolean>(initialUltra);
 
@@ -162,10 +204,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const toggleUltra = useCallback(() => setIsUltra((v) => !v), []);
 
   const antdThemeConfig = useMemo(() => buildAntdThemeConfig(isDark, isUltra), [isDark, isUltra]);
+  const antdLocale = useMemo(() => resolveAntdLocale(i18n.language), [i18n.language]);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ isDark, isUltra, toggleTheme, toggleUltra, antdThemeConfig }),
-    [isDark, isUltra, toggleTheme, toggleUltra, antdThemeConfig],
+    () => ({ isDark, isUltra, toggleTheme, toggleUltra, antdThemeConfig, locale: antdLocale.locale, direction: antdLocale.direction }),
+    [isDark, isUltra, toggleTheme, toggleUltra, antdThemeConfig, antdLocale],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

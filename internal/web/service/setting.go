@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/xlzd/gotp"
+	"github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
 	"gorm.io/gorm"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
@@ -600,7 +600,7 @@ func (s *SettingService) VerifyTwoFactorCode(code string) error {
 	if err != nil {
 		return err
 	}
-	if strings.TrimSpace(token) == "" || !gotp.NewDefaultTOTP(token).Verify(strings.TrimSpace(code), time.Now().Unix()) {
+	if !crypto.VerifyTOTP(token, strings.TrimSpace(code)) {
 		return common.NewError("invalid two factor code")
 	}
 	return nil

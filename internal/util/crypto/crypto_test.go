@@ -3,6 +3,9 @@ package crypto
 import (
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/xlzd/gotp"
 )
 
 func TestHashPasswordAsBcrypt_RoundTrip(t *testing.T) {
@@ -65,5 +68,41 @@ func TestHashPasswordAsBcrypt_DifferentHashesForSamePassword(t *testing.T) {
 	}
 	if !CheckPasswordHash(h1, password) || !CheckPasswordHash(h2, password) {
 		t.Fatal("both hashes should still validate the original password")
+	}
+}
+
+func TestVerifyTOTP_CurrentWindow(t *testing.T) {
+	secret := "JBSWY3DPEHPK3PXP"
+	now := time.Now().Unix()
+	code := gotp.NewDefaultTOTP(secret).At(now)
+	if !VerifyTOTP(secret, code) {
+		t.Fatal("expected current-window code to verify")
+	}
+}
+
+func TestVerifyTOTP_AcceptsOneStepSkew(t *testing.T) {
+	secret := "JBSWY3DPEHPK3PXP"
+	now := time.Now().Unix()
+	code := gotp.NewDefaultTOTP(secret).At(now + 30)
+	if !VerifyTOTP(secret, code) {
+		t.Fatal("expected +1 window code to verify")
+	}
+	code = gotp.NewDefaultTOTP(secret).At(now - 30)
+	if !VerifyTOTP(secret, code) {
+		t.Fatal("expected -1 window code to verify")
+	}
+}
+
+func TestVerifyTOTP_RejectsStaleAndEmpty(t *testing.T) {
+	secret := "JBSWY3DPEHPK3PXP"
+	now := time.Now().Unix()
+	if VerifyTOTP(secret, gotp.NewDefaultTOTP(secret).At(now-120)) {
+		t.Fatal("expected a 2-window-stale code to be rejected")
+	}
+	if VerifyTOTP(secret, "") {
+		t.Fatal("expected an empty code to be rejected")
+	}
+	if VerifyTOTP("", "123456") {
+		t.Fatal("expected an empty secret to be rejected")
 	}
 }

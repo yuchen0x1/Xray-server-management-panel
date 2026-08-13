@@ -372,7 +372,10 @@ func (s *Server) Start() (err error) {
 	}
 
 	go func() {
-		_ = s.httpServer.Serve(listener)
+		if err := s.httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
+			logger.Errorf("subscription server exited: %v", err)
+			os.Exit(1)
+		}
 	}()
 
 	return nil

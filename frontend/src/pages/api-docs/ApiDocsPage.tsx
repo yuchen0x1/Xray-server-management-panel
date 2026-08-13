@@ -10,7 +10,7 @@ import { withBasePath } from '@/utils/base-path';
 import './ApiDocsPage.css';
 
 export default function ApiDocsPage() {
-  const { isDark, isUltra, antdThemeConfig } = useTheme();
+  const { isDark, isUltra, antdThemeConfig, locale, direction } = useTheme();
   const { t } = useTranslation();
   const openApiUrl = withBasePath('/panel/api/openapi.json');
 
@@ -22,7 +22,7 @@ export default function ApiDocsPage() {
   }, [isDark, isUltra]);
 
   return (
-    <ConfigProvider theme={antdThemeConfig}>
+    <ConfigProvider theme={antdThemeConfig} locale={locale} direction={direction}>
       <Layout className={pageClass}>
         <AppSidebar />
 

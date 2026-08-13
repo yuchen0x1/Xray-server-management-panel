@@ -126,8 +126,6 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 	// the per-inbound lift below).
 	xrayConfig.OutboundConfigs = liftOutboundsXhttpSessionIDKeys(xrayConfig.OutboundConfigs)
 
-	_, _, _ = s.inboundService.AddTraffic(nil, nil)
-
 	inbounds, err := s.inboundService.GetAllInbounds()
 	if err != nil {
 		return nil, err

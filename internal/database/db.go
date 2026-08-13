@@ -1944,6 +1944,9 @@ func InitDB(dbPath string) error {
 		if err = os.MkdirAll(dir, 0o755); err != nil {
 			return err
 		}
+		if err := os.Chmod(dir, 0o700); err != nil {
+			return fmt.Errorf("harden sqlite database directory permissions: %w", err)
+		}
 
 		sync := sqliteSynchronous()
 		journal := sqliteJournalMode()
@@ -1951,6 +1954,9 @@ func InitDB(dbPath string) error {
 		db, err = gorm.Open(sqlite.Open(dsn), c)
 		if err != nil {
 			return err
+		}
+		if err := os.Chmod(dbPath, 0o600); err != nil {
+			return fmt.Errorf("harden sqlite database permissions: %w", err)
 		}
 		sqlDB, err := db.DB()
 		if err != nil {

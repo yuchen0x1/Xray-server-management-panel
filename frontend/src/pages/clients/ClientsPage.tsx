@@ -196,7 +196,7 @@ function sortValueFor(column: string | null, order: 'ascend' | 'descend' | null)
 
 export default function ClientsPage() {
   const { t } = useTranslation();
-  const { isDark, isUltra, antdThemeConfig } = useTheme();
+  const { isDark, isUltra, antdThemeConfig, locale, direction } = useTheme();
   const { datepicker } = useDatepicker();
   const { isMobile } = useMediaQuery();
   const [modal, modalContextHolder] = Modal.useModal();
@@ -978,7 +978,7 @@ export default function ClientsPage() {
   }
 
   return (
-    <ConfigProvider theme={antdThemeConfig}>
+    <ConfigProvider theme={antdThemeConfig} locale={locale} direction={direction}>
       {messageContextHolder}
       {modalContextHolder}
       <Layout className={pageClass}>

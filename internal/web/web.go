@@ -200,7 +200,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 	sessionOptions := sessions.Options{
 		Path:     basePath,
 		HttpOnly: true,
-		Secure:   directHTTPS,
+		Secure:   directHTTPS || config.GetSecureCookie(),
 		SameSite: http.SameSiteLaxMode,
 	}
 	if sessionMaxAge, err := s.settingService.GetSessionMaxAge(); err == nil && sessionMaxAge > 0 {
@@ -589,7 +589,10 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 	}
 
 	go func() {
-		_ = s.httpServer.Serve(listener)
+		if err := s.httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
+			logger.Errorf("web server exited: %v", err)
+			os.Exit(1)
+		}
 	}()
 
 	// Create event bus before startTask so jobs can use it

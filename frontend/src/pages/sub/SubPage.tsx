@@ -81,7 +81,7 @@ const isActive = (() => {
 
 export default function SubPage() {
   const { t } = useTranslation();
-  const { isDark, isUltra, toggleTheme, toggleUltra, antdThemeConfig } = useTheme();
+  const { isDark, isUltra, toggleTheme, toggleUltra, antdThemeConfig, locale, direction } = useTheme();
   const [messageApi, messageContextHolder] = message.useMessage();
   useEffect(() => { setMessageInstance(messageApi); }, [messageApi]);
 
@@ -281,7 +281,7 @@ export default function SubPage() {
   );
 
   return (
-    <ConfigProvider theme={antdThemeConfig}>
+    <ConfigProvider theme={antdThemeConfig} locale={locale} direction={direction}>
       {messageContextHolder}
       <Layout className={pageClass}>
         <Layout.Content className="content">

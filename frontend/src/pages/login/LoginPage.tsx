@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  Alert,
   Button,
   ConfigProvider,
   Form,
@@ -37,7 +38,7 @@ type LoginForm = LoginFormValues;
 
 export default function LoginPage() {
   const { t } = useTranslation();
-  const { isDark, isUltra, toggleTheme, toggleUltra, antdThemeConfig } = useTheme();
+  const { isDark, isUltra, toggleTheme, toggleUltra, antdThemeConfig, locale, direction } = useTheme();
   const [messageApi, messageContextHolder] = message.useMessage();
 
   useEffect(() => {
@@ -45,6 +46,7 @@ export default function LoginPage() {
   }, [messageApi]);
 
   const [fetched, setFetched] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [twoFactorEnable, setTwoFactorEnable] = useState(false);
   const [headlineIndex, setHeadlineIndex] = useState(0);
@@ -62,6 +64,17 @@ export default function LoginPage() {
     }, HEADLINE_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [headlineWords.length]);
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('xui.sessionExpired') === '1') {
+        sessionStorage.removeItem('xui.sessionExpired');
+        setSessionExpired(true);
+      }
+    } catch {
+      return;
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,7 +138,7 @@ export default function LoginPage() {
   const themeIcon = !isDark ? <SunOutlined /> : !isUltra ? <MoonOutlined /> : <MoonFilled />;
 
   return (
-    <ConfigProvider theme={antdThemeConfig}>
+    <ConfigProvider theme={antdThemeConfig} locale={locale} direction={direction}>
       {messageContextHolder}
       <Layout className={pageClass}>
         <Layout.Content className="login-content">
@@ -180,6 +193,15 @@ export default function LoginPage() {
                 <h2 className="welcome">
                   <b key={headlineIndex}>{headlineWords[headlineIndex]}</b>
                 </h2>
+
+                {sessionExpired && (
+                  <Alert
+                    type="warning"
+                    showIcon
+                    message={t('pages.login.loginAgain')}
+                    style={{ marginBottom: 16 }}
+                  />
+                )}
 
                 <FormProvider {...methods}>
                   <Form

@@ -59,7 +59,7 @@ function scrollTarget() {
 
 export default function SettingsPage() {
   const { t } = useTranslation();
-  const { isDark, isUltra, antdThemeConfig } = useTheme();
+  const { isDark, isUltra, antdThemeConfig, locale, direction } = useTheme();
   const { isMobile } = useMediaQuery();
   const [modal, modalContextHolder] = Modal.useModal();
   const [messageApi, messageContextHolder] = message.useMessage();
@@ -207,7 +207,7 @@ export default function SettingsPage() {
   }, [activeSlug, allSetting, updateSetting, savePayload]);
 
   return (
-    <ConfigProvider theme={antdThemeConfig}>
+    <ConfigProvider theme={antdThemeConfig} locale={locale} direction={direction}>
       {messageContextHolder}
       {modalContextHolder}
       <Layout className={pageClass}>
