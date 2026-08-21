@@ -1,161 +1,83 @@
-# 3X-UI
+<div align="center">
 
-3X-UI is a web control panel for managing Xray-core servers. It provides
-protocol configuration, client and traffic management, subscriptions, node
-coordination, routing tools, and operational monitoring from one interface.
+# 3X-UI · Xray 服务器管理面板
 
-This repository is a maintained **derivative fork / secondary modification**
-of the original project. It is intended for personal and lawful use only.
+> 用于管理 Xray-core 服务器的 Web 控制面板：协议配置、客户端与流量管理、订阅服务、节点协同、路由工具和运行状态监控
 
-## Attribution
+[![Go](https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white)](https://go.dev/)
+[![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
-- Current repository: [yuchen0x1/3x-ui](https://github.com/yuchen0x1/3x-ui)
-- Original project: [MHSanaei/3x-ui](https://github.com/MHSanaei/3x-ui), by MHSanaei
-- Earlier X-UI project: [FranzKafkaYu/x-ui](https://github.com/FranzKafkaYu/x-ui), by Franz Kafka Yu
+</div>
 
-Please keep this attribution when redistributing modified builds. Features and
-fixes in this repository may differ from the original project.
+> 本仓库是基于原项目进行的**二次修改维护分支**，仅建议用于个人和合法用途。
 
-## Community
+## 项目归属与致谢
 
-- QQ group: `1016190748`
-- Telegram: [t.me/lenmoC](https://t.me/lenmoC)
+- 当前仓库：[yuchen0x1/3x-ui](https://github.com/yuchen0x1/3x-ui)
+- 原项目：[MHSanaei/3x-ui](https://github.com/MHSanaei/3x-ui)（作者：MHSanaei）
+- 更早的 X-UI 项目：[FranzKafkaYu/x-ui](https://github.com/FranzKafkaYu/x-ui)（作者：Franz Kafka Yu）
 
-When asking for help, include the exact version, operating system, relevant
-logs, and whether the issue is from the original project or this fork.
+重新发布或继续修改时，请保留上述归属说明。本仓库的功能和修复可能与原项目存在差异。
 
-## Features
+## 📖 项目简介
 
-- VLESS, VMess, Trojan, Shadowsocks, WireGuard, Hysteria2, HTTP, SOCKS,
-  Dokodemo-door, Tunnel, and TUN inbounds
-- TCP Raw, mKCP, WebSocket, gRPC, HTTPUpgrade, and XHTTP transports
-- TLS, XTLS, REALITY, fallbacks, routing rules, balancers, and outbound tools
-- Per-client traffic quotas, expiry dates, IP limits, online status, share links,
-  QR codes, and subscription links
-- Built-in subscription output for raw, JSON, Clash, and custom templates
-- Multi-node management with node health, certificate, and update tooling
-- Telegram bot, email notifications, Fail2ban integration, and system metrics
-- REST API with in-panel OpenAPI documentation
-- SQLite by default, with optional PostgreSQL support
-- Multiple UI languages plus light, dark, and ultra-dark themes
+3X-UI 是一个用于管理 Xray-core 服务器的 Web 控制面板，提供协议配置、客户端与流量管理、订阅服务、节点协同、路由工具和运行状态监控。
 
-## Quick Start
+## 🎯 功能特性
 
-### Source or Docker
+- 支持 VLESS、VMess、Trojan、Shadowsocks、WireGuard、Hysteria2、HTTP、SOCKS、Dokodemo-door、Tunnel 和 TUN 入站
+- 支持 TCP Raw、mKCP、WebSocket、gRPC、HTTPUpgrade、XHTTP 等传输方式
+- 支持 TLS、XTLS、REALITY、Fallback、路由规则、Balancer 和出站工具
+- 支持客户端流量配额、到期时间、IP 限制、在线状态、分享链接、二维码和订阅
+- 内置 Raw、JSON、Clash 及自定义模板订阅输出
+- 支持多节点管理、节点健康状态、证书和节点升级工具
+- 支持 Telegram 机器人、邮件通知、Fail2ban 和系统指标
+- 提供面板内置 OpenAPI 文档的 REST API
+- 默认使用 SQLite，也支持 PostgreSQL
+- 支持多语言界面、浅色、深色和极暗主题
 
-This fork currently ships source and Docker build instructions rather than
-claiming upstream release artifacts. Use the Docker command below for a
-reproducible local build, or build the binary with `make build`.
+## 🧱 技术栈
 
-### Upstream-compatible installer
+| 模块 | 技术 |
+| --- | --- |
+| 后端 | Go |
+| 前端 | React |
+| 数据库 | SQLite（默认）/ PostgreSQL（可选） |
+| 部署 | 安装脚本 / Docker |
 
-The bundled installer remains compatible with the original project's published
-release artifacts:
+## 🚀 快速开始
+
+### 方式一：安装脚本
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/MHSanaei/3x-ui/main/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/yuchen0x1/3x-ui/main/install.sh)
 ```
 
-That command installs the original project's release channel, not an
-unpublished binary from this fork. Run `x-ui` after installation to manage the
-service, credentials, certificates, database, and Xray settings.
+安装完成后运行 `x-ui`，可以管理服务、登录凭据、证书、数据库和 Xray 设置。
 
-### Docker
+### 方式二：Docker
 
 ```bash
-git clone https://github.com/yuchen0x1/3x-ui.git
-cd 3x-ui
 docker compose up -d
 ```
 
-The default compose setup uses SQLite. PostgreSQL can be enabled through the
-database environment variables documented in `docker-compose.yml`.
+默认发布端口：`2053`（可在 `docker-compose.yml` 通过 `XUI_PORT` 调整）。数据库默认保存在 `db/`（挂载到容器内 `/etc/x-ui/`）。
 
-### Windows
+## ⚙️ 默认配置与注意事项
 
-Windows support is included in the repository. See
-[`windows_files/readme.txt`](windows_files/readme.txt) for the platform-specific
-startup notes.
+| 配置项 | 默认值 | 说明 |
+| --- | --- | --- |
+| 默认账号 | `admin` / `admin` | **初始化项目，首次登录请立即修改密码** |
+| 面板端口 | `2053` | Docker 默认；脚本安装以安装输出为准 |
+| 数据库 | SQLite `/etc/x-ui` | 忘记密码时可用 sqlitebrowser 打开数据库查询 |
+| 环境变量 | `XUI_*` | Docker 通过环境变量配置，见 `.env.example` |
 
-## Configuration
+> 只建议用于个人和合法用途，请遵守所在地法律法规和服务条款。
 
-SQLite is the default database and is stored under the configured X-UI data
-directory. PostgreSQL can be selected with:
+## 📬 联系方式
 
-```text
-XUI_DB_TYPE=postgres
-XUI_DB_DSN=postgres://xui:password@127.0.0.1:5432/xui?sslmode=disable
-```
+- QQ 交流群：`1016190748`
+- Telegram：[https://t.me/lenmoC](https://t.me/lenmoC)
 
-Other commonly used settings include:
-
-| Variable | Purpose |
-| --- | --- |
-| `XUI_INIT_WEB_BASE_PATH` | Initial web panel path |
-| `XUI_PORT` | Panel listen port |
-| `XUI_LOG_LEVEL` | Log verbosity |
-| `XUI_DEBUG` | Enable debug behavior |
-| `XUI_ENABLE_FAIL2BAN` | Enable Fail2ban integration |
-| `XUI_DB_FOLDER` | SQLite data directory |
-| `XUI_DB_MAX_OPEN_CONNS` | PostgreSQL open connection limit |
-| `XUI_DB_MAX_IDLE_CONNS` | PostgreSQL idle connection limit |
-
-See `.env.example`, `docker-compose.yml`, and `docs/` for the complete list.
-
-## Development
-
-### Requirements
-
-- Go 1.26
-- Node.js 24 or newer
-- npm 10 or newer
-- A C compiler for SQLite-enabled Go builds
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The Vite server runs on `http://localhost:5173/` and proxies panel API
-requests to a Go server on port `2053`.
-
-### Verification
-
-From the repository root:
-
-```bash
-make gen
-make lint
-make typecheck
-make test
-make build
-make verify
-```
-
-`make verify` is the local CI-style gate. The frontend build regenerates
-`internal/web/dist/`, which is embedded into the Go binary.
-
-## Repository Layout
-
-- `internal/`: Go backend, database, Xray lifecycle, jobs, API, and services
-- `frontend/`: React, TypeScript, Ant Design, Vite, schemas, and tests
-- `tools/openapigen/`: generated frontend schema and API tooling
-- `deploy/`: cloud-init, marketplace, and smoke-test deployment material
-- `docs/`: architecture and subscription customization documentation
-- `media/`: screenshots and project media
-
-## Security
-
-Do not expose the panel without authentication and transport protection. Use
-strong credentials, restrict access to trusted networks where possible, rotate
-API tokens, and review generated Xray configurations before applying them.
-Security reports should not contain passwords, API tokens, private keys, or
-subscription URLs.
-
-## License
-
-This project is distributed under the GNU General Public License v3.0. See
-[`LICENSE`](LICENSE) for the full license text.
+联系或反馈时，请备注原项目地址 `https://github.com/MHSanaei/3x-ui`、原创作者 `MHSanaei`，并说明你使用的版本、运行平台和具体问题。
