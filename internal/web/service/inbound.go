@@ -605,8 +605,8 @@ func validateFinalMaskRealityCombo(streamSettings string) error {
 var shortIdHexPattern = regexp.MustCompile(`^[0-9a-fA-F]*$`)
 
 // validateRealityConfig validates Reality-specific fields when security is set to reality:
-//  - publicKey must not be empty
-//  - each shortId, if non-empty, must be 0-16 hex characters
+//   - publicKey must not be empty
+//   - each shortId, if non-empty, must be 0-16 hex characters
 func validateRealityConfig(streamSettings string) error {
 	if streamSettings == "" {
 		return nil
