@@ -40,7 +40,10 @@ type PanelUpdateInfo struct {
 }
 
 const (
-	panelUpdaterURL      = "https://raw.githubusercontent.com/MHSanaei/3x-ui/main/update.sh"
+	panelRepository      = "yuchen0x1/xray-panel"
+	panelRepositoryRaw   = "https://raw.githubusercontent.com/" + panelRepository + "/main"
+	panelUpdaterURL      = panelRepositoryRaw + "/update.sh"
+	panelGitHubAPI       = "https://api.github.com/repos/" + panelRepository
 	maxPanelUpdaterBytes = 2 << 20
 	// devReleaseTag is the fixed-tag rolling pre-release the CI force-moves to the
 	// newest main commit; the dev update channel installs from it.
@@ -413,9 +416,9 @@ func fetchLatestPanelVersion() (string, error) {
 // fetchPanelRelease fetches a release from GitHub. An empty tag resolves the
 // latest stable release; a non-empty tag (e.g. dev-latest) resolves that tag.
 func fetchPanelRelease(tag string) (*service.Release, error) {
-	url := "https://api.github.com/repos/MHSanaei/3x-ui/releases/latest"
+	url := panelGitHubAPI + "/releases/latest"
 	if tag != "" {
-		url = "https://api.github.com/repos/MHSanaei/3x-ui/releases/tags/" + tag
+		url = panelGitHubAPI + "/releases/tags/" + tag
 	}
 	client := (&service.SettingService{}).NewProxiedHTTPClient(10 * time.Second)
 	req, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)

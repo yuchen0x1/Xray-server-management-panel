@@ -13,7 +13,6 @@ import {
   DashboardOutlined,
   DatabaseOutlined,
   ExportOutlined,
-  GithubOutlined,
   GlobalOutlined,
   HeartOutlined,
   ImportOutlined,
@@ -41,9 +40,6 @@ import { useAllSettings } from '@/api/queries/useAllSettings';
 import './AppSidebar.css';
 
 const SIDEBAR_COLLAPSED_KEY = 'isSidebarCollapsed';
-const DONATE_URL = 'https://donate.sanaei.dev/';
-const DOCS_URL = 'https://docs.sanaei.dev/';
-const REPO_URL = 'https://github.com/MHSanaei/3x-ui';
 const LOGOUT_KEY = '__logout__';
 
 type IconName = 'dashboard' | 'inbound' | 'team' | 'groups' | 'setting' | 'tool' | 'cluster' | 'hosts' | 'logout' | 'apidocs' | 'outbound' | 'routing';
@@ -73,31 +69,27 @@ function readCollapsed(): boolean {
 
 function DonateButton({ ariaLabel }: { ariaLabel: string }) {
   return (
-    <a
-      href={DONATE_URL}
-      target="_blank"
-      rel="noopener noreferrer"
+    <button
+      type="button"
       className="sidebar-donate"
       aria-label={ariaLabel}
       title={ariaLabel}
     >
       <HeartOutlined />
-    </a>
+    </button>
   );
 }
 
 function DocsButton({ ariaLabel }: { ariaLabel: string }) {
   return (
-    <a
-      href={DOCS_URL}
-      target="_blank"
-      rel="noopener noreferrer"
+    <button
+      type="button"
       className="sidebar-docs"
       aria-label={ariaLabel}
       title={ariaLabel}
     >
       <ReadOutlined />
-    </a>
+    </button>
   );
 }
 
@@ -105,17 +97,14 @@ function VersionBadge({ version, collapsed }: { version: string; collapsed?: boo
   if (!version) return null;
   const label = formatPanelVersion(version);
   return (
-    <a
-      href={REPO_URL}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
       className={`sider-version${collapsed ? ' is-collapsed' : ''}`}
-      aria-label={`GitHub ${label}`}
+      aria-label={`Panel ${label}`}
       title={label}
     >
-      <GithubOutlined />
+      <TagsOutlined />
       {!collapsed && <span className="sider-version-text">{label}</span>}
-    </a>
+    </div>
   );
 }
 

@@ -59,6 +59,9 @@ const XrayLogModal = lazy(() => import('./XrayLogModal'));
 const VersionModal = lazy(() => import('./VersionModal'));
 import './IndexPage.css';
 
+const TELEGRAM_GROUP_URL = 'https://t.me/lenmoC';
+const TELEGRAM_GROUP_LABEL = '@lenmoC';
+
 export default function IndexPage() {
   const { t } = useTranslation();
   const { isDark, isUltra, antdThemeConfig } = useTheme();
@@ -140,7 +143,7 @@ export default function IndexPage() {
   }
 
   function openTelegram() {
-    window.open('https://t.me/XrayUI', '_blank', 'noopener,noreferrer');
+    window.open(TELEGRAM_GROUP_URL, '_blank', 'noopener,noreferrer');
   }
 
   async function openConfig() {
@@ -245,9 +248,9 @@ export default function IndexPage() {
                       }
                       hoverable
                       actions={[
-                        <Space className="action" key="tg" role="button" tabIndex={0} aria-label="@XrayUI" onClick={openTelegram} onKeyDown={activateOnKey(openTelegram)}>
+                        <Space className="action" key="tg" role="button" tabIndex={0} aria-label={TELEGRAM_GROUP_LABEL} onClick={openTelegram} onKeyDown={activateOnKey(openTelegram)}>
                           <TelegramFilled aria-hidden="true" />
-                          {!isMobile && <span>@XrayUI</span>}
+                          {!isMobile && <span>{TELEGRAM_GROUP_LABEL}</span>}
                         </Space>,
                         <Space
                           key="panel-version"

@@ -25,6 +25,13 @@ func TestGetPanelVersion(t *testing.T) {
 	}
 }
 
+func TestGetBaseVersionIsUtf8(t *testing.T) {
+	got := GetBaseVersion()
+	if got != "3.6.0" {
+		t.Fatalf("base version = %q, want %q", got, "3.6.0")
+	}
+}
+
 func TestGetPortOverride(t *testing.T) {
 	tests := []struct {
 		name       string

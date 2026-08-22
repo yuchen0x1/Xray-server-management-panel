@@ -33,6 +33,18 @@ func TestIsNewerVersion(t *testing.T) {
 	}
 }
 
+func TestPanelUpdateSource(t *testing.T) {
+	if panelRepository != "yuchen0x1/xray-panel" {
+		t.Fatalf("panel repository = %q, want yuchen0x1/xray-panel", panelRepository)
+	}
+	if panelUpdaterURL != "https://raw.githubusercontent.com/yuchen0x1/xray-panel/main/update.sh" {
+		t.Fatalf("panel updater URL points to %q", panelUpdaterURL)
+	}
+	if panelGitHubAPI != "https://api.github.com/repos/yuchen0x1/xray-panel" {
+		t.Fatalf("panel GitHub API points to %q", panelGitHubAPI)
+	}
+}
+
 func TestCompareVersionStringsRejectsUnexpectedFormats(t *testing.T) {
 	if _, ok := compareVersionStrings("latest", "2.9.3"); ok {
 		t.Fatal("expected non-semver latest tag to be rejected")

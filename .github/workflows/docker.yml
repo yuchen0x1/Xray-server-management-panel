@@ -24,8 +24,8 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: |
-            nhzhongguo/3x-ui
-            ghcr.io/nhzhongguo/3x-ui
+            yuchen0x1/xray-panel
+            ghcr.io/yuchen0x1/xray-panel
           tags: |
             type=ref,event=branch
             type=ref,event=tag
