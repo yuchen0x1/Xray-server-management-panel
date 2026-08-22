@@ -208,7 +208,8 @@ func (s *ServerService) probeRealityAddr(dialHost string, port int, sni string, 
 	}
 
 	cfg := &tls.Config{
-		ServerName:         sni,
+		ServerName: sni,
+		// codeql[go/disabled-certificate-check] REALITY scanning collects the peer certificate and verifies it explicitly below.
 		InsecureSkipVerify: true,
 		NextProtos:         []string{"h2", "http/1.1"},
 		CurvePreferences:   []tls.CurveID{tls.X25519, tls.X25519MLKEM768},

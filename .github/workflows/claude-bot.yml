@@ -782,6 +782,7 @@ jobs:
         id: merge
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
           PR: ${{ github.event.issue.number }}
         run: |
           set -euo pipefail
@@ -796,13 +797,25 @@ jobs:
           fi
           base=$(gh pr view "$PR" --json baseRefName --jq '.baseRefName')
           head=$(gh pr view "$PR" --json headRefName --jq '.headRefName')
+          head_repo=$(gh pr view "$PR" --json headRepository --jq '.headRepository.nameWithOwner')
+          head_oid=$(gh pr view "$PR" --json headRefOid --jq '.headRefOid')
+          if [ "$head_repo" != "$REPO" ]; then
+            hand_back "This workflow only resolves conflicts for pull request branches in \`${REPO}\`. Fork pull requests must be resolved manually."
+          fi
+          if ! git check-ref-format --branch "$base" >/dev/null 2>&1 || ! git check-ref-format --branch "$head" >/dev/null 2>&1; then
+            hand_back "This pull request uses a branch name this workflow refuses to check out. Resolve the conflicts manually."
+          fi
           git config core.hooksPath /dev/null
           git config core.quotePath false
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          gh pr checkout "$PR"
-          git fetch origin "$base"
-          if git merge --no-commit --no-ff "origin/${base}"; then
+          git fetch --no-tags origin "+refs/heads/${head}:refs/remotes/origin/claude-conflict-head-${PR}"
+          git switch --detach "refs/remotes/origin/claude-conflict-head-${PR}"
+          if [ "$(git rev-parse HEAD)" != "$head_oid" ]; then
+            hand_back "The pull request branch changed while this workflow was preparing it. Re-run the command."
+          fi
+          git fetch --no-tags origin "+refs/heads/${base}:refs/remotes/origin/claude-conflict-base-${PR}"
+          if git merge --no-commit --no-ff "refs/remotes/origin/claude-conflict-base-${PR}"; then
             git merge --abort 2>/dev/null || true
             hand_back "No conflicts with \`${base}\`: the merge applies cleanly, so nothing was changed."
           fi
@@ -919,6 +932,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BOT_PAT: ${{ secrets.CLAUDE_BOT_PAT }}
           PR: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
           BASE: ${{ steps.merge.outputs.base }}
           HEAD_REF: ${{ steps.merge.outputs.head }}
           FILES: ${{ steps.merge.outputs.files }}
@@ -985,10 +999,15 @@ jobs:
             exit 1
           fi
           git commit --no-verify -m "chore: merge ${BASE} into ${HEAD_REF} and resolve conflicts"
-          head_repo=$(gh pr view "$PR" --json headRepositoryOwner,headRepository \
-            --jq '"\(.headRepositoryOwner.login)/\(.headRepository.name)"')
-          git remote set-url --push origin "https://x-access-token:${BOT_PAT}@github.com/${head_repo}.git"
-          git push origin "HEAD:${HEAD_REF}"
+          head_repo=$(gh pr view "$PR" --json headRepository --jq '.headRepository.nameWithOwner')
+          if [ "$head_repo" != "$REPO" ]; then
+            git merge --abort 2>/dev/null || true
+            gh pr comment "$PR" --body "The pull request branch is no longer in \`${REPO}\`, so nothing was pushed."
+            echo "::error::Refusing to push to fork or changed head repository: ${head_repo}"
+            exit 1
+          fi
+          git remote set-url --push origin "https://x-access-token:${BOT_PAT}@github.com/${REPO}.git"
+          git push origin "HEAD:refs/heads/${HEAD_REF}"
           if [ -f /tmp/summary.md ]; then
             gh pr comment "$PR" --body-file /tmp/summary.md
           else
