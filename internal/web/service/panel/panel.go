@@ -40,7 +40,7 @@ type PanelUpdateInfo struct {
 }
 
 const (
-	panelRepository      = "yuchen0x1/xray-panel"
+	panelRepository      = "yuchen0x1/Xray-server-management-panel"
 	panelRepositoryRaw   = "https://raw.githubusercontent.com/" + panelRepository + "/main"
 	panelUpdaterURL      = panelRepositoryRaw + "/update.sh"
 	panelGitHubAPI       = "https://api.github.com/repos/" + panelRepository

@@ -15,7 +15,7 @@ export function generateStaticParams() {
 }
 
 const INSTALL_COMMAND =
-  'bash <(curl -Ls https://raw.githubusercontent.com/yuchen0x1/xray-panel/main/install.sh)';
+  'bash <(curl -Ls https://raw.githubusercontent.com/yuchen0x1/Xray-server-management-panel/main/install.sh)';
 
 export default async function HomePage({ params }: PageProps<'/[lang]'>) {
   const { lang } = await params;

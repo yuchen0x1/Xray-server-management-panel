@@ -11,8 +11,8 @@ export interface InstallOptions {
   webBasePath: string;
 }
 
-const REPO_RAW = 'https://raw.githubusercontent.com/yuchen0x1/xray-panel/main/install.sh';
-const IMAGE = 'ghcr.io/yuchen0x1/xray-panel:latest';
+const REPO_RAW = 'https://raw.githubusercontent.com/yuchen0x1/Xray-server-management-panel/main/install.sh';
+const IMAGE = 'ghcr.io/yuchen0x1/xray-server-management-panel:latest';
 
 function isLatest(version: string): boolean {
   const v = version.trim().toLowerCase();

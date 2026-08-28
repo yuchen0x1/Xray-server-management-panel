@@ -34,13 +34,13 @@ func TestIsNewerVersion(t *testing.T) {
 }
 
 func TestPanelUpdateSource(t *testing.T) {
-	if panelRepository != "yuchen0x1/xray-panel" {
-		t.Fatalf("panel repository = %q, want yuchen0x1/xray-panel", panelRepository)
+	if panelRepository != "yuchen0x1/Xray-server-management-panel" {
+		t.Fatalf("panel repository = %q, want yuchen0x1/Xray-server-management-panel", panelRepository)
 	}
-	if panelUpdaterURL != "https://raw.githubusercontent.com/yuchen0x1/xray-panel/main/update.sh" {
+	if panelUpdaterURL != "https://raw.githubusercontent.com/yuchen0x1/Xray-server-management-panel/main/update.sh" {
 		t.Fatalf("panel updater URL points to %q", panelUpdaterURL)
 	}
-	if panelGitHubAPI != "https://api.github.com/repos/yuchen0x1/xray-panel" {
+	if panelGitHubAPI != "https://api.github.com/repos/yuchen0x1/Xray-server-management-panel" {
 		t.Fatalf("panel GitHub API points to %q", panelGitHubAPI)
 	}
 }

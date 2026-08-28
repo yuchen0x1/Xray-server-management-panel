@@ -7,7 +7,7 @@
 
 ## 项目归属与致谢
 
-- 当前仓库：[yuchen0x1/xray-panel](https://github.com/yuchen0x1/xray-panel)
+- 当前仓库：[yuchen0x1/Xray-server-management-panel](https://github.com/yuchen0x1/Xray-server-management-panel)
 - 原项目：[MHSanaei/3x-ui](https://github.com/MHSanaei/3x-ui)，作者 MHSanaei
 - 更早的 X-UI 项目：[FranzKafkaYu/x-ui](https://github.com/FranzKafkaYu/x-ui)，作者 Franz Kafka Yu
 
@@ -41,7 +41,7 @@
 ### 安装脚本
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/yuchen0x1/xray-panel/main/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/yuchen0x1/Xray-server-management-panel/main/install.sh)
 ```
 
 安装完成后运行 `x-ui`，可以管理服务、登录凭据、证书、数据库和 Xray 设置。
@@ -49,8 +49,8 @@ bash <(curl -Ls https://raw.githubusercontent.com/yuchen0x1/xray-panel/main/inst
 ### Docker
 
 ```bash
-git clone https://github.com/yuchen0x1/xray-panel.git
-cd 3x-ui
+git clone https://github.com/yuchen0x1/Xray-server-management-panel.git
+cd Xray-server-management-panel
 docker compose up -d
 ```
 
@@ -62,7 +62,7 @@ docker compose up -d
 不是当前二改分支的未发布二进制。
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/yuchen0x1/xray-panel/main/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/yuchen0x1/Xray-server-management-panel/main/install.sh)
 ```
 
 ### Windows
