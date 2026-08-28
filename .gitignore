@@ -5,6 +5,7 @@
 .specify/
 .claude/
 .cache/
+.mimosa/
 .sync*
 
 # Ignore log files
