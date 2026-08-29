@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"sync"
 	"time"
 
@@ -67,31 +66,6 @@ func InitLogger(level logging.Level) {
 	multiBackend := logging.MultiLogger(backends...)
 	newLogger.SetBackend(multiBackend)
 	logger = newLogger
-}
-
-// initDefaultBackend creates the console/syslog logging backend.
-// Windows: Uses stderr directly (no syslog support)
-// Unix-like: Attempts syslog, falls back to stderr
-func initDefaultBackend() logging.Backend {
-	var backend logging.Backend
-	includeTime := false
-
-	if runtime.GOOS == "windows" {
-		// Windows: Use stderr directly (no syslog support)
-		backend = logging.NewLogBackend(os.Stderr, "", 0)
-		includeTime = true
-	} else {
-		// Unix-like: Try syslog, fallback to stderr
-		if syslogBackend, err := logging.NewSyslogBackend(""); err != nil {
-			fmt.Fprintf(os.Stderr, "syslog backend disabled: %v\n", err)
-			backend = logging.NewLogBackend(os.Stderr, "", 0)
-			includeTime = os.Getppid() > 0
-		} else {
-			backend = syslogBackend
-		}
-	}
-
-	return logging.NewBackendFormatter(backend, newFormatter(includeTime))
 }
 
 // initFileBackend creates the file logging backend with size/age‑bounded rotation
