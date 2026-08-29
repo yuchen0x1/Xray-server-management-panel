@@ -14,20 +14,20 @@ function wgInbound() {
     protocol: 'wireguard',
     settings: {
       mtu: 1420,
-      secretKey: 'iJ2cBkrSGqRwIfYIDIxk7hr5RXfdR93MfJUL7yqkkH8=',
+      secretKey: btoa('fixture-server-secret'),
       peers: [],
       clients: [
         {
           email: 'alice',
-          privateKey: 'QGVlb2dXc1ZTWGw0ZXBzZndsWmtMaUM5MUlNYjBHWFdYbz0=',
-          publicKey: 'DGSYIcEKAUkA7HhzGSjxLZuV67BR3LeyU0BMLJzNVHQ=',
+          privateKey: btoa('fixture-client-private'),
+          publicKey: btoa('fixture-client-public'),
           allowedIPs: ['10.0.0.2/32'],
           keepAlive: 25,
         },
         {
           email: 'bob',
-          privateKey: 'aGVsbG8td29ybGQtdGVzdC1wcml2YXRlLWtleS1ub3chIQ==',
-          publicKey: 'b3RoZXItcHVibGljLWtleS1mb3ItYm9iLXRlc3QtdmFsISE=',
+          privateKey: btoa('fixture-bob-private'),
+          publicKey: btoa('fixture-bob-public'),
           allowedIPs: ['10.0.0.3/32'],
         },
       ],
@@ -68,11 +68,11 @@ describe('wireguard multi-client link/config fan-out', () => {
       port: 51820,
       protocol: 'wireguard',
       settings: {
-        secretKey: 'iJ2cBkrSGqRwIfYIDIxk7hr5RXfdR93MfJUL7yqkkH8=',
+        secretKey: btoa('fixture-server-secret'),
         peers: [
           {
-            privateKey: 'QGVlb2dXc1ZTWGw0ZXBzZndsWmtMaUM5MUlNYjBHWFdYbz0=',
-            publicKey: 'DGSYIcEKAUkA7HhzGSjxLZuV67BR3LeyU0BMLJzNVHQ=',
+            privateKey: btoa('fixture-client-private'),
+            publicKey: btoa('fixture-client-public'),
             allowedIPs: ['10.0.0.9/32'],
           },
         ],

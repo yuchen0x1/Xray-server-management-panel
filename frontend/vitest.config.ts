@@ -17,6 +17,7 @@ export default defineConfig({
   },
   test: {
     globals: false,
+    exclude: ['src/**/*.stories.{ts,tsx}'],
     projects: [
       {
         extends: true,
@@ -44,6 +45,7 @@ export default defineConfig({
         plugins: [storybookTest({ configDir: path.join(dirname, '.storybook') })],
         test: {
           name: 'storybook',
+          include: ['src/**/*.stories.{ts,tsx}'],
           browser: {
             enabled: true,
             headless: true,

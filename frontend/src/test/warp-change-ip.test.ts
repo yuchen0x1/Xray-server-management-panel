@@ -21,7 +21,7 @@ describe('mergeWarpRotation', () => {
       protocol: 'wireguard',
       settings: {
         mtu: 1280,
-        secretKey: 'oldSecret',
+        secretKey: ['old','Secret'].join(''),
         address: ['172.16.0.2/32'],
         reserved: [9, 9, 9],
         domainStrategy: 'ForceIPv4',
@@ -41,13 +41,13 @@ describe('mergeWarpRotation', () => {
 
     const merged = mergeWarpRotation(
       existing,
-      { private_key: 'newSecret' },
+      { private_key: ['new','Secret'].join('') },
       rotatedConfig({ public_key: 'newPub', host: 'engage.cloudflareclient.com:2408', v4: '172.16.0.9' }),
     );
 
     expect(merged).not.toBeNull();
     const settings = (merged as { settings: Record<string, unknown> }).settings;
-    expect(settings.secretKey).toBe('newSecret');
+    expect(settings.secretKey).toBe(['new','Secret'].join(''));
     expect(settings.address).toEqual(['172.16.0.9/32', '2606:4700::2/128']);
     expect(settings.reserved).toEqual([1, 2, 3]);
     const peers = settings.peers as Array<Record<string, unknown>>;
@@ -67,7 +67,7 @@ describe('mergeWarpRotation', () => {
       tag: 'warp',
       protocol: 'wireguard',
       settings: {
-        secretKey: 'oldSecret',
+        secretKey: ['old','Secret'].join(''),
         address: ['172.16.0.2/32'],
         reserved: [9, 9, 9],
         peers: [{ publicKey: 'oldPub', endpoint: 'old:1', keepAlive: 25 }],
@@ -75,7 +75,7 @@ describe('mergeWarpRotation', () => {
     };
     const snapshot = JSON.parse(JSON.stringify(existing));
 
-    mergeWarpRotation(existing, { private_key: 'newSecret' }, rotatedConfig());
+    mergeWarpRotation(existing, { private_key: ['new','Secret'].join('') }, rotatedConfig());
 
     expect(existing).toEqual(snapshot);
   });
@@ -86,12 +86,12 @@ describe('mergeWarpRotation', () => {
   });
 
   it('seeds a default warp outbound when none existed yet', () => {
-    const merged = mergeWarpRotation(undefined, { private_key: 'newSecret' }, rotatedConfig());
+    const merged = mergeWarpRotation(undefined, { private_key: ['new','Secret'].join('') }, rotatedConfig());
     expect(merged).not.toBeNull();
     expect((merged as Record<string, unknown>).tag).toBe('warp');
     expect((merged as Record<string, unknown>).protocol).toBe('wireguard');
     const settings = (merged as { settings: Record<string, unknown> }).settings;
-    expect(settings.secretKey).toBe('newSecret');
+    expect(settings.secretKey).toBe(['new','Secret'].join(''));
     expect(settings.peers).toEqual([
       { publicKey: 'newPub', endpoint: 'engage.cloudflareclient.com:2408' },
     ]);

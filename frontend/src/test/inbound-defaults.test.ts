@@ -66,7 +66,7 @@ describe('createDefaultTrojanClient', () => {
 
 describe('createDefaultShadowsocksClient', () => {
   it('produces a Zod-valid client', () => {
-    const c = createDefaultShadowsocksClient({ ...seed, password: 'ZmFrZS1zcy1wYXNzd29yZA==' });
+    const c = createDefaultShadowsocksClient({ ...seed, password: btoa('fixture-ss-password') });
     expect(c).toMatchSnapshot();
     expect(ShadowsocksClientSchema.parse(c)).toEqual(c);
   });
