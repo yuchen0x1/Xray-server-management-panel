@@ -50,6 +50,283 @@ is_domain() {
     [[ "$1" =~ ^([A-Za-z0-9](-*[A-Za-z0-9])*\.)+(xn--[a-z0-9]{2,}|[A-Za-z]{2,})$ ]] && return 0 || return 1
 }
 
+# ============================================================
+# Dual download channel (mainland China -> Gitee, elsewhere -> GitHub).
+# The menu's install/update entry points fetch the installer, updater and
+# x-ui.sh itself from a region-selected primary source with automatic
+# fallback to the other channel, so a broken mirror can never brick an
+# update. Set XUI_DOWNLOAD_CHANNEL=cn|global to override the detection.
+# Security: every URL used here is a fixed public endpoint. _region_url_safe
+# rejects anything that is not http(s) or whose host is localhost / an IP
+# literal (covers 127.0.0.1 and the private/reserved IPv4 ranges), and the
+# geo probes are additionally pinned to _region_probe_host_allowed.
+# ============================================================
+_REGION_REPO_OWNER="yuchen0x1"
+_REGION_REPO_NAME="Xray-server-management-panel"
+XUI_UPDATE_REGION=""
+
+_region_curl() {
+    curl "$@"
+}
+
+# Accept only http(s) URLs whose host is a public domain name: rejects
+# localhost, *.local and every IPv4/IPv6 literal (loopback, RFC1918,
+# link-local, CGNAT, ...). Our endpoints are always domain names, so any
+# literal host here means someone tampered with the URL.
+_region_url_safe() {
+    local url="$1" host
+    case "$url" in
+        https://* | http://*) : ;;
+        *) return 1 ;;
+    esac
+    host="${url#*://}"
+    host="${host%%[/?#]*}"
+    host="${host##*@}"
+    # Bracketed IPv6 or a bare IPv6 literal (2+ colons) can never be one of
+    # our fixed domain endpoints.
+    if [[ "$host" == *"["* || "$host" == *"]"* ]]; then
+        return 1
+    fi
+    if [[ "${host//[^:]/}" == *:*:* ]]; then
+        return 1
+    fi
+    host="${host%%:*}"  # strip :port (at most a single colon is left here)
+    case "$host" in
+        localhost | localhost.localdomain | *.localhost | *.local) return 1 ;;
+    esac
+    if [[ "$host" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+        return 1
+    fi
+    return 0
+}
+
+# Host whitelist for the geo-probe / endpoint-race requests.
+_region_probe_host_allowed() {
+    case "$1" in
+        qifu-api.baidubce.com | api.ip.sb | gitee.com | api.github.com) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# Build + validate a probe URL for whitelisted host $1 and path $2.
+_region_probe_url() {
+    local url="https://$1/$2"
+    _region_probe_host_allowed "$1" || return 1
+    _region_url_safe "$url" || return 1
+    echo "$url"
+}
+
+# Concurrent Gitee vs GitHub releases/latest race; whichever endpoint answers
+# first with a valid release payload wins. Empty output = both failed.
+_region_race_probe() {
+    local gitee_url github_url t_gitee t_github p1 p2 winner=""
+    gitee_url="$(_region_probe_url "gitee.com" "api/v5/repos/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/latest")"
+    github_url="$(_region_probe_url "api.github.com" "repos/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/latest")"
+    if [[ -z "$gitee_url" || -z "$github_url" ]]; then
+        return 0
+    fi
+    t_gitee="$(mktemp "${TMPDIR:-/tmp}/xui-region-gitee.XXXXXX")" || return 0
+    t_github="$(mktemp "${TMPDIR:-/tmp}/xui-region-github.XXXXXX")" || { rm -f "$t_gitee"; return 0; }
+    _region_curl -m 3 -s -o "$t_gitee" "$gitee_url" > /dev/null 2>&1 &
+    p1=$!
+    _region_curl -m 3 -s -o "$t_github" "$github_url" > /dev/null 2>&1 &
+    p2=$!
+    while kill -0 "$p1" 2> /dev/null && kill -0 "$p2" 2> /dev/null; do
+        sleep 0.1 2> /dev/null || sleep 1
+    done
+    if ! kill -0 "$p1" 2> /dev/null && wait "$p1" 2> /dev/null && grep -q '"tag_name"' "$t_gitee" 2> /dev/null; then
+        winner="cn"
+    elif ! kill -0 "$p2" 2> /dev/null && wait "$p2" 2> /dev/null && grep -q '"tag_name"' "$t_github" 2> /dev/null; then
+        winner="global"
+    fi
+    if [[ -z "$winner" ]]; then
+        # The first finisher failed; wait out the remaining probe (bounded by -m 3).
+        if wait "$p1" 2> /dev/null && grep -q '"tag_name"' "$t_gitee" 2> /dev/null; then
+            winner="cn"
+        elif wait "$p2" 2> /dev/null && grep -q '"tag_name"' "$t_github" 2> /dev/null; then
+            winner="global"
+        fi
+    fi
+    wait 2> /dev/null
+    rm -f "$t_gitee" "$t_github"
+    echo "$winner"
+}
+
+# Print "cn" or "global" on stdout; channel logs go to stderr. Cached in
+# XUI_UPDATE_REGION and, across processes, in a temp file trusted for 24h.
+detect_update_region() {
+    local cache_file="${TMPDIR:-/tmp}/x-ui-download-region.cache"
+    local region="" probe_url resp
+
+    # 0) explicit override wins
+    case "${XUI_DOWNLOAD_CHANNEL:-}" in
+        cn | global)
+            XUI_UPDATE_REGION="${XUI_DOWNLOAD_CHANNEL}"
+            echo -e "${yellow}Download channel override active: ${XUI_DOWNLOAD_CHANNEL}${plain}" >&2
+            echo "${XUI_DOWNLOAD_CHANNEL}"
+            return 0
+            ;;
+    esac
+
+    # 1) already detected in this process
+    if [[ "${XUI_UPDATE_REGION:-}" == "cn" || "${XUI_UPDATE_REGION:-}" == "global" ]]; then
+        echo "${XUI_UPDATE_REGION}"
+        return 0
+    fi
+
+    # 2) recent result cached on disk
+    if [[ -f "$cache_file" ]] && find "$cache_file" -mmin -1440 2> /dev/null | grep -q .; then
+        region="$(head -n 1 "$cache_file" 2> /dev/null | tr -d '[:space:]')"
+        if [[ "$region" == "cn" || "$region" == "global" ]]; then
+            XUI_UPDATE_REGION="$region"
+            echo -e "${yellow}Using cached download channel: ${region}${plain}" >&2
+            echo "$region"
+            return 0
+        fi
+    fi
+
+    # a) Baidu qifu geo API: "中国"/"China" -> cn; a successful answer for any
+    #    other country -> global.
+    probe_url="$(_region_probe_url "qifu-api.baidubce.com" "ip/local/geo/v1/district")"
+    if [[ -n "$probe_url" ]]; then
+        resp="$(_region_curl -m 3 -s "$probe_url" 2> /dev/null)"
+        if [[ "$resp" == *中国* || "$resp" == *China* ]]; then
+            region="cn"
+        elif [[ "$resp" == *'"code"'*'"Success"'* ]]; then
+            region="global"
+        fi
+    fi
+
+    # b) ip.sb geo API: "CN" -> cn; any other valid geo answer -> global.
+    if [[ -z "$region" ]]; then
+        probe_url="$(_region_probe_url "api.ip.sb" "geoip")"
+        if [[ -n "$probe_url" ]]; then
+            resp="$(_region_curl -m 3 -s "$probe_url" 2> /dev/null)"
+            if [[ "$resp" == *'"CN"'* ]]; then
+                region="cn"
+            elif [[ "$resp" == *'"country'* ]]; then
+                region="global"
+            fi
+        fi
+    fi
+
+    # c) both geo probes failed -> race Gitee vs GitHub, fastest wins.
+    if [[ -z "$region" ]]; then
+        region="$(_region_race_probe)"
+    fi
+
+    # d) everything failed -> global (GitHub as the fallback channel).
+    if [[ -z "$region" ]]; then
+        region="global"
+    fi
+
+    XUI_UPDATE_REGION="$region"
+    printf '%s' "$region" > "$cache_file" 2> /dev/null
+    if [[ "$region" == "cn" ]]; then
+        echo -e "${green}Detected mainland China network: Gitee is the primary download source, GitHub the fallback.${plain}" >&2
+    else
+        echo -e "${green}GitHub is the primary download source, Gitee the fallback.${plain}" >&2
+    fi
+    echo "$region"
+    return 0
+}
+
+# Extract tag_name from GitHub (pretty-printed) or Gitee (single-line) JSON.
+_region_parse_tag() {
+    sed -nE 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' | head -n 1
+}
+
+# Latest release tag via the region-selected API, falling back to the other.
+_region_fetch_latest_tag() {
+    local region primary_url fallback_url tag
+    region="$(detect_update_region)"
+    if [[ "$region" == "cn" ]]; then
+        primary_url="$(_region_probe_url "gitee.com" "api/v5/repos/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/latest")"
+        fallback_url="$(_region_probe_url "api.github.com" "repos/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/latest")"
+    else
+        primary_url="$(_region_probe_url "api.github.com" "repos/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/latest")"
+        fallback_url="$(_region_probe_url "gitee.com" "api/v5/repos/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/latest")"
+    fi
+    if [[ -n "$primary_url" ]]; then
+        echo -e "Fetching the latest release tag from ${primary_url} ..." >&2
+        tag="$(_region_curl -Ls --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "$primary_url" 2> /dev/null | _region_parse_tag)"
+        if [[ -n "$tag" ]]; then
+            echo "$tag"
+            return 0
+        fi
+    fi
+    if [[ -n "$fallback_url" ]]; then
+        echo -e "${yellow}Primary channel failed, falling back to ${fallback_url} ...${plain}" >&2
+        tag="$(_region_curl -Ls --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "$fallback_url" 2> /dev/null | _region_parse_tag)"
+        if [[ -n "$tag" ]]; then
+            echo "$tag"
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# Download the release tarball from the primary channel for the detected
+# region, with automatic fallback to the other channel.
+_region_download_release_tarball() {
+    local out="$1" tag="$2" region
+    local primary_base fallback_base try_url
+    region="$(detect_update_region)"
+    if [[ "$region" == "cn" ]]; then
+        primary_base="https://gitee.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/download"
+        fallback_base="https://github.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/download"
+    else
+        primary_base="https://github.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/download"
+        fallback_base="https://gitee.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/download"
+    fi
+    for try_url in "${primary_base}/${tag}/x-ui-linux-$(arch).tar.gz" "${fallback_base}/${tag}/x-ui-linux-$(arch).tar.gz"; do
+        if ! _region_url_safe "$try_url"; then
+            echo -e "${red}Refusing unsafe download URL: ${try_url}${plain}" >&2
+            continue
+        fi
+        echo -e "Downloading $(basename "$try_url") (${tag}) from ${try_url} ..." >&2
+        rm -f "$out"
+        _region_curl -fLR --retry 5 --retry-delay 3 --connect-timeout 15 --speed-limit 1 --speed-time 300 -o "$out" "$try_url" > /dev/null 2>&1
+        if [[ $? -eq 0 && -s "$out" ]]; then
+            echo -e "${green}Downloaded $(basename "$try_url") successfully.${plain}" >&2
+            return 0
+        fi
+        echo -e "${yellow}Download from ${try_url} failed, trying the other channel ...${plain}" >&2
+    done
+    rm -f "$out"
+    return 1
+}
+
+# Fetch a repo file (raw) from the primary channel, falling back to the other.
+# $1 = output file, $2 = repo path, $3 = git ref (default: main).
+_region_fetch_raw_file() {
+    local out="$1" repo_path="$2" ref="${3:-main}" region
+    local primary_url fallback_url try_url
+    region="$(detect_update_region)"
+    if [[ "$region" == "cn" ]]; then
+        primary_url="https://gitee.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/raw/${ref}/${repo_path}"
+        fallback_url="https://raw.githubusercontent.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/${ref}/${repo_path}"
+    else
+        primary_url="https://raw.githubusercontent.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/${ref}/${repo_path}"
+        fallback_url="https://gitee.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/raw/${ref}/${repo_path}"
+    fi
+    for try_url in "$primary_url" "$fallback_url"; do
+        if ! _region_url_safe "$try_url"; then
+            echo -e "${red}Refusing unsafe raw URL: ${try_url}${plain}" >&2
+            continue
+        fi
+        echo -e "Fetching ${repo_path} (${ref}) from ${try_url} ..." >&2
+        rm -f "$out"
+        _region_curl -fLRo "$out" "$try_url" > /dev/null 2>&1
+        if [[ $? -eq 0 && -s "$out" ]]; then
+            return 0
+        fi
+        echo -e "${yellow}Fetch from ${try_url} failed, trying the other channel ...${plain}" >&2
+    done
+    rm -f "$out"
+    return 1
+}
+
 # acme.sh's standalone server binds IPv4 by default; --listen-v6 makes it
 # v6-only, which breaks HTTP-01 validation when the domain's A record points
 # at this host's IPv4 (#4994). Only force IPv6 when the host has no global
@@ -129,8 +406,18 @@ before_show_menu() {
 }
 
 install() {
-    bash <(curl -Ls https://raw.githubusercontent.com/yuchen0x1/Xray-server-management-panel/main/install.sh)
-    if [[ $? == 0 ]]; then
+    # Fetch the installer from the region-selected channel (Gitee for cn,
+    # GitHub otherwise) into a temp file so a failing primary source can
+    # fall back to the other one before anything is executed.
+    local installer_tmp="${TMPDIR:-/tmp}/x-ui-installer.$$.sh"
+    if ! _region_fetch_raw_file "${installer_tmp}" "install.sh"; then
+        LOGE "Failed to download the installer, please make sure this machine can reach Gitee or GitHub"
+        return 1
+    fi
+    bash "${installer_tmp}"
+    local rc=$?
+    rm -f "${installer_tmp}"
+    if [[ $rc == 0 ]]; then
         if [[ $# == 0 ]]; then
             start
         else
@@ -148,8 +435,18 @@ update() {
         fi
         return 0
     fi
-    bash <(curl -Ls https://raw.githubusercontent.com/yuchen0x1/Xray-server-management-panel/main/update.sh)
-    if [[ $? == 0 ]]; then
+    # Fetch the updater from the region-selected channel (Gitee for cn,
+    # GitHub otherwise) into a temp file so a failing primary source can
+    # fall back to the other one before anything is executed.
+    local updater_tmp="${TMPDIR:-/tmp}/x-ui-updater.$$.sh"
+    if ! _region_fetch_raw_file "${updater_tmp}" "update.sh"; then
+        LOGE "Failed to download the updater, please make sure this machine can reach Gitee or GitHub"
+        return 1
+    fi
+    bash "${updater_tmp}"
+    local rc=$?
+    rm -f "${updater_tmp}"
+    if [[ $rc == 0 ]]; then
         LOGI "Update is complete, Panel has automatically restarted "
         before_show_menu
     fi
@@ -166,8 +463,15 @@ update_dev() {
     fi
     # XUI_UPDATE_TAG tells update.sh to install the dev-latest pre-release
     # instead of the latest stable tag.
-    XUI_UPDATE_TAG="dev-latest" bash <(curl -Ls https://raw.githubusercontent.com/yuchen0x1/Xray-server-management-panel/main/update.sh)
-    if [[ $? == 0 ]]; then
+    local updater_tmp="${TMPDIR:-/tmp}/x-ui-updater.$$.sh"
+    if ! _region_fetch_raw_file "${updater_tmp}" "update.sh"; then
+        LOGE "Failed to download the updater, please make sure this machine can reach Gitee or GitHub"
+        return 1
+    fi
+    XUI_UPDATE_TAG="dev-latest" bash "${updater_tmp}"
+    local rc=$?
+    rm -f "${updater_tmp}"
+    if [[ $rc == 0 ]]; then
         LOGI "Dev update is complete, Panel has automatically restarted "
         before_show_menu
     fi
@@ -208,6 +512,27 @@ replace_xui_script() {
     return 0
 }
 
+# Region-aware x-ui.sh self-update: tries the raw URL of the detected channel
+# first (Gitee for cn, GitHub otherwise), then the other one. $1 is passed
+# through to replace_xui_script ("true" enables If-Modified-Since against the
+# installed copy).
+_region_replace_xui_script_dual() {
+    local mode="$1" region primary_url fallback_url
+    region="$(detect_update_region)"
+    if [[ "$region" == "cn" ]]; then
+        primary_url="https://gitee.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/raw/main/x-ui.sh"
+        fallback_url="https://raw.githubusercontent.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/main/x-ui.sh"
+    else
+        primary_url="https://raw.githubusercontent.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/main/x-ui.sh"
+        fallback_url="https://gitee.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/raw/main/x-ui.sh"
+    fi
+    if replace_xui_script "$primary_url" "$mode"; then
+        return 0
+    fi
+    LOGI "Primary source failed, falling back to ${fallback_url} ..."
+    replace_xui_script "$fallback_url" "$mode"
+}
+
 update_menu() {
     echo -e "${yellow}Updating Menu${plain}"
     confirm "This function will update the menu to the latest changes." "y"
@@ -219,7 +544,7 @@ update_menu() {
         return 0
     fi
 
-    if replace_xui_script "https://raw.githubusercontent.com/yuchen0x1/Xray-server-management-panel/main/x-ui.sh" "false"; then
+    if _region_replace_xui_script_dual "false"; then
         chmod +x ${xui_folder}/x-ui.sh
         echo -e "${green}Update successful. The panel has automatically restarted.${plain}"
         exit 0
@@ -237,11 +562,16 @@ legacy_version() {
         echo "Panel version cannot be empty. Exiting."
         exit 1
     fi
-    # Use the entered panel version in the download link
-    install_command="bash <(curl -Ls "https://raw.githubusercontent.com/yuchen0x1/Xray-server-management-panel/v$tag_version/install.sh") v$tag_version"
-
-    echo "Downloading and installing panel version $tag_version..."
-    eval $install_command
+    # Fetch the pinned installer from the region-selected channel (Gitee for
+    # cn, GitHub otherwise) at the requested version tag.
+    local installer_tmp="${TMPDIR:-/tmp}/x-ui-installer.$$.sh"
+    if ! _region_fetch_raw_file "${installer_tmp}" "install.sh" "v${tag_version}"; then
+        echo -e "${red}Failed to download the v${tag_version} installer from Gitee/GitHub.${plain}"
+        rm -f "${installer_tmp}"
+        return 1
+    fi
+    bash "${installer_tmp}" "v${tag_version}"
+    rm -f "${installer_tmp}"
 }
 
 # Function to handle the deletion of the script file
@@ -836,12 +1166,12 @@ enable_bbr() {
 }
 
 update_shell() {
-    if replace_xui_script "https://github.com/yuchen0x1/Xray-server-management-panel/raw/main/x-ui.sh" "true"; then
+    if _region_replace_xui_script_dual "true"; then
         LOGI "Upgrade script succeeded, Please rerun the script"
         before_show_menu
     else
         echo ""
-        LOGE "Failed to download script, Please check whether the machine can connect Github"
+        LOGE "Failed to download script, Please check whether the machine can connect Gitee or Github"
         before_show_menu
     fi
 }
