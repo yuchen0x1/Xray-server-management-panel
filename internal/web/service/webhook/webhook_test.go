@@ -13,13 +13,13 @@ import (
 
 func TestWebhookSubscriberDispatchesPayload(t *testing.T) {
 	var received atomic.Int32
-	var lastEvent string
+	var lastEvent atomic.Value
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		received.Add(1)
 		var p Payload
 		if err := json.NewDecoder(r.Body).Decode(&p); err == nil {
-			lastEvent = p.Event
+			lastEvent.Store(p.Event)
 		}
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -34,13 +34,16 @@ func TestWebhookSubscriberDispatchesPayload(t *testing.T) {
 		Timestamp: time.Now(),
 	})
 
-	time.Sleep(100 * time.Millisecond)
+	deadline := time.Now().Add(2 * time.Second)
+	for received.Load() == 0 && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
 
 	if received.Load() == 0 {
-		t.Errorf("expected webhook call to server, but got none")
+		t.Fatal("expected webhook call to server, but got none")
 	}
-	if lastEvent != string(eventbus.EventOutboundDown) {
-		t.Errorf("expected event %s, got %s", eventbus.EventOutboundDown, lastEvent)
+	if got, _ := lastEvent.Load().(string); got != string(eventbus.EventOutboundDown) {
+		t.Errorf("expected event %s, got %s", eventbus.EventOutboundDown, got)
 	}
 }
 
