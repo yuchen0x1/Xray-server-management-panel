@@ -23,6 +23,7 @@ import {
   AndroidOutlined,
   AppleOutlined,
   CopyOutlined,
+  DesktopOutlined,
   DownOutlined,
   DownloadOutlined,
   MoonFilled,
@@ -147,6 +148,34 @@ export default function SubPage() {
   const happUrl = useMemo(() => `happ://add/${subUrl}`, []);
   const incyUrl = useMemo(() => `incy://add/${subUrl}`, []);
 
+  const clashUrl = useMemo(() => {
+    const targetUrl = subClashUrl || subUrl;
+    if (!targetUrl) return '';
+    return `clash://install-config?url=${encodeURIComponent(targetUrl)}&name=${encodeURIComponent(subTitle || sId || 'Subscription')}`;
+  }, []);
+
+  const singboxUrl = useMemo(() => {
+    const targetUrl = subJsonUrl || subUrl;
+    if (!targetUrl) return '';
+    return `sing-box://import-remote-profile?url=${encodeURIComponent(targetUrl)}#${encodeURIComponent(subTitle || sId || 'Subscription')}`;
+  }, []);
+
+  const hiddifyUrl = useMemo(() => {
+    if (!subUrl) return '';
+    return `hiddify://install-sub?url=${encodeURIComponent(subUrl)}&name=${encodeURIComponent(subTitle || sId || 'Subscription')}`;
+  }, []);
+
+  const surgeUrl = useMemo(() => {
+    const targetUrl = subClashUrl || subUrl;
+    if (!targetUrl) return '';
+    return `surge:///install-config?url=${encodeURIComponent(targetUrl)}`;
+  }, []);
+
+  const loonUrl = useMemo(() => {
+    if (!subUrl) return '';
+    return `loon://import?sub=${encodeURIComponent(subUrl)}&title=${encodeURIComponent(subTitle || sId || 'Subscription')}`;
+  }, []);
+
   const pageClass = useMemo(() => {
     const classes = ['subscription-page'];
     if (isDark) classes.push('is-dark');
@@ -203,22 +232,36 @@ export default function SubPage() {
       label: 'V2RayNG',
       onClick: () => open(`v2rayng://install-config?url=${encodeURIComponent(subUrl)}`),
     },
-    { key: 'android-singbox', label: 'Sing-box', onClick: () => copy(subUrl) },
-    { key: 'android-v2raytun', label: 'V2RayTun', onClick: () => copy(subUrl) },
-    { key: 'android-npvtunnel', label: 'NPV Tunnel', onClick: () => copy(subUrl) },
+    { key: 'android-clash', label: 'Clash / Mihomo', onClick: () => open(clashUrl) },
+    { key: 'android-singbox', label: 'Sing-box', onClick: () => open(singboxUrl) },
+    { key: 'android-hiddify', label: 'Hiddify', onClick: () => open(hiddifyUrl) },
     { key: 'android-happ', label: 'Happ', onClick: () => open(`happ://add/${subUrl}`) },
     { key: 'android-incy', label: 'Incy', onClick: () => open(`incy://add/${subUrl}`) },
-  ], [copy, open]);
+    { key: 'android-v2raytun', label: 'V2RayTun', onClick: () => copy(subUrl) },
+    { key: 'android-npvtunnel', label: 'NPV Tunnel', onClick: () => copy(subUrl) },
+  ], [copy, open, clashUrl, singboxUrl, hiddifyUrl]);
 
   const iosMenuItems = useMemo(() => [
     { key: 'ios-shadowrocket', label: 'Shadowrocket', onClick: () => open(shadowrocketUrl) },
+    { key: 'ios-surge', label: 'Surge', onClick: () => open(surgeUrl) },
+    { key: 'ios-loon', label: 'Loon', onClick: () => open(loonUrl) },
+    { key: 'ios-singbox', label: 'Sing-box', onClick: () => open(singboxUrl) },
+    { key: 'ios-hiddify', label: 'Hiddify', onClick: () => open(hiddifyUrl) },
     { key: 'ios-v2box', label: 'V2Box', onClick: () => open(v2boxUrl) },
     { key: 'ios-streisand', label: 'Streisand', onClick: () => open(streisandUrl) },
-    { key: 'ios-v2raytun', label: 'V2RayTun', onClick: () => copy(subUrl) },
-    { key: 'ios-npvtunnel', label: 'NPV Tunnel', onClick: () => copy(subUrl) },
     { key: 'ios-happ', label: 'Happ', onClick: () => open(happUrl) },
     { key: 'ios-incy', label: 'Incy', onClick: () => open(incyUrl) },
-  ], [copy, open, shadowrocketUrl, v2boxUrl, streisandUrl, happUrl, incyUrl]);
+    { key: 'ios-v2raytun', label: 'V2RayTun', onClick: () => copy(subUrl) },
+    { key: 'ios-npvtunnel', label: 'NPV Tunnel', onClick: () => copy(subUrl) },
+  ], [copy, open, shadowrocketUrl, surgeUrl, loonUrl, singboxUrl, hiddifyUrl, v2boxUrl, streisandUrl, happUrl, incyUrl]);
+
+  const desktopMenuItems = useMemo(() => [
+    { key: 'desktop-clash', label: 'Clash Verge / Mihomo', onClick: () => open(clashUrl) },
+    { key: 'desktop-singbox', label: 'Sing-box', onClick: () => open(singboxUrl) },
+    { key: 'desktop-hiddify', label: 'Hiddify', onClick: () => open(hiddifyUrl) },
+    { key: 'desktop-v2rayn', label: 'v2rayN', onClick: () => copy(subUrl) },
+    { key: 'desktop-copy-sub', label: t('pages.inbounds.copyLink'), onClick: () => copy(subUrl) },
+  ], [copy, open, clashUrl, singboxUrl, hiddifyUrl, t]);
 
   const langMenuItems = useMemo(
     () => (LanguageManager.supportedLanguages as { value: string; name: string; icon: string }[]).map((l) => ({
@@ -514,17 +557,24 @@ export default function SubPage() {
                 )}
 
                 <Row gutter={[8, 8]} justify="center" className="apps-row">
-                  <Col xs={24} sm={12} className="app-col">
+                  <Col xs={24} sm={8} className="app-col">
                     <Dropdown trigger={['click']} menu={{ items: androidMenuItems }}>
                       <Button block={isMobile} size="large" type="primary">
                         <AndroidOutlined /> Android <DownOutlined />
                       </Button>
                     </Dropdown>
                   </Col>
-                  <Col xs={24} sm={12} className="app-col">
+                  <Col xs={24} sm={8} className="app-col">
                     <Dropdown trigger={['click']} menu={{ items: iosMenuItems }}>
                       <Button block={isMobile} size="large" type="primary">
                         <AppleOutlined /> iOS <DownOutlined />
+                      </Button>
+                    </Dropdown>
+                  </Col>
+                  <Col xs={24} sm={8} className="app-col">
+                    <Dropdown trigger={['click']} menu={{ items: desktopMenuItems }}>
+                      <Button block={isMobile} size="large" type="primary">
+                        <DesktopOutlined /> Desktop <DownOutlined />
                       </Button>
                     </Dropdown>
                   </Col>
