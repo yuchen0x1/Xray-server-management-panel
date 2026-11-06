@@ -83,9 +83,9 @@ func (s *NodeService) FetchCertFingerprint(ctx context.Context, n *model.Node) (
 		return "", err
 	}
 	client := &http.Client{
+		// codeql[go/disabled-certificate-check] This certificate-discovery probe must read the untrusted leaf before the UI can pin it.
 		Transport: &http.Transport{
-			DialContext: netsafe.SSRFGuardedDialContext,
-			// codeql[go/disabled-certificate-check] This certificate-discovery probe must read the untrusted leaf before the UI can pin it.
+			DialContext:     netsafe.SSRFGuardedDialContext,
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}

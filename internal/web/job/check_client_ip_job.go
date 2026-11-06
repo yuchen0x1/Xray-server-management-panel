@@ -132,7 +132,7 @@ func chunkEmails(s []string, size int) [][]string {
 	if len(s) == 0 {
 		return nil
 	}
-	chunks := make([][]string, 0, (len(s)+size-1)/size)
+	chunks := make([][]string, 0, len(s)/size+min(len(s)%size, 1))
 	for size < len(s) {
 		s, chunks = s[size:], append(chunks, s[:size])
 	}
