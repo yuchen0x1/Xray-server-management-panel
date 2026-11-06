@@ -55,6 +55,12 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 
 	engine := gin.Default()
 
+	trustedProxyCIDRs, err := s.settingService.GetTrustedProxyCIDRs()
+	if err != nil {
+		trustedProxyCIDRs = ""
+	}
+	engine.SetTrustedProxies(parseTrustedProxyList(trustedProxyCIDRs))
+
 	subDomain, err := s.settingService.GetSubDomain()
 	if err != nil {
 		return nil, err

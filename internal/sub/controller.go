@@ -74,6 +74,8 @@ type SUBController struct {
 	subClashService *SubClashService
 	settingService  service.SettingService
 
+	limiter *subLimiter
+
 	subTemplateMu    sync.RWMutex
 	subTemplateCache map[string]*cachedSubTemplate
 }
@@ -271,6 +273,7 @@ func NewSUBController(g *gin.RouterGroup, options ...SUBControllerOption) *SUBCo
 		subJsonService:  NewSubJsonService(config.subJsonMux, config.subJsonRules, config.subJsonFinalMask, sub),
 		subClashService: NewSubClashService(config.subClashEnableRouting, config.subClashRules, sub),
 
+		limiter:          newSubLimiter(subLimitMaxMisses, subLimitWindow, subLimitCooldown),
 		subTemplateCache: map[string]*cachedSubTemplate{},
 	}
 	a.initRouter(g)
@@ -280,6 +283,7 @@ func NewSUBController(g *gin.RouterGroup, options ...SUBControllerOption) *SUBCo
 // initRouter registers HTTP routes for subscription links and JSON endpoints
 // on the provided router group.
 func (a *SUBController) initRouter(g *gin.RouterGroup) {
+	g.Use(a.rateLimitMiddleware())
 	gLink := g.Group(a.subPath)
 	gLink.GET(":subid", a.subs)
 	gLink.HEAD(":subid", a.subs)
