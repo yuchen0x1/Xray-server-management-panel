@@ -27,8 +27,8 @@ func TestGetPanelVersion(t *testing.T) {
 
 func TestGetBaseVersionIsUtf8(t *testing.T) {
 	got := GetBaseVersion()
-	if got != "3.6.0" {
-		t.Fatalf("base version = %q, want %q", got, "3.6.0")
+	if got != "3.7.0" {
+		t.Fatalf("base version = %q, want %q", got, "3.7.0")
 	}
 }
 

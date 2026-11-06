@@ -59,7 +59,10 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 	if err != nil {
 		trustedProxyCIDRs = ""
 	}
-	engine.SetTrustedProxies(parseTrustedProxyList(trustedProxyCIDRs))
+	if proxyErr := engine.SetTrustedProxies(parseTrustedProxyList(trustedProxyCIDRs)); proxyErr != nil {
+		logger.Warning("sub: invalid trustedProxyCIDRs, falling back to direct peer address:", proxyErr)
+		_ = engine.SetTrustedProxies(nil)
+	}
 
 	subDomain, err := s.settingService.GetSubDomain()
 	if err != nil {
