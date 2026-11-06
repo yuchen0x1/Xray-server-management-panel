@@ -236,9 +236,31 @@ _region_parse_tag() {
     sed -nE 's/.*"tag_name"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' | head -n 1
 }
 
+# Fetch the latest release tag from one API endpoint. Prints the tag on stdout.
+# Exit codes: 0 = got tag, 1 = request/parse failed, 2 = rate limited (403/429).
+# Rate-limited endpoints are never retried: both Gitee (strict anonymous quota)
+# and GitHub (secondary limits) keep answering 403/429 for a while, so burning
+# retries on the same URL only delays the switch to the other channel.
+_region_fetch_tag_from_url() {
+    local url="$1" body_file code tag
+    body_file="$(mktemp "${TMPDIR:-/tmp}/xui-tag-body.XXXXXX")" || return 1
+    code="$(_region_curl -Ls --retry 2 --retry-delay 2 --connect-timeout 15 --max-time 60 -w '%{http_code}' -o "$body_file" "$url" 2> /dev/null)"
+    if [[ "$code" == "403" || "$code" == "429" ]]; then
+        rm -f "$body_file"
+        return 2
+    fi
+    tag="$(_region_parse_tag < "$body_file")"
+    rm -f "$body_file"
+    if [[ -n "$tag" ]]; then
+        echo "$tag"
+        return 0
+    fi
+    return 1
+}
+
 # Latest release tag via the region-selected API, falling back to the other.
 _region_fetch_latest_tag() {
-    local region primary_url fallback_url tag
+    local region primary_url fallback_url tag rc
     region="$(detect_update_region)"
     if [[ "$region" == "cn" ]]; then
         primary_url="$(_region_probe_url "gitee.com" "api/v5/repos/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/latest")"
@@ -249,15 +271,19 @@ _region_fetch_latest_tag() {
     fi
     if [[ -n "$primary_url" ]]; then
         echo -e "Fetching the latest release tag from ${primary_url} ..." >&2
-        tag="$(_region_curl -Ls --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "$primary_url" 2> /dev/null | _region_parse_tag)"
+        tag="$(_region_fetch_tag_from_url "$primary_url")"
+        rc=$?
         if [[ -n "$tag" ]]; then
             echo "$tag"
             return 0
         fi
+        if [[ $rc -eq 2 ]]; then
+            echo -e "${yellow}Rate limited by the primary channel, switching to the fallback immediately ...${plain}" >&2
+        fi
     fi
     if [[ -n "$fallback_url" ]]; then
         echo -e "${yellow}Primary channel failed, falling back to ${fallback_url} ...${plain}" >&2
-        tag="$(_region_curl -Ls --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "$fallback_url" 2> /dev/null | _region_parse_tag)"
+        tag="$(_region_fetch_tag_from_url "$fallback_url")"
         if [[ -n "$tag" ]]; then
             echo "$tag"
             return 0
