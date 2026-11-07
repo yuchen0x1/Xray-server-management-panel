@@ -110,7 +110,10 @@
     "donate": "تبرع",
     "hosts": "المضيفات",
     "docs": "التوثيق",
-    "openMenu": "فتح القائمة"
+    "openMenu": "فتح القائمة",
+    "palette": "لوحة الأوامر",
+    "palettePlaceholder": "ابحث عن الصفحات…",
+    "paletteEmpty": "لا توجد صفحة مطابقة"
   },
   "pages": {
     "login": {

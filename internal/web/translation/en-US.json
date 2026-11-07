@@ -110,7 +110,10 @@
     "link": "Manage",
     "donate": "Donate",
     "docs": "Documentation",
-    "openMenu": "Open menu"
+    "openMenu": "Open menu",
+    "palette": "Command Palette",
+    "palettePlaceholder": "Search pages…",
+    "paletteEmpty": "No matching page"
   },
   "pages": {
     "login": {

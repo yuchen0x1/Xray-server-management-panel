@@ -110,7 +110,10 @@
     "donate": "Bağış Yap",
     "hosts": "Host'lar",
     "docs": "Belgeler",
-    "openMenu": "Menüyü aç"
+    "openMenu": "Menüyü aç",
+    "palette": "Komut Paleti",
+    "palettePlaceholder": "Sayfa ara…",
+    "paletteEmpty": "Eşleşen sayfa yok"
   },
   "pages": {
     "login": {

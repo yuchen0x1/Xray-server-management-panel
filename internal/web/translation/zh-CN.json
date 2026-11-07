@@ -110,7 +110,10 @@
     "donate": "捐赠",
     "hosts": "主机",
     "docs": "文档",
-    "openMenu": "打开菜单"
+    "openMenu": "打开菜单",
+    "palette": "命令面板",
+    "palettePlaceholder": "搜索页面…",
+    "paletteEmpty": "没有匹配的页面"
   },
   "pages": {
     "login": {

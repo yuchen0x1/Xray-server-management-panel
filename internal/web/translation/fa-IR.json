@@ -110,7 +110,10 @@
     "donate": "حمایت مالی",
     "hosts": "میزبان‌ها",
     "docs": "مستندات",
-    "openMenu": "باز کردن منو"
+    "openMenu": "باز کردن منو",
+    "palette": "پالت فرمان",
+    "palettePlaceholder": "جستجوی صفحات…",
+    "paletteEmpty": "صفحه‌ای یافت نشد"
   },
   "pages": {
     "login": {

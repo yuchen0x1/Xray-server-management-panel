@@ -110,7 +110,10 @@
     "donate": "Doar",
     "hosts": "Hosts",
     "docs": "Documentação",
-    "openMenu": "Abrir menu"
+    "openMenu": "Abrir menu",
+    "palette": "Paleta de Comandos",
+    "palettePlaceholder": "Pesquisar páginas…",
+    "paletteEmpty": "Nenhuma página correspondente"
   },
   "pages": {
     "login": {

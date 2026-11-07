@@ -110,7 +110,10 @@
     "donate": "捐贈",
     "hosts": "Hosts",
     "docs": "文件",
-    "openMenu": "開啟選單"
+    "openMenu": "開啟選單",
+    "palette": "指令面板",
+    "palettePlaceholder": "搜尋页面…",
+    "paletteEmpty": "沒有符合的页面"
   },
   "pages": {
     "login": {

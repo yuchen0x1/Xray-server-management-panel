@@ -110,7 +110,10 @@
     "donate": "Donar",
     "hosts": "Hosts",
     "docs": "Documentación",
-    "openMenu": "Abrir menú"
+    "openMenu": "Abrir menú",
+    "palette": "Paleta de Comandos",
+    "palettePlaceholder": "Buscar páginas…",
+    "paletteEmpty": "No hay página que coincida"
   },
   "pages": {
     "login": {

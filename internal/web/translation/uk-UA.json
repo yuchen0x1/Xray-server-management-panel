@@ -110,7 +110,10 @@
     "donate": "Підтримати",
     "hosts": "Хости",
     "docs": "Документація",
-    "openMenu": "Відкрити меню"
+    "openMenu": "Відкрити меню",
+    "palette": "Палітра команд",
+    "palettePlaceholder": "Пошук сторінок…",
+    "paletteEmpty": "Немає відповідних сторінок"
   },
   "pages": {
     "login": {

@@ -110,7 +110,10 @@
     "donate": "寄付",
     "hosts": "ホスト",
     "docs": "ドキュメント",
-    "openMenu": "メニューを開く"
+    "openMenu": "メニューを開く",
+    "palette": "コマンドパレット",
+    "palettePlaceholder": "ページを検索…",
+    "paletteEmpty": "一致するページがありません"
   },
   "pages": {
     "login": {
