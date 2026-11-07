@@ -19,6 +19,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/mtproto"
+	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/netsafe"
 	wgutil "github.com/mhsanaei/3x-ui/v3/internal/util/wireguard"
@@ -302,18 +303,19 @@ func (s *InboundService) annotateFallbackParents(db *gorm.DB, inbounds []*model.
 }
 
 type InboundOption struct {
-	Id             int    `json:"id" example:"1"`
-	Remark         string `json:"remark" example:"VLESS-443"`
-	Tag            string `json:"tag" example:"in-443-tcp"`
-	Protocol       string `json:"protocol" example:"vless"`
-	Port           int    `json:"port" example:"443"`
-	Enable         bool   `json:"enable" example:"true"`
-	TlsFlowCapable bool   `json:"tlsFlowCapable" example:"true"`
-	SsMethod       string `json:"ssMethod"`
-	WgPublicKey    string `json:"wgPublicKey,omitempty"`
-	WgMtu          int    `json:"wgMtu,omitempty"`
-	WgDns          string `json:"wgDns,omitempty"`
-	MtprotoDomain  string `json:"mtprotoDomain,omitempty"`
+	Id             int                      `json:"id" example:"1"`
+	Remark         string                   `json:"remark" example:"VLESS-443"`
+	Tag            string                   `json:"tag" example:"in-443-tcp"`
+	Protocol       string                   `json:"protocol" example:"vless"`
+	Port           int                      `json:"port" example:"443"`
+	Enable         bool                     `json:"enable" example:"true"`
+	TlsFlowCapable bool                     `json:"tlsFlowCapable" example:"true"`
+	SsMethod       string                   `json:"ssMethod"`
+	WgPublicKey    string                   `json:"wgPublicKey,omitempty"`
+	WgMtu          int                      `json:"wgMtu,omitempty"`
+	WgDns          string                   `json:"wgDns,omitempty"`
+	MtprotoDomain  string                   `json:"mtprotoDomain,omitempty"`
+	TuicServer     *tuic.TuicServerSettings `json:"tuicServer,omitempty"`
 	// Hosting node; nil for this panel's own inbounds. Lets the clients
 	// page map a node filter onto inbound IDs (#4997).
 	NodeId *int `json:"nodeId,omitempty"`
@@ -375,6 +377,7 @@ func (s *InboundService) GetInboundOptions(userId int) ([]InboundOption, error) 
 			WgMtu:             wgMtu,
 			WgDns:             wgDns,
 			MtprotoDomain:     inboundMtprotoDomain(r.Protocol, r.Settings),
+			TuicServer:        inboundTuicServer(r.Protocol, r.Settings),
 			NodeId:            r.NodeId,
 			NodeAddress:       r.NodeAddress,
 			Listen:            r.Listen,
@@ -425,6 +428,28 @@ func inboundMtprotoDomain(protocol string, settings string) string {
 		return ""
 	}
 	return strings.TrimSpace(parsed.FakeTLSDomain)
+}
+
+func inboundTuicServer(protocol string, settings string) *tuic.TuicServerSettings {
+	if protocol != string(model.TUIC) || strings.TrimSpace(settings) == "" {
+		return nil
+	}
+	inst, ok := tuic.InstanceFromInbound(&model.Inbound{Protocol: model.TUIC, Settings: settings})
+	if !ok {
+		return nil
+	}
+	return &tuic.TuicServerSettings{
+		Certificate:           inst.Certificate,
+		CongestionControl:     inst.CongestionControl,
+		ALPN:                  inst.ALPN,
+		UDPRelayMode:          inst.UDPRelayMode,
+		ZeroRTTHandshake:      inst.ZeroRTTHandshake,
+		LogLevel:              inst.LogLevel,
+		MaxIdleTime:           inst.MaxIdleTime,
+		AuthenticationTimeout: inst.AuthenticationTimeout,
+		MaxUdpRelayPacketSize: inst.MaxUdpRelayPacketSize,
+		SNI:                   inst.SNI,
+	}
 }
 
 // GetAllInbounds retrieves all inbounds with client stats.
@@ -978,6 +1003,9 @@ func (s *InboundService) normalizeMtprotoXrayPort(inbound *model.Inbound, oldSet
 // Returns the created inbound, whether Xray needs restart, and any error.
 func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, bool, error) {
 	inbound.Id = 0
+	if err := normalizeTuicSettings(inbound); err != nil {
+		return inbound, false, err
+	}
 	inbound.TrafficResetDay = normalizeTrafficResetDay(inbound.TrafficResetDay)
 	// Normalize streamSettings based on protocol
 	s.normalizeStreamSettings(inbound)
@@ -1080,6 +1108,10 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 			if client.AdTag != "" && !model.ValidMtprotoAdTag(client.AdTag) {
 				return inbound, false, common.NewError("mtproto client ad tag must be 32 hex characters")
 			}
+		case "tuic":
+			if err := validateTuicClientFields(client); err != nil {
+				return inbound, false, err
+			}
 		default:
 			if client.ID == "" {
 				return inbound, false, common.NewError("empty client ID")
@@ -1094,6 +1126,25 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 		markDirty := false
 		if err := tx.Omit("ClientStats").Save(inbound).Error; err != nil {
 			return err
+		}
+		if inbound.NodeID == nil && inbound.Protocol == model.TUIC {
+			if self := tuicSocksSelfConflict(inbound, inbound.Id); self != "" {
+				return common.NewError(self)
+			}
+			conflict, cErr := checkTuicSocksRelayCollision(tx, inbound.Id)
+			if cErr != nil {
+				return cErr
+			}
+			if conflict != nil {
+				return common.NewError(conflict.String())
+			}
+			conflict, cErr = checkTuicSocksReverseConflict(tx, inbound.Id)
+			if cErr != nil {
+				return cErr
+			}
+			if conflict != nil {
+				return common.NewError(conflict.String())
+			}
 		}
 		// Emails seeded here (import's ClientStats, e.g. the controller's forced
 		// Enable=true on every imported stat row) are authoritative for this call
@@ -1146,7 +1197,7 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 				if push {
 					payload := inbound
 					pushable := true
-					if inbound.Protocol == model.MTProto {
+					if inbound.Protocol == model.MTProto || inbound.Protocol == model.TUIC {
 						if built, bErr := s.buildRuntimeInboundForAPI(tx, inbound); bErr == nil {
 							payload = built
 						} else {
@@ -1160,7 +1211,9 @@ func (s *InboundService) AddInbound(inbound *model.Inbound) (*model.Inbound, boo
 								logger.Debug("New inbound added on", rt.Name(), ":", inbound.Tag)
 							} else {
 								logger.Debug("Unable to add inbound on", rt.Name(), ":", err1)
-								needRestart = true
+								if inbound.Protocol != model.MTProto && inbound.Protocol != model.TUIC {
+									needRestart = true
+								}
 							}
 						}
 					}
@@ -1408,6 +1461,9 @@ func (s *InboundService) SetInboundEnable(id int, enable bool) (bool, error) {
 }
 
 func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, bool, error) {
+	if err := normalizeTuicSettings(inbound); err != nil {
+		return inbound, false, err
+	}
 	inbound.TrafficResetDay = normalizeTrafficResetDay(inbound.TrafficResetDay)
 	// Normalize streamSettings based on protocol
 	s.normalizeStreamSettings(inbound)
@@ -1421,6 +1477,9 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 		return inbound, false, err
 	}
 	s.normalizeMtprotoSecret(inbound)
+	if err := s.validateTuicClients(inbound); err != nil {
+		return inbound, false, err
+	}
 	inbound.SubSortIndex = normalizeSubSortIndex(inbound.SubSortIndex)
 
 	oldInbound, err := s.GetInbound(inbound.Id)
@@ -1576,7 +1635,7 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 			}
 			if !push {
 				needRestart = true
-			} else if oldProtocol == model.MTProto || oldInbound.Protocol == model.MTProto {
+			} else if oldProtocol == model.MTProto || oldInbound.Protocol == model.MTProto || oldProtocol == model.TUIC || oldInbound.Protocol == model.TUIC {
 				oldSnapshot := *oldInbound
 				oldSnapshot.Tag = tag
 				oldSnapshot.Protocol = oldProtocol
@@ -1590,14 +1649,14 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 						pushable = false
 					}
 				}
-				newProtocolIsMtproto := oldInbound.Protocol == model.MTProto
+				newProtocolIsSidecar := oldInbound.Protocol == model.MTProto || oldInbound.Protocol == model.TUIC
 				if pushable {
 					postCommitApply = func() {
 						if err2 := rt.UpdateInbound(context.Background(), &oldSnapshot, payload); err2 == nil {
 							logger.Debug("Updated inbound applied on", rt.Name(), ":", oldInbound.Tag)
 						} else {
 							logger.Debug("Unable to update inbound on", rt.Name(), ":", err2)
-							if !newProtocolIsMtproto {
+							if !newProtocolIsSidecar {
 								needRestart = true
 							}
 						}
@@ -1707,6 +1766,28 @@ func (s *InboundService) buildRuntimeInboundForAPI(tx *gorm.DB, inbound *model.I
 			enableMap[clientTraffic.Email] = clientTraffic.Enable
 		}
 
+		trafficIDs := map[string]int{}
+		if inbound.Protocol == model.TUIC {
+			emails := make([]string, 0, len(clients))
+			for _, client := range clients {
+				c, ok := client.(map[string]any)
+				if !ok {
+					continue
+				}
+				email, _ := c["email"].(string)
+				if email != "" {
+					emails = append(emails, email)
+				}
+			}
+			var rows []xray.ClientTraffic
+			if err := tx.Select("id", "email").Where("email IN ?", emails).Find(&rows).Error; err != nil {
+				return nil, err
+			}
+			for _, row := range rows {
+				trafficIDs[row.Email] = row.Id
+			}
+		}
+
 		finalClients := make([]any, 0, len(clients))
 		for _, client := range clients {
 			c, ok := client.(map[string]any)
@@ -1721,6 +1802,13 @@ func (s *InboundService) buildRuntimeInboundForAPI(tx *gorm.DB, inbound *model.I
 
 			if manualEnable, ok := c["enable"].(bool); ok && !manualEnable {
 				continue
+			}
+
+			if inbound.Protocol == model.TUIC {
+				delete(c, "traffic_id")
+				if id := trafficIDs[email]; id > 0 {
+					c["traffic_id"] = id
+				}
 			}
 
 			finalClients = append(finalClients, c)

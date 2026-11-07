@@ -5,6 +5,7 @@ import {
   MtprotoClientSchema,
   ShadowsocksClientSchema,
   TrojanClientSchema,
+  TuicClientSchema,
   VlessClientSchema,
   VmessClientSchema,
   WireguardClientSchema,
@@ -13,6 +14,7 @@ import type { StreamSettings } from '@/schemas/api/inbound';
 import type { Sniffing } from '@/schemas/primitives';
 import type { z } from 'zod';
 import { normalizeStreamSettingsForWire } from '@/lib/xray/stream-wire-normalize';
+import { resolveTuicServerSettings } from '@/lib/tuic';
 import { canEnableSniffing } from '@/lib/xray/protocol-capabilities';
 import { SockoptStreamSettingsSchema } from '@/schemas/protocols/stream/sockopt';
 import { XHttpStreamSettingsSchema, XHttpXmuxSchema } from '@/schemas/protocols/stream/xhttp';
@@ -161,7 +163,12 @@ function stripTlsCertUseFile(stream: Record<string, unknown>): void {
 
 export function rawInboundToFormValues(row: RawInboundRow): InboundFormValues {
   const protocol = (row.protocol || 'vless') as InboundSettings['protocol'];
-  const settings = coerceJsonObject(row.settings) as InboundSettings['settings'];
+  const rawSettings = coerceJsonObject(row.settings);
+  const settings = (
+    protocol === 'tuic'
+      ? { clients: rawSettings.clients, server: resolveTuicServerSettings(rawSettings) }
+      : rawSettings
+  ) as InboundSettings['settings'];
   const rawStream = coerceJsonObject(row.streamSettings);
   const streamSettings = Object.keys(rawStream).length > 0
     ? (rawStream as StreamSettings)
@@ -255,6 +262,7 @@ function clientSchemaForProtocol(protocol: string): z.ZodType | null {
     case 'hysteria': return HysteriaClientSchema;
     case 'wireguard': return WireguardClientSchema;
     case 'mtproto': return MtprotoClientSchema;
+    case 'tuic': return TuicClientSchema;
     default: return null;
   }
 }

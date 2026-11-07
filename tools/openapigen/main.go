@@ -88,6 +88,11 @@ func run(root, outDir string) error {
 			Path:        resolveRel(root, "internal/web/service/panel"),
 			StructAllow: setOf("ApiTokenView", "PanelUpdateStatus"),
 		},
+		{
+			Path:        resolveRel(root, "internal/tuic"),
+			StructAllow: setOf("TuicServerSettings"),
+			AliasAllow:  setOf(),
+		},
 	}
 
 	schemas, aliases, err := walkPackages(requests)

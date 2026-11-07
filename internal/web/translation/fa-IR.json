@@ -637,7 +637,8 @@
           "node": "آدرس نود",
           "listen": "آدرس شنود ورودی",
           "custom": "سفارشی"
-        }
+        },
+        "autoFill": "تکمیل خودکار"
       },
       "info": {
         "mode": "حالت",
@@ -656,7 +657,9 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "پیکربندی Peer {n}"
       },
-      "sniffingDestOverride": "بازنویسی مقصد"
+      "sniffingDestOverride": "بازنویسی مقصد",
+      "advancedTitle": "تنظیمات پیشرفته",
+      "setSuccess": "با موفقیت اعمال شد"
     },
     "clients": {
       "tabBasics": "پایه",
@@ -819,6 +822,7 @@
       "wireguardPreSharedKey": "کلید پیش‌اشتراکی وایرگارد",
       "wireguardAllowedIPs": "آی‌پی‌های مجاز وایرگارد",
       "wireguardAllowedIPsHint": "برای تخصیص خودکار خالی بگذارید؛ ورودی‌ها را با کاما جدا کنید",
+      "tuicConfig": "پیکربندی TUIC (Clash)",
       "mtprotoSecret": "سکرت MTProto",
       "mtprotoSecretHint": "سکرت FakeTLS این کلاینت. برای تعویض، دوباره تولید کنید.",
       "mtprotoAdTag": "برچسب تبلیغاتی (کانال حامی)",
@@ -1628,6 +1632,23 @@
         "allowedIPs": "آی‌پی‌های مجاز",
         "endpoint": "نقطه پایانی",
         "domainStrategy": "استراتژی حل دامنه"
+      },
+      "tuic": {
+        "congestionControl": "کنترل ازدحام",
+        "congestionControlHint": "الگوریتم سرور و کلاینت. تغییر سرور پس از اتصال مجدد اعمال می‌شود.",
+        "profileOptions": "Client profile options",
+        "alpn": "ALPN",
+        "udpRelayMode": "حالت رله UDP",
+        "udpRelayModeHint": "حالت UDP کلاینت. سرور از هر دو پشتیبانی می‌کند.",
+        "zeroRttHandshake": "دست دادن 0-RTT",
+        "logLevel": "سطح گزارش",
+        "logLevelHint": "حداقل سطح لاگ این ورودی.",
+        "maxIdleTime": "حداکثر زمان بیکاری (ثانیه)",
+        "authTimeout": "مهلت زمانی احراز هویت (ثانیه)",
+        "maxUdpRelayPacketSize": "حداکثر اندازه بسته UDP",
+        "sni": "SNI",
+        "sniHint": "نام سرور TLS در پروفایل کلاینت.",
+        "sniRequired": "برای تکمیل خودکار مسیرهای گواهی، دامنه را وارد کنید."
       },
       "tun": {
         "userLevel": "سطح کاربر"

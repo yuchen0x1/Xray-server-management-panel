@@ -1792,7 +1792,8 @@ export const SCHEMAS: Record<string, unknown> = {
           "mixed",
           "tunnel",
           "tun",
-          "mtproto"
+          "mtproto",
+          "tuic"
         ],
         "example": "vless",
         "type": "string"
@@ -1994,6 +1995,14 @@ export const SCHEMAS: Record<string, unknown> = {
       "tlsFlowCapable": {
         "example": true,
         "type": "boolean"
+      },
+      "tuicServer": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TuicServerSettings"
+          }
+        ],
+        "nullable": true
       },
       "wgDns": {
         "type": "string"
@@ -2796,6 +2805,69 @@ export const SCHEMAS: Record<string, unknown> = {
       "id",
       "key",
       "value"
+    ],
+    "type": "object"
+  },
+  "TuicServerSettings": {
+    "properties": {
+      "alpn": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "authentication_timeout": {
+        "example": 3,
+        "type": "integer"
+      },
+      "certificate": {
+        "example": "/root/cert/example.com/fullchain.pem",
+        "type": "string"
+      },
+      "congestion_control": {
+        "example": "bbr",
+        "type": "string"
+      },
+      "log_level": {
+        "example": "info",
+        "type": "string"
+      },
+      "max_idle_time": {
+        "example": 15,
+        "type": "integer"
+      },
+      "max_udp_relay_packet_size": {
+        "example": 1500,
+        "type": "integer"
+      },
+      "private_key": {
+        "example": "/root/cert/example.com/privkey.pem",
+        "type": "string"
+      },
+      "sni": {
+        "example": "example.com",
+        "type": "string"
+      },
+      "udp_relay_mode": {
+        "example": "native",
+        "type": "string"
+      },
+      "zero_rtt_handshake": {
+        "example": true,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "alpn",
+      "authentication_timeout",
+      "certificate",
+      "congestion_control",
+      "log_level",
+      "max_idle_time",
+      "max_udp_relay_packet_size",
+      "private_key",
+      "udp_relay_mode",
+      "zero_rtt_handshake"
     ],
     "type": "object"
   },

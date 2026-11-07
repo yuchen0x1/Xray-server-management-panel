@@ -637,7 +637,8 @@
           "node": "ノードアドレス",
           "listen": "インバウンドのリッスンアドレス",
           "custom": "カスタム"
-        }
+        },
+        "autoFill": "自動入力"
       },
       "info": {
         "mode": "モード",
@@ -656,7 +657,9 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "Peer {n} 設定"
       },
-      "sniffingDestOverride": "宛先のオーバーライド"
+      "sniffingDestOverride": "宛先のオーバーライド",
+      "advancedTitle": "詳細設定",
+      "setSuccess": "設定しました"
     },
     "clients": {
       "tabBasics": "基本",
@@ -819,6 +822,7 @@
       "wireguardPreSharedKey": "WireGuard 事前共有鍵",
       "wireguardAllowedIPs": "WireGuard 許可IP",
       "wireguardAllowedIPsHint": "空欄で自動割り当て。複数指定はカンマ区切り",
+      "tuicConfig": "TUIC 設定 (Clash)",
       "mtprotoSecret": "MTProto シークレット",
       "mtprotoSecretHint": "このクライアントの FakeTLS シークレット。変更するには再生成します。",
       "mtprotoAdTag": "広告タグ（スポンサーチャンネル）",
@@ -1628,6 +1632,23 @@
         "allowedIPs": "許可されたIP",
         "endpoint": "エンドポイント",
         "domainStrategy": "ドメイン戦略"
+      },
+      "tuic": {
+        "congestionControl": "輻輳制御",
+        "congestionControlHint": "サーバーとクライアントの方式。サーバーへの変更は再接続後に適用。",
+        "profileOptions": "Client profile options",
+        "alpn": "ALPN",
+        "udpRelayMode": "UDP リレーモード",
+        "udpRelayModeHint": "クライアントの UDP モード。サーバーは両方に対応。",
+        "zeroRttHandshake": "0-RTT ハンドシェイク",
+        "logLevel": "ログレベル",
+        "logLevelHint": "このインバウンドの最低ログレベル。",
+        "maxIdleTime": "最大アイドル時間 (秒)",
+        "authTimeout": "認証タイムアウト (秒)",
+        "maxUdpRelayPacketSize": "最大 UDP パケットサイズ",
+        "sni": "SNI",
+        "sniHint": "クライアント設定の TLS サーバー名。",
+        "sniRequired": "証明書パスの自動入力にはドメインを指定してください。"
       },
       "tun": {
         "userLevel": "ユーザーレベル"

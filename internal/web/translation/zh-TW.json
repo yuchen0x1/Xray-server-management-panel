@@ -637,7 +637,8 @@
           "node": "節點地址",
           "listen": "入站監聽地址",
           "custom": "自訂"
-        }
+        },
+        "autoFill": "自動填入"
       },
       "info": {
         "mode": "模式",
@@ -656,7 +657,9 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "Peer {n} 設定"
       },
-      "sniffingDestOverride": "目標覆寫"
+      "sniffingDestOverride": "目標覆寫",
+      "advancedTitle": "進階設定",
+      "setSuccess": "設定成功"
     },
     "clients": {
       "tabBasics": "基本",
@@ -819,6 +822,7 @@
       "wireguardPreSharedKey": "WireGuard 預共用金鑰",
       "wireguardAllowedIPs": "WireGuard 允許的 IP",
       "wireguardAllowedIPsHint": "留空則自動分配；多個條目用逗號分隔",
+      "tuicConfig": "TUIC 設定 (Clash)",
       "mtprotoSecret": "MTProto 金鑰",
       "mtprotoSecretHint": "該用戶端的 FakeTLS 金鑰。重新產生即可更換。",
       "mtprotoAdTag": "廣告標籤（贊助頻道）",
@@ -1628,6 +1632,23 @@
         "allowedIPs": "允許的 IP",
         "endpoint": "端點",
         "domainStrategy": "域策略"
+      },
+      "tuic": {
+        "congestionControl": "壅塞控制演算法",
+        "congestionControlHint": "伺服器與用戶端演算法。伺服器變更於重新連線後生效。",
+        "profileOptions": "Client profile options",
+        "alpn": "ALPN",
+        "udpRelayMode": "UDP 轉發模式",
+        "udpRelayModeHint": "用戶端 UDP 模式。伺服器支援兩種模式。",
+        "zeroRttHandshake": "0-RTT 握手",
+        "logLevel": "日誌層級",
+        "logLevelHint": "此入站的最低記錄級別。",
+        "maxIdleTime": "最大閒置時間 (秒)",
+        "authTimeout": "認證逾時時間 (秒)",
+        "maxUdpRelayPacketSize": "最大 UDP 封包大小",
+        "sni": "SNI",
+        "sniHint": "用戶端設定檔中的 TLS 伺服器名稱。",
+        "sniRequired": "請輸入網域以自動填入憑證路徑。"
       },
       "tun": {
         "userLevel": "用戶級別"

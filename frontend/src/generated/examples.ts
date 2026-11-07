@@ -484,6 +484,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "ssMethod": "",
     "tag": "in-443-tcp",
     "tlsFlowCapable": true,
+    "tuicServer": null,
     "wgDns": "",
     "wgMtu": 0,
     "wgPublicKey": ""
@@ -653,6 +654,21 @@ export const EXAMPLES: Record<string, unknown> = {
     "id": 0,
     "key": "",
     "value": ""
+  },
+  "TuicServerSettings": {
+    "alpn": [
+      ""
+    ],
+    "authentication_timeout": 3,
+    "certificate": "/root/cert/example.com/fullchain.pem",
+    "congestion_control": "bbr",
+    "log_level": "info",
+    "max_idle_time": 15,
+    "max_udp_relay_packet_size": 1500,
+    "private_key": "/root/cert/example.com/privkey.pem",
+    "sni": "example.com",
+    "udp_relay_mode": "native",
+    "zero_rtt_handshake": true
   },
   "User": {
     "id": 0,

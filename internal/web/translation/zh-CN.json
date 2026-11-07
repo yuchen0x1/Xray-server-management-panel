@@ -637,7 +637,8 @@
           "listen": "入站监听地址",
           "custom": "自定义"
         },
-        "verifyPeerCertByName": "按名称验证对端证书"
+        "verifyPeerCertByName": "按名称验证对端证书",
+        "autoFill": "自动填充"
       },
       "info": {
         "mode": "模式",
@@ -656,7 +657,9 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "Peer {n} 配置"
       },
-      "sniffingDestOverride": "目标覆盖"
+      "sniffingDestOverride": "目标覆盖",
+      "advancedTitle": "高级设置",
+      "setSuccess": "设置成功"
     },
     "clients": {
       "tabBasics": "基本",
@@ -819,6 +822,7 @@
       "wireguardPreSharedKey": "WireGuard 预共享密钥",
       "wireguardAllowedIPs": "WireGuard 允许的 IP",
       "wireguardAllowedIPsHint": "留空则自动分配；多个条目用逗号分隔",
+      "tuicConfig": "TUIC 配置 (Clash)",
       "mtprotoSecret": "MTProto 密钥",
       "mtprotoSecretHint": "该客户端的 FakeTLS 密钥。重新生成即可更换。",
       "mtprotoAdTag": "广告标签（赞助频道）",
@@ -1628,6 +1632,23 @@
         "allowedIPs": "允许的 IP",
         "endpoint": "端点",
         "domainStrategy": "域策略"
+      },
+      "tuic": {
+        "congestionControl": "拥塞控制算法",
+        "congestionControlHint": "服务器和客户端算法。服务器更改在重新连接后生效。",
+        "profileOptions": "Client profile options",
+        "alpn": "ALPN",
+        "udpRelayMode": "UDP 转发模式",
+        "udpRelayModeHint": "客户端 UDP 模式。服务器支持两种模式。",
+        "zeroRttHandshake": "0-RTT 握手",
+        "logLevel": "日志级别",
+        "logLevelHint": "此入站的最低日志级别。",
+        "maxIdleTime": "最大空闲时间 (秒)",
+        "authTimeout": "认证超时时间 (秒)",
+        "maxUdpRelayPacketSize": "最大 UDP 数据包大小",
+        "sni": "SNI",
+        "sniHint": "客户端配置中的 TLS 服务器名称。",
+        "sniRequired": "请输入域名以自动填充证书路径。"
       },
       "tun": {
         "userLevel": "用户级别"

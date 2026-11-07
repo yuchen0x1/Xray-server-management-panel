@@ -387,6 +387,7 @@
         "stream": "Stream",
         "streamHelp": "Обёртка блока stream Xray:"
       },
+      "advancedTitle": "Дополнительные настройки",
       "subSortIndex": "Порядок",
       "inboundInfo": "Информация о подключении",
       "exportInbound": "Экспорт подключений",
@@ -430,6 +431,7 @@
         "moreIssues": "{message}  (+{count} ещё)"
       },
       "form": {
+        "autoFill": "Автозаполнение",
         "echSockopt": "ECH Sockopt",
         "echSockoptTip": "Параметры сокета для соединения, через которое Xray получает список конфигураций ECH (например, можно направить запрос через исходящее dialerProxy). Оставьте отключённым для значений по умолчанию.",
         "curvePreferences": "Предпочтения кривых",
@@ -656,7 +658,8 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "Конфиг Peer {n}"
       },
-      "sniffingDestOverride": "Переопределение назначения"
+      "sniffingDestOverride": "Переопределение назначения",
+      "setSuccess": "Успешно применено"
     },
     "clients": {
       "tabBasics": "Основные",
@@ -819,6 +822,7 @@
       "wireguardPreSharedKey": "Общий ключ WireGuard",
       "wireguardAllowedIPs": "Разрешённые IP WireGuard",
       "wireguardAllowedIPsHint": "Оставьте пустым для автоназначения; разделяйте записи запятыми",
+      "tuicConfig": "Конфиг TUIC (Clash)",
       "mtprotoSecret": "Секрет MTProto",
       "mtprotoSecretHint": "Секрет FakeTLS клиента. Перегенерируйте, чтобы сменить.",
       "mtprotoAdTag": "Рекламный тег (спонсорский канал)",
@@ -1628,6 +1632,23 @@
         "allowedIPs": "Разрешенные IP-адреса",
         "endpoint": "Конечная точка",
         "domainStrategy": "Стратегия домена"
+      },
+      "tuic": {
+        "congestionControl": "Контроль перегрузок",
+        "congestionControlHint": "Алгоритм сервера и клиента. На сервере меняется после переподключения.",
+        "profileOptions": "Параметры клиентского профиля",
+        "alpn": "ALPN",
+        "udpRelayMode": "Режим ретрансляции UDP",
+        "udpRelayModeHint": "Режим UDP для клиента. Сервер поддерживает оба.",
+        "zeroRttHandshake": "0-RTT рукопожатие",
+        "logLevel": "Уровень логирования",
+        "logLevelHint": "Минимальный уровень сообщений в логах этого инбаунда.",
+        "maxIdleTime": "Макс. время простоя (сек)",
+        "authTimeout": "Таймаут аутентификации (сек)",
+        "maxUdpRelayPacketSize": "Макс. размер пакета UDP",
+        "sni": "SNI",
+        "sniHint": "Имя сервера для TLS в клиентском профиле.",
+        "sniRequired": "Укажите домен для автозаполнения."
       },
       "tun": {
         "userLevel": "Уровень пользователя"

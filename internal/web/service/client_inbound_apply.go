@@ -391,6 +391,10 @@ func (s *ClientService) addInboundClient(inboundSvc *InboundService, data *model
 			if client.AdTag != "" && !model.ValidMtprotoAdTag(client.AdTag) {
 				return false, common.NewError("mtproto client ad tag must be 32 hex characters")
 			}
+		case "tuic":
+			if err := validateTuicClientFields(client); err != nil {
+				return false, err
+			}
 		default:
 			if client.ID == "" {
 				return false, common.NewError("empty client ID")
@@ -447,6 +451,11 @@ func (s *ClientService) addInboundClient(inboundSvc *InboundService, data *model
 		if gcErr != nil {
 			return gcErr
 		}
+		if oldInbound.Protocol == model.TUIC {
+			if err := validateTuicClientIdentities(finalClients); err != nil {
+				return err
+			}
+		}
 		if err := s.SyncInbound(tx, oldInbound.Id, finalClients); err != nil {
 			return err
 		}
@@ -465,6 +474,8 @@ func (s *ClientService) addInboundClient(inboundSvc *InboundService, data *model
 			needRestart = true
 		} else if oldInbound.Protocol == model.MTProto {
 			inboundSvc.applyLocalMtproto(oldInbound.Id)
+		} else if oldInbound.Protocol == model.TUIC {
+			inboundSvc.applyLocalTuic(oldInbound.Id)
 		} else {
 			for _, client := range clients {
 				if len(client.Email) == 0 {
@@ -824,6 +835,11 @@ func (s *ClientService) UpdateInboundClient(inboundSvc *InboundService, data *mo
 		if gcErr != nil {
 			return gcErr
 		}
+		if oldInbound.Protocol == model.TUIC {
+			if err := validateTuicClientIdentities(finalClients); err != nil {
+				return err
+			}
+		}
 		if err := s.SyncInbound(tx, oldInbound.Id, finalClients); err != nil {
 			return err
 		}
@@ -843,6 +859,8 @@ func (s *ClientService) UpdateInboundClient(inboundSvc *InboundService, data *mo
 				needRestart = true
 			} else if oldInbound.Protocol == model.MTProto {
 				inboundSvc.applyLocalMtproto(oldInbound.Id)
+			} else if oldInbound.Protocol == model.TUIC {
+				inboundSvc.applyLocalTuic(oldInbound.Id)
 			} else {
 				if oldClients[clientIndex].Enable {
 					err1 := rt.RemoveUser(context.Background(), oldInbound, oldEmail)
@@ -1024,6 +1042,8 @@ func (s *ClientService) DelInboundClientByEmail(inboundSvc *InboundService, inbo
 				// it (removing the last client stops the sidecar) regardless of the
 				// client's enable state.
 				inboundSvc.applyLocalMtproto(oldInbound.Id)
+			} else if oldInbound.Protocol == model.TUIC {
+				inboundSvc.applyLocalTuic(oldInbound.Id)
 			} else if needApiDel {
 				// Local inbound: a disabled client isn't in the running Xray, so only
 				// a live one (needApiDel) needs an API removal.

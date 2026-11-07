@@ -6,6 +6,7 @@ import type { MixedInboundSettings } from '@/schemas/protocols/inbound/mixed';
 import type { MtprotoClient, MtprotoInboundSettings } from '@/schemas/protocols/inbound/mtproto';
 import type { ShadowsocksClient, ShadowsocksInboundSettings } from '@/schemas/protocols/inbound/shadowsocks';
 import type { TrojanClient, TrojanInboundSettings } from '@/schemas/protocols/inbound/trojan';
+import type { TuicClient, TuicInboundSettings } from '@/schemas/protocols/inbound/tuic';
 import type { TunInboundSettings } from '@/schemas/protocols/inbound/tun';
 import type { TunnelInboundSettings } from '@/schemas/protocols/inbound/tunnel';
 import type { VlessClient, VlessInboundSettings } from '@/schemas/protocols/inbound/vless';
@@ -128,6 +129,22 @@ export function createDefaultHysteriaClient(seed: HysteriaClientSeed = {}): Hyst
   };
 }
 
+export interface TuicClientSeed extends ClientBaseSeed {
+  uuid?: string;
+  id?: string;
+  password?: string;
+}
+
+export function createDefaultTuicClient(seed: TuicClientSeed = {}): TuicClient {
+  const uuid = seed.uuid ?? seed.id ?? RandomUtil.randomUUID();
+  return {
+    uuid,
+    id: uuid,
+    password: seed.password ?? RandomUtil.randomSeq(10),
+    ...clientBase(seed),
+  };
+}
+
 // Inbound-settings factories. Each returns a Zod-parsable wire-shape with
 // schema defaults already applied — no class instance, no XrayCommonClass.
 // Callers (form modals via Step 4, InboundsPage clone via Step 5) call
@@ -240,6 +257,25 @@ export function createDefaultTunnelInboundSettings(): TunnelInboundSettings {
   };
 }
 
+export function createDefaultTuicInboundSettings(): TuicInboundSettings {
+  return {
+    server: {
+      certificate: '',
+      private_key: '',
+      congestion_control: 'bbr',
+      alpn: ['h3', 'spdy/3.1'],
+      udp_relay_mode: 'native',
+      zero_rtt_handshake: true,
+      log_level: 'info',
+      max_idle_time: 15,
+      authentication_timeout: 3,
+      max_udp_relay_packet_size: 1500,
+      sni: '',
+    },
+    clients: [],
+  };
+}
+
 export function createDefaultTunInboundSettings(): TunInboundSettings {
   return {
     name: 'xray0',
@@ -290,7 +326,8 @@ export type AnyInboundSettings =
   | TunInboundSettings
   | TunnelInboundSettings
   | WireguardInboundSettings
-  | MtprotoInboundSettings;
+  | MtprotoInboundSettings
+  | TuicInboundSettings;
 
 export function createDefaultInboundSettings(protocol: string): AnyInboundSettings | null {
   switch (protocol) {
@@ -305,6 +342,7 @@ export function createDefaultInboundSettings(protocol: string): AnyInboundSettin
     case 'tun':         return createDefaultTunInboundSettings();
     case 'wireguard':   return createDefaultWireguardInboundSettings();
     case 'mtproto':     return createDefaultMtprotoInboundSettings();
+    case 'tuic':        return createDefaultTuicInboundSettings();
     default:            return null;
   }
 }

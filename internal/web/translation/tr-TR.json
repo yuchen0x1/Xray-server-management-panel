@@ -637,7 +637,8 @@
         "bytesPerSec": "Saniye Başına Bayt",
         "bytesPerSecTip": "Eşik aşıldıktan sonra fallback trafiğine uygulanan hız sınırı (bayt/sn); böylece sondalar sunucunuzu hedefe ücretsiz bant genişliği olarak kullanamaz. 0 = sınır yok (bu yönü devre dışı bırakır).",
         "burstBytesPerSec": "Saniye Başına Patlama Baytı",
-        "burstBytesPerSecTip": "Sabit hızın üzerindeki kısa patlamalar için pay (token-bucket boyutu). Saniye Başına Bayt değerinden düşükse ona eşitlenecek şekilde yükseltilir."
+        "burstBytesPerSecTip": "Sabit hızın üzerindeki kısa patlamalar için pay (token-bucket boyutu). Saniye Başına Bayt değerinden düşükse ona eşitlenecek şekilde yükseltilir.",
+        "autoFill": "Otomatik Doldur"
       },
       "info": {
         "mode": "Mod",
@@ -656,7 +657,9 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "Peer {n} Yapılandırması"
       },
-      "sniffingDestOverride": "Hedef geçersiz kılma"
+      "sniffingDestOverride": "Hedef geçersiz kılma",
+      "advancedTitle": "Gelişmiş Ayarlar",
+      "setSuccess": "Başarıyla uygulandı"
     },
     "clients": {
       "tabBasics": "Temel",
@@ -819,6 +822,7 @@
       "wireguardPreSharedKey": "WireGuard Ön Paylaşımlı Anahtar",
       "wireguardAllowedIPs": "WireGuard İzin Verilen IP'ler",
       "wireguardAllowedIPsHint": "Otomatik atama için boş bırakın; girişleri virgülle ayırın",
+      "tuicConfig": "TUIC Yapılandırması (Clash)",
       "mtprotoSecret": "MTProto sırrı",
       "mtprotoSecretHint": "İstemcinin FakeTLS sırrı. Değiştirmek için yeniden oluşturun.",
       "mtprotoAdTag": "Reklam etiketi (sponsorlu kanal)",
@@ -1628,6 +1632,23 @@
         "allowedIPs": "İzin Verilen IP'ler",
         "endpoint": "Uç Nokta",
         "domainStrategy": "Alan Adı Stratejisi"
+      },
+      "tuic": {
+        "congestionControl": "Tıkanıklık Kontrolü",
+        "congestionControlHint": "Sunucu ve istemci algoritması. Sunucu değişiklikleri yeniden bağlanınca uygulanır.",
+        "profileOptions": "Client profile options",
+        "alpn": "ALPN",
+        "udpRelayMode": "UDP İletim Modu",
+        "udpRelayModeHint": "İstemci UDP modu. Sunucu her ikisini de destekler.",
+        "zeroRttHandshake": "0-RTT El Sıkışması",
+        "logLevel": "Günlük Seviyesi",
+        "logLevelHint": "Bu gelen bağlantı için en düşük günlük seviyesi.",
+        "maxIdleTime": "Maksimum Boşta Kalma Süresi (sn)",
+        "authTimeout": "Kimlik Doğrulama Zaman Aşımı (sn)",
+        "maxUdpRelayPacketSize": "Maksimum UDP Paket Boyutu",
+        "sni": "SNI",
+        "sniHint": "İstemci profilindeki TLS sunucu adı.",
+        "sniRequired": "Sertifika yollarını otomatik doldurmak için alan adı girin."
       },
       "tun": {
         "userLevel": "Kullanıcı Seviyesi"

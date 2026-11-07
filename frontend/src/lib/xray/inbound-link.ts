@@ -14,6 +14,7 @@ import type { XHttpStreamSettings } from '@/schemas/protocols/stream/xhttp';
 import { getHeaderValue } from './headers';
 import { canEnableTlsFlow } from './protocol-capabilities';
 import { deriveSpiderX } from './spider-x';
+import { normalizeTuicCongestionController, resolveTuicServerSettings } from '@/lib/tuic';
 
 // Share-link generators. Each per-protocol fn takes a typed inbound plus
 // client overrides and returns a URL (or '' when the protocol doesn't
@@ -842,6 +843,71 @@ export function genMtprotoLink(input: GenMtprotoLinkInput): string {
   return url.toString();
 }
 
+export interface GenTuicLinkInput {
+  inbound: Inbound;
+  address: string;
+  port?: number;
+  remark?: string;
+  clientUuid?: string;
+  clientPassword?: string;
+  externalProxy?: ExternalProxyEntry | null;
+}
+
+export function genTuicLink(input: GenTuicLinkInput): string {
+  const {
+    inbound,
+    address,
+    port = inbound.port,
+    remark = '',
+    clientUuid = '',
+    clientPassword = '',
+    externalProxy = null,
+  } = input;
+  if (!clientUuid || !clientPassword) return '';
+
+  const rawSettings = inbound.settings as Record<string, unknown>;
+  const server = resolveTuicServerSettings(rawSettings);
+  const host = formatUrlHost(externalProxy?.dest || address);
+  const targetPort = externalProxy?.port || port;
+
+  const url = new URL(
+    `tuic://${encodeURIComponent(clientUuid)}:${encodeURIComponent(clientPassword)}@${host}:${targetPort}`,
+  );
+  const cc = normalizeTuicCongestionController(
+    server.congestion_control ?? rawSettings.congestion_control,
+  );
+  url.searchParams.set('congestion_control', cc);
+
+  const epAlpn = externalProxyAlpn(externalProxy?.alpn);
+  const alpn =
+    epAlpn ||
+    (Array.isArray(server.alpn) && server.alpn.length > 0
+      ? (server.alpn as string[]).join(',')
+      : null) ||
+    (Array.isArray(rawSettings.alpn) && rawSettings.alpn.length > 0
+      ? (rawSettings.alpn as string[]).join(',')
+      : null) ||
+    'h3,spdy/3.1';
+  url.searchParams.set('alpn', alpn);
+
+  const sni = externalProxy?.sni || (server.sni as string) || (rawSettings.sni as string);
+  if (sni) {
+    url.searchParams.set('sni', sni);
+  }
+  const udpRelay =
+    (server.udp_relay_mode as string) || (rawSettings.udp_relay_mode as string) || 'native';
+  url.searchParams.set('udp_relay_mode', udpRelay);
+
+  const allowInsecure = externalProxy?.allowInsecure ? '1' : '0';
+  url.searchParams.set('allow_insecure', allowInsecure);
+
+  if (remark) {
+    url.hash = encodeURIComponent(remark);
+  }
+
+  return url.toString();
+}
+
 export interface GenWireguardLinkInput {
   settings: WireguardInboundSettings;
   address: string;
@@ -1093,7 +1159,7 @@ export function preferPublicHost(browserHost: string, publicHost: string): strin
 // `this.clients` getter, which used isSSMultiUser to gate). Returns null
 // for SS single-user, http, mixed, tunnel, wireguard, hysteria2-without-
 // clients, and any protocol without a clients array.
-type ClientShape = { id?: string; security?: VmessSecurity; flow?: VlessClient['flow']; password?: string; auth?: string; secret?: string; email?: string; subId?: string };
+type ClientShape = { id?: string; uuid?: string; security?: VmessSecurity; flow?: VlessClient['flow']; password?: string; auth?: string; secret?: string; email?: string; subId?: string };
 
 // Mirror of the Go subKey: the stable per-client identity spx derivation
 // keys on — subscription id first, unique email as the fallback.
@@ -1112,6 +1178,8 @@ export function getInboundClients(inbound: Inbound): ClientShape[] | null {
     case 'hysteria':
       return (inbound.settings.clients ?? []) as ClientShape[];
     case 'mtproto':
+      return (inbound.settings.clients ?? []) as ClientShape[];
+    case 'tuic':
       return (inbound.settings.clients ?? []) as ClientShape[];
     case 'shadowsocks': {
       const isMultiUser = inbound.settings.method !== '2022-blake3-chacha20-poly1305';
@@ -1177,6 +1245,16 @@ export function genLink(input: GenLinkInput): string {
       });
     case 'mtproto':
       return genMtprotoLink({ inbound, address, port, clientSecret: client.secret ?? '' });
+    case 'tuic':
+      return genTuicLink({
+        inbound,
+        address,
+        port,
+        remark,
+        clientUuid: client.uuid ?? client.id ?? '',
+        clientPassword: client.password ?? '',
+        externalProxy,
+      });
     default:
       return '';
   }

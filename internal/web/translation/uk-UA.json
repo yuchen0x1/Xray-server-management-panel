@@ -637,7 +637,8 @@
           "node": "Адреса вузла",
           "listen": "Адреса прослуховування inbound",
           "custom": "Користувацька"
-        }
+        },
+        "autoFill": "Автозаповнення"
       },
       "info": {
         "mode": "Режим",
@@ -656,7 +657,9 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "Конфіг Peer {n}"
       },
-      "sniffingDestOverride": "Перевизначення призначення"
+      "sniffingDestOverride": "Перевизначення призначення",
+      "advancedTitle": "Додаткові налаштування",
+      "setSuccess": "Успішно застосовано"
     },
     "clients": {
       "tabBasics": "Основні",
@@ -819,6 +822,7 @@
       "wireguardPreSharedKey": "Спільний ключ WireGuard",
       "wireguardAllowedIPs": "Дозволені IP WireGuard",
       "wireguardAllowedIPsHint": "Залиште порожнім для автопризначення; розділяйте записи комами",
+      "tuicConfig": "Конфігурація TUIC (Clash)",
       "mtprotoSecret": "Секрет MTProto",
       "mtprotoSecretHint": "Секрет FakeTLS клієнта. Згенеруйте заново, щоб змінити.",
       "mtprotoAdTag": "Рекламний тег (спонсорський канал)",
@@ -1628,6 +1632,23 @@
         "allowedIPs": "Дозволені IP-адреси",
         "endpoint": "Кінцева точка",
         "domainStrategy": "Стратегія домену"
+      },
+      "tuic": {
+        "congestionControl": "Контроль перевантаження",
+        "congestionControlHint": "Алгоритм сервера й клієнта. На сервері змінюється після перепідключення.",
+        "profileOptions": "Client profile options",
+        "alpn": "ALPN",
+        "udpRelayMode": "Режим ретрансляції UDP",
+        "udpRelayModeHint": "Режим UDP для клієнта. Сервер підтримує обидва.",
+        "zeroRttHandshake": "0-RTT рукостискання",
+        "logLevel": "Рівень журналювання",
+        "logLevelHint": "Мінімальний рівень повідомлень у логах цього інбаунду.",
+        "maxIdleTime": "Макс. час простою (сек)",
+        "authTimeout": "Таймаут автентифікації (сек)",
+        "maxUdpRelayPacketSize": "Макс. розмір пакета UDP",
+        "sni": "SNI",
+        "sniHint": "Ім’я сервера для TLS у профілі клієнта.",
+        "sniRequired": "Укажіть домен для автозаповнення."
       },
       "tun": {
         "userLevel": "Рівень користувача"

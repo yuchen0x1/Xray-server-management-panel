@@ -637,7 +637,8 @@
         "bytesPerSec": "Byte per detik",
         "bytesPerSecTip": "Batas kecepatan (byte/detik) yang diterapkan pada lalu lintas fallback setelah ambang batas, agar probe tidak dapat memakai server Anda sebagai bandwidth gratis menuju target. 0 = tanpa batas (menonaktifkan arah ini).",
         "burstBytesPerSec": "Byte per detik burst",
-        "burstBytesPerSecTip": "Kelonggaran untuk burst singkat di atas laju tetap (ukuran token-bucket). Jika lebih kecil dari Byte per detik, nilainya dinaikkan agar sama."
+        "burstBytesPerSecTip": "Kelonggaran untuk burst singkat di atas laju tetap (ukuran token-bucket). Jika lebih kecil dari Byte per detik, nilainya dinaikkan agar sama.",
+        "autoFill": "Isi Otomatis"
       },
       "info": {
         "mode": "Mode",
@@ -656,7 +657,9 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "Konfig Peer {n}"
       },
-      "sniffingDestOverride": "Penggantian tujuan"
+      "sniffingDestOverride": "Penggantian tujuan",
+      "advancedTitle": "Pengaturan Lanjutan",
+      "setSuccess": "Berhasil diterapkan"
     },
     "clients": {
       "tabBasics": "Dasar",
@@ -819,6 +822,7 @@
       "wireguardPreSharedKey": "Kunci Pra-Berbagi WireGuard",
       "wireguardAllowedIPs": "IP yang Diizinkan WireGuard",
       "wireguardAllowedIPsHint": "Biarkan kosong untuk penetapan otomatis; pisahkan entri dengan koma",
+      "tuicConfig": "Konfigurasi TUIC (Clash)",
       "mtprotoSecret": "Secret MTProto",
       "mtprotoSecretHint": "Secret FakeTLS klien. Buat ulang untuk menggantinya.",
       "mtprotoAdTag": "Ad-tag (kanal bersponsor)",
@@ -1628,6 +1632,23 @@
         "allowedIPs": "IP yang Diizinkan",
         "endpoint": "Titik Akhir",
         "domainStrategy": "Strategi Domain"
+      },
+      "tuic": {
+        "congestionControl": "Kontrol Kemacetan",
+        "congestionControlHint": "Algoritma server dan klien. Perubahan server berlaku setelah terhubung ulang.",
+        "profileOptions": "Client profile options",
+        "alpn": "ALPN",
+        "udpRelayMode": "Mode Relai UDP",
+        "udpRelayModeHint": "Mode UDP klien. Server mendukung keduanya.",
+        "zeroRttHandshake": "Jabat Tangan 0-RTT",
+        "logLevel": "Tingkat Log",
+        "logLevelHint": "Level log minimum untuk inbound ini.",
+        "maxIdleTime": "Waktu Diam Maks (dtk)",
+        "authTimeout": "Batas Waktu Otentikasi (dtk)",
+        "maxUdpRelayPacketSize": "Ukuran Paket UDP Maks",
+        "sni": "SNI",
+        "sniHint": "Nama server TLS dalam profil klien.",
+        "sniRequired": "Masukkan domain untuk mengisi jalur sertifikat otomatis."
       },
       "tun": {
         "userLevel": "Level Pengguna"

@@ -442,7 +442,7 @@ export const InboundSchema = z.object({
   nodeId: z.number().int().nullable().optional(),
   originNodeGuid: z.string().optional(),
   port: z.number().int().min(0).max(65535),
-  protocol: z.enum(['vmess', 'vless', 'trojan', 'shadowsocks', 'wireguard', 'hysteria', 'http', 'mixed', 'tunnel', 'tun', 'mtproto']),
+  protocol: z.enum(['vmess', 'vless', 'trojan', 'shadowsocks', 'wireguard', 'hysteria', 'http', 'mixed', 'tunnel', 'tun', 'mtproto', 'tuic']),
   remark: z.string(),
   settings: z.unknown(),
   shareAddr: z.string(),
@@ -493,6 +493,7 @@ export const InboundOptionSchema = z.object({
   ssMethod: z.string(),
   tag: z.string(),
   tlsFlowCapable: z.boolean(),
+  tuicServer: z.lazy(() => TuicServerSettingsSchema).nullable().optional(),
   wgDns: z.string().optional(),
   wgMtu: z.number().int().optional(),
   wgPublicKey: z.string().optional(),
@@ -674,6 +675,21 @@ export const SettingSchema = z.object({
   value: z.string(),
 });
 export type Setting = z.infer<typeof SettingSchema>;
+
+export const TuicServerSettingsSchema = z.object({
+  alpn: z.array(z.string()),
+  authentication_timeout: z.number().int(),
+  certificate: z.string(),
+  congestion_control: z.string(),
+  log_level: z.string(),
+  max_idle_time: z.number().int(),
+  max_udp_relay_packet_size: z.number().int(),
+  private_key: z.string(),
+  sni: z.string().optional(),
+  udp_relay_mode: z.string(),
+  zero_rtt_handshake: z.boolean(),
+});
+export type TuicServerSettings = z.infer<typeof TuicServerSettingsSchema>;
 
 export const UserSchema = z.object({
   id: z.number().int(),

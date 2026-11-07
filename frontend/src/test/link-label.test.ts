@@ -40,4 +40,14 @@ describe('link-label parseLinkParts', () => {
     expect(parts?.remark).toBe('mt-inbound');
     expect(parts && linkMetaText(parts)).toBe('mt-inbound:8443');
   });
+
+  it('labels a tuic link with QUIC network and TLS security', () => {
+    const link = 'tuic://uuid:pass@tuic.example.com:8443?congestion_control=bbr#tuic-remark';
+    const parts = parseLinkParts(link);
+    expect(parts?.protocol).toBe('TUIC');
+    expect(parts?.network).toBe('QUIC');
+    expect(parts?.security).toBe('TLS');
+    expect(parts?.port).toBe('8443');
+    expect(parts?.remark).toBe('tuic-remark');
+  });
 });

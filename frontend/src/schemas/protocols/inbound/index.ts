@@ -6,6 +6,7 @@ import { MixedInboundSettingsSchema } from './mixed';
 import { MtprotoInboundSettingsSchema } from './mtproto';
 import { ShadowsocksInboundSettingsSchema } from './shadowsocks';
 import { TrojanInboundSettingsSchema } from './trojan';
+import { TuicInboundSettingsSchema } from './tuic';
 import { TunInboundSettingsSchema } from './tun';
 import { TunnelInboundSettingsSchema } from './tunnel';
 import { VlessInboundSettingsSchema } from './vless';
@@ -18,6 +19,7 @@ export * from './mixed';
 export * from './mtproto';
 export * from './shadowsocks';
 export * from './trojan';
+export * from './tuic';
 export * from './tun';
 export * from './tunnel';
 export * from './vless';
@@ -41,5 +43,6 @@ export const InboundSettingsSchema = z.discriminatedUnion('protocol', [
   z.object({ protocol: z.literal('tunnel'),      settings: TunnelInboundSettingsSchema }),
   z.object({ protocol: z.literal('tun'),         settings: TunInboundSettingsSchema }),
   z.object({ protocol: z.literal('mtproto'),     settings: MtprotoInboundSettingsSchema }),
+  z.object({ protocol: z.literal('tuic'),        settings: TuicInboundSettingsSchema }),
 ]);
 export type InboundSettings = z.infer<typeof InboundSettingsSchema>;

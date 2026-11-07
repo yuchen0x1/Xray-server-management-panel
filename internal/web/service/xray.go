@@ -13,6 +13,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/json_util"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 
@@ -137,7 +138,7 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 		if inbound.NodeID != nil {
 			continue
 		}
-		if inbound.Protocol == model.MTProto {
+		if inbound.Protocol == model.MTProto || inbound.Protocol == model.TUIC {
 			continue
 		}
 		settings := map[string]any{}
@@ -330,6 +331,11 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 		}
 		injectMtprotoEgress(xrayConfig, inbound)
 	}
+
+	// TUIC inbounds are served by the panel's own TUIC server, not by xray-core.
+	// Each one gets a loopback SOCKS5 inbound that the TUIC server dials
+	// through, so routing rules match the relayed traffic like any other.
+	injectTuicSocks(xrayConfig, inbounds)
 
 	// Wire the panel's own HTTP traffic through the configured outbound, after
 	// the subscription merge so subscription outbound tags are valid targets.
@@ -623,6 +629,42 @@ func injectMtprotoEgress(cfg *xray.Config, inbound *model.Inbound) {
 		Settings: json_util.RawMessage(mtprotoEgressSocksSettings),
 		Tag:      tag,
 	})
+}
+
+const (
+	tuicEgressSocksSettings    = `{"auth":"noauth","udp":true}`
+	tuicEgressSniffingSettings = `{"enabled":true,"destOverride":["http","tls","quic","fakedns"]}`
+)
+
+// injectTuicSocks gives every enabled, non-node-hosted TUIC inbound its own
+// loopback SOCKS5 inbound. The panel's TUIC server terminates the QUIC
+// connection and relays the payload through this bridge, so routing rules can
+// match the relayed traffic the same way they match any other inbound.
+func injectTuicSocks(cfg *xray.Config, inbounds []*model.Inbound) {
+	existingTags := make(map[string]struct{}, len(cfg.InboundConfigs))
+	for i := range cfg.InboundConfigs {
+		existingTags[cfg.InboundConfigs[i].Tag] = struct{}{}
+	}
+
+	for _, inbound := range inbounds {
+		if inbound.Protocol != model.TUIC || !inbound.Enable || inbound.NodeID != nil {
+			continue
+		}
+		if _, taken := existingTags[inbound.Tag]; taken {
+			logger.Warning("tuic socks: inbound tag [", inbound.Tag, "] already present in generated config, skipping its relay inbound")
+			continue
+		}
+
+		existingTags[inbound.Tag] = struct{}{}
+		cfg.InboundConfigs = append(cfg.InboundConfigs, xray.InboundConfig{
+			Listen:   json_util.RawMessage(`"127.0.0.1"`),
+			Port:     tuic.SOCKSPortForInbound(inbound.Id),
+			Protocol: "socks",
+			Settings: json_util.RawMessage(tuicEgressSocksSettings),
+			Sniffing: json_util.RawMessage(tuicEgressSniffingSettings),
+			Tag:      inbound.Tag,
+		})
+	}
 }
 
 // mergeSubscriptionOutbounds appends the subscription outbounds to the

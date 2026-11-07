@@ -637,7 +637,8 @@
         "bytesPerSec": "بايت في الثانية",
         "bytesPerSecTip": "حد السرعة (بايت/ثانية) المطبّق على مرور الـ fallback بعد العتبة، عشان الفحوصات ماتقدرش تستخدم سيرفرك كنطاق ترددي مجاني للهدف. 0 = بلا حد (بيعطّل الاتجاه ده).",
         "burstBytesPerSec": "بايت في الثانية للدفقة",
-        "burstBytesPerSecTip": "السماح بدفقات قصيرة فوق المعدل الثابت (حجم token-bucket). لو أقل من بايت في الثانية بيترفع ليطابقه."
+        "burstBytesPerSecTip": "السماح بدفقات قصيرة فوق المعدل الثابت (حجم token-bucket). لو أقل من بايت في الثانية بيترفع ليطابقه.",
+        "autoFill": "الملء التلقائي"
       },
       "info": {
         "mode": "الوضع",
@@ -656,7 +657,9 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "تكوين Peer {n}"
       },
-      "sniffingDestOverride": "تجاوز الوجهة"
+      "sniffingDestOverride": "تجاوز الوجهة",
+      "advancedTitle": "الإعدادات المتقدمة",
+      "setSuccess": "تم الإعداد بنجاح"
     },
     "clients": {
       "tabBasics": "أساسي",
@@ -819,6 +822,7 @@
       "wireguardPreSharedKey": "مفتاح وايرغارد المشترك مسبقًا",
       "wireguardAllowedIPs": "عناوين IP المسموحة لوايرغارد",
       "wireguardAllowedIPsHint": "اتركه فارغًا للتعيين التلقائي؛ افصل بين الإدخالات بفواصل",
+      "tuicConfig": "إعدادات TUIC (Clash)",
       "mtprotoSecret": "سر MTProto",
       "mtprotoSecretHint": "سر FakeTLS الخاص بالعميل. أعد التوليد لتغييره.",
       "mtprotoAdTag": "علامة إعلانية (قناة مموّلة)",
@@ -1628,6 +1632,23 @@
         "allowedIPs": "عناوين IP المسموح بها",
         "endpoint": "النهاية",
         "domainStrategy": "استراتيجية الدومين"
+      },
+      "tuic": {
+        "congestionControl": "التحكم في الازدحام",
+        "congestionControlHint": "خوارزمية الخادم والعميل. تسري تغييرات الخادم بعد إعادة الاتصال.",
+        "profileOptions": "Client profile options",
+        "alpn": "ALPN",
+        "udpRelayMode": "وضع ترحيل UDP",
+        "udpRelayModeHint": "وضع UDP للعميل. يدعم الخادم كلا الوضعين.",
+        "zeroRttHandshake": "مصافحة 0-RTT",
+        "logLevel": "مستوى السجل",
+        "logLevelHint": "أدنى مستوى للسجل لهذا الاتصال الوارد.",
+        "maxIdleTime": "أقصى وقت خمول (ثوانٍ)",
+        "authTimeout": "مهلة المصادقة (ثوانٍ)",
+        "maxUdpRelayPacketSize": "أقصى حجم لحزمة UDP",
+        "sni": "SNI",
+        "sniHint": "اسم خادم TLS في ملف إعداد العميل.",
+        "sniRequired": "أدخل نطاقًا لملء مسارات الشهادة تلقائيًا."
       },
       "tun": {
         "userLevel": "مستوى المستخدم"

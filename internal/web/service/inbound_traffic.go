@@ -104,6 +104,10 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 	if len(traffics) == 0 {
 		return nil
 	}
+	traffics, err = canonicalizeClientTraffic(tx, traffics)
+	if err != nil {
+		return fmt.Errorf("resolve client traffic identities: %w", err)
+	}
 
 	emails := make([]string, 0, len(traffics))
 	for _, traffic := range traffics {
@@ -182,6 +186,50 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 	}
 
 	return nil
+}
+
+// canonicalizeClientTraffic resolves the identity of every reported traffic row
+// to the email that owns it and merges duplicates. The TUIC server reports a
+// client_traffics row id instead of the email (the client may not exist in
+// the panel's client_traffics yet), so the owner is looked up by that id.
+// Rows whose owner cannot be found are dropped rather than attributed to an
+// arbitrary account.
+func canonicalizeClientTraffic(tx *gorm.DB, traffics []*xray.ClientTraffic) ([]*xray.ClientTraffic, error) {
+	byEmail := make(map[string]*xray.ClientTraffic, len(traffics))
+	for _, traffic := range traffics {
+		if traffic == nil {
+			continue
+		}
+		email := traffic.Email
+		if traffic.TuicTrafficID > 0 {
+			var owner xray.ClientTraffic
+			err := tx.Select("email").Where("id = ?", traffic.TuicTrafficID).Take(&owner).Error
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				continue
+			}
+			if err != nil {
+				return nil, err
+			}
+			email = owner.Email
+		}
+		current := byEmail[email]
+		if current == nil {
+			copied := *traffic
+			copied.Email = email
+			copied.TuicUUID = ""
+			copied.TuicInboundId = 0
+			byEmail[email] = &copied
+			continue
+		}
+		current.Up += traffic.Up
+		current.Down += traffic.Down
+		current.Enable = current.Enable || traffic.Enable
+	}
+	result := make([]*xray.ClientTraffic, 0, len(byEmail))
+	for _, traffic := range byEmail {
+		result = append(result, traffic)
+	}
+	return result, nil
 }
 
 func (s *InboundService) adjustTraffics(tx *gorm.DB, dbClientTraffics []*xray.ClientTraffic) ([]*xray.ClientTraffic, map[string]int64, error) {

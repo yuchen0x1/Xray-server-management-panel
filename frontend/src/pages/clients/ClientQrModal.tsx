@@ -7,6 +7,7 @@ import { LinkTags, linkMetaText, parseLinkParts } from '@/lib/xray/link-label';
 import { QrPanel } from '@/pages/inbounds/qr';
 import type { ClientRecord, InboundOption } from '@/hooks/useClients';
 import { buildWireguardClientConfig, findWireguardInbound, isWireguardClient } from './wireguardConfig';
+import { buildTuicClientConfig, findTuicInbound, isTuicClient } from './tuicConfig';
 
 interface SubSettings {
   enable: boolean;
@@ -59,7 +60,13 @@ export default function ClientQrModal({
     return buildWireguardClientConfig(client, wgInbound, window.location.hostname, subSettings?.publicHost ?? '');
   }, [client, wgInbound, subSettings?.publicHost]);
 
-  const hasAnything = !!subLink || !!subJsonLink || !!wgConfigText || links.length > 0;
+  const tuicInbound = useMemo(() => findTuicInbound(client, inboundsById), [client, inboundsById]);
+  const tuicConfigText = useMemo(() => {
+    if (!client || !tuicInbound || !isTuicClient(client)) return '';
+    return buildTuicClientConfig(client, tuicInbound, window.location.hostname, subSettings?.publicHost ?? '');
+  }, [client, tuicInbound, subSettings?.publicHost]);
+
+  const hasAnything = !!subLink || !!subJsonLink || !!wgConfigText || !!tuicConfigText || links.length > 0;
 
   useEffect(() => {
     if (!open || !client?.subId) {
@@ -135,8 +142,21 @@ export default function ClientQrModal({
         ),
       });
     }
+    if (tuicConfigText) {
+      out.push({
+        key: 'tuic-config',
+        label: <Tag color="orange" style={{ margin: 0 }}>{t('pages.clients.tuicConfig')}</Tag>,
+        children: (
+          <QrPanel
+            value={tuicConfigText}
+            remark={client?.email || 'tuic-client'}
+            downloadName={`${client?.email || 'tuic-client'}.yaml`}
+          />
+        ),
+      });
+    }
     return out;
-  }, [subLink, subJsonLink, wgConfigText, links, client?.email, t]);
+  }, [subLink, subJsonLink, wgConfigText, tuicConfigText, links, client?.email, t]);
 
   useEffect(() => {
     if (!open) {

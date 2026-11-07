@@ -387,6 +387,7 @@
         "stream": "Stream",
         "streamHelp": "Xray stream block wrapper:"
       },
+      "advancedTitle": "Advanced Settings",
       "subSortIndex": "Sub order",
       "inboundInfo": "Inbound Information",
       "exportInbound": "Export Inbound",
@@ -430,6 +431,7 @@
         "moreIssues": "{message}  (+{count} more)"
       },
       "form": {
+        "autoFill": "Auto Fill",
         "moveUp": "Move up",
         "moveDown": "Move down",
         "addAll": "Add all",
@@ -656,7 +658,8 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "Peer {n} config"
       },
-      "sniffingDestOverride": "Destination override"
+      "sniffingDestOverride": "Destination override",
+      "setSuccess": "Applied successfully"
     },
     "clients": {
       "tabBasics": "Basics",
@@ -819,6 +822,7 @@
       "wireguardPreSharedKey": "WireGuard Pre-Shared Key",
       "wireguardAllowedIPs": "WireGuard Allowed IPs",
       "wireguardAllowedIPsHint": "Leave empty to auto-assign; separate entries with commas",
+      "tuicConfig": "TUIC config (Clash)",
       "mtprotoSecret": "MTProto secret",
       "mtprotoSecretHint": "The client's FakeTLS secret. Regenerate to rotate it.",
       "mtprotoAdTag": "Ad-tag (sponsored channel)",
@@ -1745,6 +1749,23 @@
         "allowedIPs": "Allowed IPs",
         "endpoint": "Endpoint",
         "domainStrategy": "Domain Strategy"
+      },
+      "tuic": {
+        "congestionControl": "Congestion Control",
+        "congestionControlHint": "Server and client algorithm. Server changes apply after reconnecting.",
+        "profileOptions": "Client profile options",
+        "alpn": "ALPN",
+        "udpRelayMode": "UDP Relay Mode",
+        "udpRelayModeHint": "Client UDP mode. The server supports both.",
+        "zeroRttHandshake": "Zero-RTT Handshake",
+        "logLevel": "Log Level",
+        "logLevelHint": "Minimum log level for this inbound.",
+        "maxIdleTime": "Max Idle Time (s)",
+        "authTimeout": "Auth Timeout (s)",
+        "maxUdpRelayPacketSize": "Max UDP Packet Size",
+        "sni": "SNI",
+        "sniHint": "TLS server name in the client profile.",
+        "sniRequired": "Enter a domain to auto-fill certificate paths."
       },
       "tun": {
         "userLevel": "User Level"

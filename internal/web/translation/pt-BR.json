@@ -637,7 +637,8 @@
           "node": "Endereço do nó",
           "listen": "Endereço de escuta do inbound",
           "custom": "Personalizada"
-        }
+        },
+        "autoFill": "Preenchimento automático"
       },
       "info": {
         "mode": "Modo",
@@ -656,7 +657,9 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "Config Peer {n}"
       },
-      "sniffingDestOverride": "Substituição de destino"
+      "sniffingDestOverride": "Substituição de destino",
+      "advancedTitle": "Configurações avançadas",
+      "setSuccess": "Aplicado com sucesso"
     },
     "clients": {
       "tabBasics": "Básico",
@@ -819,6 +822,7 @@
       "wireguardPreSharedKey": "Chave pré-compartilhada do WireGuard",
       "wireguardAllowedIPs": "IPs permitidos do WireGuard",
       "wireguardAllowedIPsHint": "Deixe vazio para atribuir automaticamente; separe as entradas com vírgulas",
+      "tuicConfig": "Configuração do TUIC (Clash)",
       "mtprotoSecret": "Segredo MTProto",
       "mtprotoSecretHint": "O segredo FakeTLS do cliente. Gere novamente para trocá-lo.",
       "mtprotoAdTag": "Ad-tag (canal patrocinado)",
@@ -1628,6 +1632,23 @@
         "allowedIPs": "IPs Permitidos",
         "endpoint": "Ponto Final",
         "domainStrategy": "Estratégia de Domínio"
+      },
+      "tuic": {
+        "congestionControl": "Controle de congestionamento",
+        "congestionControlHint": "Algoritmo do servidor e cliente. Alterações no servidor valem após reconectar.",
+        "profileOptions": "Client profile options",
+        "alpn": "ALPN",
+        "udpRelayMode": "Modo de retransmissão UDP",
+        "udpRelayModeHint": "Modo UDP do cliente. O servidor aceita ambos.",
+        "zeroRttHandshake": "Handshake 0-RTT",
+        "logLevel": "Nível de registro",
+        "logLevelHint": "Nível mínimo de log desta entrada.",
+        "maxIdleTime": "Tempo máx. ocioso (s)",
+        "authTimeout": "Tempo limite de autenticação (s)",
+        "maxUdpRelayPacketSize": "Tamanho máx. do pacote UDP",
+        "sni": "SNI",
+        "sniHint": "Nome do servidor TLS no perfil do cliente.",
+        "sniRequired": "Informe um domínio para preencher os caminhos do certificado."
       },
       "tun": {
         "userLevel": "Nível do Usuário"

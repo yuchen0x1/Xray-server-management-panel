@@ -637,7 +637,8 @@
           "node": "Dirección del nodo",
           "listen": "Dirección de escucha del inbound",
           "custom": "Personalizada"
-        }
+        },
+        "autoFill": "Autocompletar"
       },
       "info": {
         "mode": "Modo",
@@ -656,7 +657,9 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "Config Peer {n}"
       },
-      "sniffingDestOverride": "Anulación de destino"
+      "sniffingDestOverride": "Anulación de destino",
+      "advancedTitle": "Configuración avanzada",
+      "setSuccess": "Configurado correctamente"
     },
     "clients": {
       "tabBasics": "Básico",
@@ -819,6 +822,7 @@
       "wireguardPreSharedKey": "Clave precompartida de WireGuard",
       "wireguardAllowedIPs": "IP permitidas de WireGuard",
       "wireguardAllowedIPsHint": "Déjalo vacío para asignar automáticamente; separa las entradas con comas",
+      "tuicConfig": "Configuración de TUIC (Clash)",
       "mtprotoSecret": "Secreto MTProto",
       "mtprotoSecretHint": "El secreto FakeTLS del cliente. Vuelve a generarlo para cambiarlo.",
       "mtprotoAdTag": "Ad-tag (canal patrocinado)",
@@ -1628,6 +1632,23 @@
         "allowedIPs": "IP permitidas",
         "endpoint": "Punto final",
         "domainStrategy": "Estrategia de dominio"
+      },
+      "tuic": {
+        "congestionControl": "Control de congestión",
+        "congestionControlHint": "Algoritmo del servidor y cliente. Los cambios del servidor se aplican al reconectar.",
+        "profileOptions": "Client profile options",
+        "alpn": "ALPN",
+        "udpRelayMode": "Modo de retransmisión UDP",
+        "udpRelayModeHint": "Modo UDP del cliente. El servidor admite ambos.",
+        "zeroRttHandshake": "Apretón de manos 0-RTT",
+        "logLevel": "Nivel de registro",
+        "logLevelHint": "Nivel mínimo de registro de esta entrada.",
+        "maxIdleTime": "Tiempo máx. de inactividad (s)",
+        "authTimeout": "Tiempo de espera de autenticación (s)",
+        "maxUdpRelayPacketSize": "Tamaño máx. de paquete UDP",
+        "sni": "SNI",
+        "sniHint": "Nombre del servidor TLS en el perfil del cliente.",
+        "sniRequired": "Introduce un dominio para completar las rutas del certificado."
       },
       "tun": {
         "userLevel": "Nivel de Usuario"

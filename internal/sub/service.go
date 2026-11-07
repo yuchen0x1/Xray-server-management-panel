@@ -19,6 +19,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/random"
 	wgutil "github.com/mhsanaei/3x-ui/v3/internal/util/wireguard"
@@ -492,7 +493,7 @@ func (s *SubService) getInboundsBySubId(subId string) ([]*model.Inbound, error) 
 		JOIN client_inbounds ON client_inbounds.inbound_id = inbounds.id
 		JOIN clients ON clients.id = client_inbounds.client_id
 		WHERE
-			inbounds.protocol in ('vmess','vless','trojan','shadowsocks','hysteria','wireguard','mtproto')
+			inbounds.protocol in ('vmess','vless','trojan','shadowsocks','hysteria','wireguard','mtproto','tuic')
 			AND clients.sub_id = ? AND inbounds.enable = ?
 	)`, subId, true).Order("sub_sort_index ASC").Order("id ASC").Find(&inbounds).Error
 	if err != nil {
@@ -643,8 +644,88 @@ func (s *SubService) GetLink(inbound *model.Inbound, email string) string {
 		return s.genMtprotoLink(inbound, email)
 	case "wireguard":
 		return s.genWireguardLink(inbound, email)
+	case "tuic":
+		return s.genTuicLink(inbound, email)
 	}
 	return ""
+}
+
+// genTuicLink builds a per-client tuic:// share link mirroring the frontend
+// genTuicLink: the client's UUID and password are the userinfo, and the
+// server's congestion control, ALPN, SNI and UDP relay mode ride in the
+// query. Returns "" when the client has no UUID or password.
+func (s *SubService) genTuicLink(inbound *model.Inbound, email string) string {
+	if inbound.Protocol != model.TUIC {
+		return ""
+	}
+	inst, ok := tuic.InstanceFromInbound(inbound)
+	if !ok {
+		return ""
+	}
+	var client *tuic.TuicClientSettings
+	for i := range inst.Clients {
+		if inst.Clients[i].Email == email {
+			client = &inst.Clients[i]
+			break
+		}
+	}
+	if client == nil && len(inst.Clients) > 0 && email == "" {
+		client = &inst.Clients[0]
+	}
+	if client == nil || client.UUID == "" || client.Password == "" {
+		return ""
+	}
+
+	params := make(map[string]string)
+	congestionControl := inst.CongestionControl
+	if congestionControl == "" {
+		congestionControl = "bbr"
+	}
+	params["congestion_control"] = congestionControl
+	if len(inst.ALPN) > 0 {
+		params["alpn"] = strings.Join(inst.ALPN, ",")
+	}
+	if inst.SNI != "" {
+		params["sni"] = inst.SNI
+	}
+	if inst.UDPRelayMode != "" {
+		params["udp_relay_mode"] = inst.UDPRelayMode
+	}
+	params["allow_insecure"] = "0"
+
+	stream := unmarshalStreamSettings(inbound.StreamSettings)
+	externalProxies, _ := stream["externalProxy"].([]any)
+	if len(externalProxies) > 0 {
+		links := make([]string, 0, len(externalProxies))
+		for _, externalProxy := range externalProxies {
+			ep, ok := externalProxy.(map[string]any)
+			if !ok {
+				continue
+			}
+			dest, _ := ep["dest"].(string)
+			portF, okPort := ep["port"].(float64)
+			if dest == "" || !okPort {
+				continue
+			}
+			epParams := cloneStringMap(params)
+			if sni, ok := externalProxySNI(ep); ok {
+				epParams["sni"] = sni
+			}
+			if alpn, ok := externalProxyALPN(ep["alpn"]); ok {
+				epParams["alpn"] = alpn
+			}
+			if ai, ok := ep["allowInsecure"].(bool); ok && ai {
+				epParams["allow_insecure"] = "1"
+			}
+			link := fmt.Sprintf("tuic://%s:%s@%s", encodeUserinfo(client.UUID), encodeUserinfo(client.Password), joinHostPort(dest, int(portF)))
+			links = append(links, buildLinkWithParams(link, epParams, s.endpointRemark(inbound, email, ep, "")))
+		}
+		return strings.Join(links, "\n")
+	}
+
+	host := s.resolveInboundAddress(inbound)
+	link := fmt.Sprintf("tuic://%s:%s@%s", encodeUserinfo(client.UUID), encodeUserinfo(client.Password), joinHostPort(host, inbound.Port))
+	return buildLinkWithParams(link, params, s.genRemark(inbound, email, "", ""))
 }
 
 // genWireguardLink builds a per-client wireguard:// share link mirroring the
