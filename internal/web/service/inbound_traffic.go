@@ -167,7 +167,7 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 			),
 			t.Up, t.Down, now, ct.Email,
 		).Error; err != nil {
-			logger.Warning("AddClientTraffic update data ", err)
+			return fmt.Errorf("update traffic for %s: %w", ct.Email, err)
 		}
 	}
 
@@ -181,7 +181,7 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 			`UPDATE client_traffics SET expiry_time = ? WHERE email = ? AND expiry_time < 0`,
 			convertedExpiryByEmail[email], email,
 		).Error; err != nil {
-			logger.Warning("AddClientTraffic update expiry_time ", err)
+			return fmt.Errorf("update expiry time for %s: %w", email, err)
 		}
 	}
 
