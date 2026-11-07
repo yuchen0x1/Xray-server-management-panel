@@ -46,6 +46,7 @@ export default function InboundList({
   isMobile,
   subEnable,
   nodesById,
+  hostRemarksByInbound,
   hasActiveNode,
   onAddInbound,
   onGeneralAction,
@@ -135,6 +136,7 @@ export default function InboundList({
     hasAnySubSortIndex,
     hasActiveNode,
     nodesById,
+    hostRemarksByInbound,
     clientCount,
     inboundSpeed,
     subEnable,
@@ -243,6 +245,11 @@ export default function InboundList({
                     />
                     <span className="card-id">#{record.id}</span>
                     <span className="tag-name">{record.remark}</span>
+                    {hostRemarksByInbound?.get(record.id)?.length ? (
+                      <span className="card-hosts">
+                        {hostRemarksByInbound!.get(record.id)!.map((r) => <Tag key={r} color="cyan">{r}</Tag>)}
+                      </span>
+                    ) : null}
                     <div className="card-actions">
                       <Tooltip title={t('pages.inbounds.inboundInfo')}>
                         <InfoCircleOutlined

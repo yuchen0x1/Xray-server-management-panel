@@ -256,6 +256,7 @@
       "migrationDownloadPgDesc": "انقر لتنزيل قاعدة بيانات SQLite بامتداد .db مبنية من بيانات PostgreSQL الخاصة بك، جاهزة لتشغيل هذه اللوحة على SQLite."
     },
     "inbounds": {
+      "hosts": "المضيفات",
       "totalDownUp": "إجمالي المرسل/المستقبل",
       "totalUsage": "إجمالي الاستخدام",
       "inboundCount": "عدد الإدخالات",

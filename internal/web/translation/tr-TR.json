@@ -256,6 +256,7 @@
       "migrationDownloadPgDesc": "PostgreSQL verilerinizden oluşturulan ve bu paneli SQLite üzerinde çalıştırmaya hazır bir .db SQLite veritabanı indirmek için tıklayın."
     },
     "inbounds": {
+      "hosts": "Hostlar",
       "totalDownUp": "Toplam Gönderilen/Alınan",
       "totalUsage": "Toplam Kullanım",
       "inboundCount": "Toplam Gelen Bağlantı",

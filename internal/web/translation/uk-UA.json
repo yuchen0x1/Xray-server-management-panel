@@ -256,6 +256,7 @@
       "migrationDownloadPgDesc": "Натисніть, щоб завантажити базу даних SQLite (.db), створену з ваших даних PostgreSQL і готову для запуску панелі на SQLite."
     },
     "inbounds": {
+      "hosts": "Хости",
       "totalDownUp": "Всього надісланих/отриманих",
       "totalUsage": "Всього використанно",
       "inboundCount": "Загальна кількість вхідних",

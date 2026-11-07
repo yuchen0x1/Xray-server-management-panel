@@ -256,6 +256,7 @@
       "migrationDownloadPgDesc": "Klik untuk mengunduh basis data SQLite .db yang dibuat dari data PostgreSQL Anda, siap menjalankan panel ini di SQLite."
     },
     "inbounds": {
+      "hosts": "Host",
       "totalDownUp": "Total Terkirim/Diterima",
       "totalUsage": "Penggunaan Total",
       "inboundCount": "Total Masuk",

@@ -256,6 +256,7 @@
       "migrationDownloadPgDesc": "PostgreSQL のデータから作成した .db SQLite データベースをダウンロードします。このパネルを SQLite で実行する準備が整います。"
     },
     "inbounds": {
+      "hosts": "ホスト",
       "totalDownUp": "総アップロード / ダウンロード",
       "totalUsage": "総使用量",
       "inboundCount": "インバウンド数",

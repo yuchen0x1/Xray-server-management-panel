@@ -256,6 +256,7 @@
       "migrationDownloadPgDesc": "برای دانلود یک پایگاه‌دادهٔ SQLite با پسوند ‎.db که از داده‌های PostgreSQL شما ساخته می‌شود کلیک کنید؛ آمادهٔ اجرای این پنل روی SQLite."
     },
     "inbounds": {
+      "hosts": "میزبان‌ها",
       "totalDownUp": "دریافت/ارسال کل",
       "totalUsage": "‌‌‌مصرف کل",
       "inboundCount": "کل ورودی‌ها",

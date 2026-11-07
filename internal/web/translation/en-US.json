@@ -256,6 +256,7 @@
       "migrationDownloadPgDesc": "Click to download a .db SQLite database built from your PostgreSQL data, ready to run this panel on SQLite."
     },
     "inbounds": {
+      "hosts": "Hosts",
       "totalDownUp": "Total Sent/Received",
       "totalUsage": "Total Usage",
       "inboundCount": "Total Inbounds",

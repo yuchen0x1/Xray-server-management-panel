@@ -27,6 +27,7 @@ interface UseInboundColumnsParams {
   hasAnySubSortIndex: boolean;
   hasActiveNode: boolean;
   nodesById: Map<number, NodeRecord>;
+  hostRemarksByInbound?: Map<number, string[]>;
   clientCount: Record<number, ClientCountEntry>;
   inboundSpeed: Record<number, InboundSpeedEntry>;
   subEnable: boolean;
@@ -41,6 +42,7 @@ export function useInboundColumns({
   hasAnySubSortIndex,
   hasActiveNode,
   nodesById,
+  hostRemarksByInbound,
   clientCount,
   inboundSpeed,
   subEnable,
@@ -142,6 +144,34 @@ export function useInboundColumns({
         align: 'center',
         width: 90,
         sorter: (a, b) => compareText(a.remark, b.remark),
+      });
+    }
+
+    if (hostRemarksByInbound && hostRemarksByInbound.size > 0) {
+      cols.push({
+        title: t('pages.inbounds.hosts'),
+        key: 'hosts',
+        align: 'left',
+        width: 160,
+        sorter: (a, b) => compareText((hostRemarksByInbound.get(a.id) || []).join(','), (hostRemarksByInbound.get(b.id) || []).join(',')),
+        render: (_, record) => {
+          const remarks = hostRemarksByInbound.get(record.id) || [];
+          if (remarks.length === 0) return null;
+          if (remarks.length === 1) return <Tag color="cyan">{remarks[0]}</Tag>;
+          return (
+            <Popover
+              title={t('pages.inbounds.hosts')}
+              content={(
+                <div className="client-email-list">
+                  {remarks.map((r) => <div key={r}>{r}</div>)}
+                </div>
+              )}
+            >
+              <Tag color="cyan">{remarks[0]}</Tag>
+              {remarks.length > 1 && <Tag color="cyan">+{remarks.length - 1}</Tag>}
+            </Popover>
+          );
+        },
       });
     }
 
@@ -357,5 +387,5 @@ export function useInboundColumns({
     );
 
     return cols;
-  }, [t, hasAnyRemark, hasAnySubSortIndex, hasActiveNode, nodesById, clientCount, inboundSpeed, subEnable, expireDiff, trafficDiff, datepicker, onRowAction, onSwitchEnable]);
+  }, [t, hasAnyRemark, hasAnySubSortIndex, hasActiveNode, nodesById, hostRemarksByInbound, clientCount, inboundSpeed, subEnable, expireDiff, trafficDiff, datepicker, onRowAction, onSwitchEnable]);
 }

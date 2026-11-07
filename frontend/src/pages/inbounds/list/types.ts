@@ -80,6 +80,7 @@ export interface InboundListProps {
   isMobile: boolean;
   subEnable: boolean;
   nodesById: Map<number, NodeRecord>;
+  hostRemarksByInbound?: Map<number, string[]>;
   hasActiveNode: boolean;
   onAddInbound: () => void;
   onGeneralAction: (key: GeneralAction) => void;

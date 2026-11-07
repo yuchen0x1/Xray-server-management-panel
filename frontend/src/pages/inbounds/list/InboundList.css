@@ -181,6 +181,13 @@
   user-select: none;
 }
 
+.card-hosts {
+  display: flex;
+  gap: 4px;
+  max-width: 40%;
+  overflow: hidden;
+}
+
 .card-id {
   font-size: 11px;
   opacity: 0.6;

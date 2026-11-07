@@ -256,6 +256,7 @@
       "migrationDownloadPgDesc": "点击下载由 PostgreSQL 数据构建的 .db SQLite 数据库，可用于在 SQLite 上运行本面板。"
     },
     "inbounds": {
+      "hosts": "域名",
       "totalDownUp": "总上传 / 下载",
       "totalUsage": "总用量",
       "inboundCount": "入站数量",

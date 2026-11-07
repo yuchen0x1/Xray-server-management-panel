@@ -31,6 +31,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { useNodesQuery } from '@/api/queries/useNodesQuery';
+import { useHostsQuery } from '@/api/queries/useHostsQuery';
 import AppSidebar from '@/layouts/AppSidebar';
 const TextModal = lazy(() => import('@/components/feedback/TextModal'));
 import type { TextModalTab } from '@/components/feedback/TextModal';
@@ -94,6 +95,21 @@ export default function InboundsPage() {
     for (const n of nodesList || []) map.set(n.id, n);
     return map;
   }, [nodesList]);
+
+  const { hosts: hostsList } = useHostsQuery();
+  const hostRemarksByInbound = useMemo(() => {
+    const map = new Map<number, string[]>();
+    for (const h of hostsList || []) {
+      const remark = h.remark?.trim();
+      if (!remark) continue;
+      for (const inboundId of h.inboundIds || []) {
+        const list = map.get(inboundId) || [];
+        if (!list.includes(remark)) list.push(remark);
+        map.set(inboundId, list);
+      }
+    }
+    return map;
+  }, [hostsList]);
 
   const hasActiveNode = useMemo(
     () => (nodesList || []).some((n) => n.enable && n.status === 'online'),
@@ -613,6 +629,7 @@ export default function InboundsPage() {
                       isMobile={isMobile}
                       subEnable={subSettings.enable}
                       nodesById={nodesById}
+                      hostRemarksByInbound={hostRemarksByInbound}
                       hasActiveNode={showNodeInfo}
                       onAddInbound={onAddInbound}
                       onGeneralAction={onGeneralAction}
