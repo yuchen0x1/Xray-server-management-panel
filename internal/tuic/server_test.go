@@ -433,9 +433,7 @@ func testServerUDPStreamE2E(t *testing.T, controller string) {
 	if _, err := authStream.Write(authPayload); err != nil {
 		t.Fatalf("write authentication payload failed: %v", err)
 	}
-	if err := authStream.Close(); err != nil {
-		t.Fatalf("close authentication stream failed: %v", err)
-	}
+	closeSendStream(t, authStream)
 
 	target := &Address{Type: AddrTypeIPv4, IP: net.ParseIP("8.8.8.8"), Port: 53}
 	udpMsg := bytes.Repeat([]byte("s"), 8500)
@@ -458,9 +456,7 @@ func testServerUDPStreamE2E(t *testing.T, controller string) {
 		if _, err := packetStream.Write(frame.Bytes()); err != nil {
 			t.Fatalf("write packet frame failed: %v", err)
 		}
-		if err := packetStream.Close(); err != nil {
-			t.Fatalf("close packet stream failed: %v", err)
-		}
+		closeSendStream(t, packetStream)
 	}
 
 	replyReassembler := newPacketReassembler(maxUdpRelayPacketSize)

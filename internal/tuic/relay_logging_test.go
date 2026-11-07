@@ -57,9 +57,7 @@ func audit3LogsStart(t *testing.T, level, marker, relayAddr string) (*Server, *c
 	if _, err := auth.Write(frame); err != nil {
 		t.Fatal(err)
 	}
-	if err := auth.Close(); err != nil {
-		t.Fatal(err)
-	}
+	closeSendStream(t, auth)
 	_, _ = authenticatedServerConnection(t, s, id)
 	return s, c, id, password, token
 }
@@ -98,9 +96,7 @@ func TestAudit3RealEventsRespectThresholdAndDoNotExposeSecrets(t *testing.T) {
 			if _, err := u.Write(frame.Bytes()); err != nil {
 				t.Fatal(err)
 			}
-			if err := u.Close(); err != nil {
-				t.Fatal(err)
-			}
+			closeSendStream(t, u)
 			got := make([]byte, len(payload))
 			if _, err := io.ReadFull(u, got); err != nil || string(got) != payload {
 				t.Fatalf("TCP echo %q, %v", got, err)

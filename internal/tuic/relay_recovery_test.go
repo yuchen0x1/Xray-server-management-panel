@@ -184,7 +184,7 @@ func TestAudit3UDPAssociationMustRecoverAfterBridgeReadFailure(t *testing.T) {
 			case <-time.After(time.Second):
 				t.Fatal("restarted bridge did not receive the retained association request")
 			}
-			_, payload, oldErr := audit3ReceivePacket(c, mode, 300*time.Millisecond)
+			_, payload, oldErr := audit3ReceivePacket(c, mode, time.Second)
 			// A different association proves QUIC, the restarted SOCKS bridge, and both transport modes remain functional.
 			audit3SendPacket(t, c, mode, 42132, 4, "fresh")
 			h, p, newErr := audit3ReceivePacket(c, mode, time.Second)
