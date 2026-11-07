@@ -43,7 +43,7 @@ function applyDom(isDark: boolean, isUltra: boolean) {
 }
 
 // module load so the document is in the right theme before React mounts.
-const initialDark = readBool(STORAGE_DARK, true);
+const initialDark = readBool(STORAGE_DARK, false);
 const initialUltra = readBool(STORAGE_ULTRA, false);
 applyDom(initialDark, initialUltra);
 
