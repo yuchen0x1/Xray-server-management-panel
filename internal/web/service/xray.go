@@ -286,6 +286,10 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 				logger.Warningf("Inbound %q: dropping %d XMC finalmask mask(s) without complete Minecraft profiles — reconfigure them to restore the obfuscation (see XTLS/Xray-core#6487)", inbound.Tag, dropped)
 			}
 
+			if lifted := liftLegacyXdnsMasks(stream); lifted > 0 {
+				logger.Warningf("Inbound %q: lifted %d xdns finalmask mask(s) to the structured format xray-core requires since 2026-10-21", inbound.Tag, lifted)
+			}
+
 			// xray-core v26.6.22 (#6258) renamed the XHTTP session keys and
 			// kept no fallback. Lift legacy sessionPlacement/sessionKey onto the
 			// new names here so inbounds stored before the rename keep working

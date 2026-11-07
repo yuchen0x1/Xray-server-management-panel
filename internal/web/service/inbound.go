@@ -811,6 +811,105 @@ func stripIncompleteXmcMasks(stream map[string]any) int {
 	return dropped
 }
 
+// liftLegacyXdnsMasks rewrites xdns finalmask entries still stored in the
+// string form xray-core accepted before 2026-10-21 ("example.com:txt",
+// "example.com:txt+udp://1.1.1.1:53") into the structured shape it requires
+// now ({"names": [...], "types": [...]} / {"addrs": [...]}). The core dropped
+// []string parsing with no fallback, so an inbound saved by an older panel
+// would otherwise fail conf.XDNS.Build() and take every other inbound down
+// with it. The panel's mask editor still writes the string form, so this
+// heals on every config build rather than only once at migration time.
+func liftLegacyXdnsMasks(stream map[string]any) int {
+	finalmask, ok := stream["finalmask"].(map[string]any)
+	if !ok {
+		return 0
+	}
+	udp, _ := finalmask["udp"].([]any)
+	if len(udp) == 0 {
+		return 0
+	}
+	lifted := 0
+	for _, entry := range udp {
+		mask, ok := entry.(map[string]any)
+		if !ok || mask["type"] != "xdns" {
+			continue
+		}
+		settings, ok := mask["settings"].(map[string]any)
+		if !ok {
+			continue
+		}
+		changed := false
+		if domains, ok := liftLegacyXdnsDomains(settings["domains"]); ok {
+			settings["domains"] = domains
+			changed = true
+		}
+		if resolvers, ok := liftLegacyXdnsResolvers(settings["resolvers"]); ok {
+			settings["resolvers"] = resolvers
+			changed = true
+		}
+		if changed {
+			lifted++
+		}
+	}
+	return lifted
+}
+
+func liftLegacyXdnsDomains(value any) (any, bool) {
+	list, ok := value.([]any)
+	if !ok || len(list) == 0 {
+		return value, false
+	}
+	lifted := make([]any, 0, len(list))
+	for _, item := range list {
+		spec, ok := item.(string)
+		if !ok {
+			return value, false
+		}
+		lifted = append(lifted, liftLegacyXdnsDomain(spec))
+	}
+	return lifted, true
+}
+
+func liftLegacyXdnsDomain(spec string) map[string]any {
+	name, method, hasMethod := spec, "", false
+	if i := strings.LastIndex(spec, ":"); i > 0 {
+		name, method, hasMethod = spec[:i], spec[i+1:], true
+	}
+	domain := map[string]any{"names": []any{name}}
+	if !hasMethod {
+		return domain
+	}
+	switch strings.ToLower(method) {
+	case "", "txt":
+		domain["types"] = []any{16}
+	case "a":
+		domain["types"] = []any{1}
+	case "aaaa":
+		domain["types"] = []any{28}
+	}
+	return domain
+}
+
+func liftLegacyXdnsResolvers(value any) (any, bool) {
+	list, ok := value.([]any)
+	if !ok || len(list) == 0 {
+		return value, false
+	}
+	lifted := make([]any, 0, len(list))
+	for _, item := range list {
+		spec, ok := item.(string)
+		if !ok {
+			return value, false
+		}
+		addr := spec
+		if _, server, found := strings.Cut(spec, "+udp://"); found && server != "" {
+			addr = server
+		}
+		lifted = append(lifted, map[string]any{"addrs": []any{addr}})
+	}
+	return lifted, true
+}
+
 // dropEmptyRandPackets removes the leftover empty "packet" from finalmask
 // items that also carry a rand, and reports how many it cleared.
 //

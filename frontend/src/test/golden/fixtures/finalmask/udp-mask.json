@@ -49,11 +49,11 @@
       "type": "xdns",
       "settings": {
         "domains": [
-          "example.com:txt",
-          "example.org:a"
+          { "names": ["example.com"], "types": [16] },
+          { "names": ["example.org"], "types": [1] }
         ],
         "resolvers": [
-          "example.com:txt+udp://1.1.1.1:53"
+          { "addrs": ["1.1.1.1:53"] }
         ]
       }
     },
