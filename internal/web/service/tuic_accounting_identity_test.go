@@ -54,7 +54,7 @@ func TestAudit3RenameAndRotateCredentialsMustPreserveRetiredUsage(t *testing.T) 
 	const oldID = "a0000000-0000-0000-0000-000000000032"
 	a := audit3CreateTuicClient(t, svc, inboundSvc, ib, "old@audit3", oldID)
 	trafficID := audit3RuntimeTrafficID(t, inboundSvc, ib, "old@audit3")
-	if _, err := svc.Update(inboundSvc, a.Id, model.Client{Email: "new@audit3", ID: "a0000000-0000-0000-0000-000000000033", Password: "newpw", Enable: true}, 0); err != nil {
+	if _, err := svc.Update(inboundSvc, a.Id, model.Client{Email: "new@audit3", ID: "a0000000-0000-0000-0000-000000000033", Password: "newpw", Enable: true}); err != nil {
 		t.Fatalf("public rename + rotate: %v", err)
 	}
 	if _, _, err := inboundSvc.AddTraffic(nil, []*xray.ClientTraffic{{Email: "old@audit3", TuicTrafficID: trafficID, TuicUUID: oldID, TuicInboundId: ib.Id, Up: 123, Down: 456}}); err != nil {
@@ -73,7 +73,7 @@ func TestAudit3PublicRenamePreservesRetiredUsage(t *testing.T) {
 	const id = "a0000000-0000-0000-0000-000000000034"
 	a := audit3CreateTuicClient(t, svc, inboundSvc, ib, "old@audit3", id)
 	trafficID := audit3RuntimeTrafficID(t, inboundSvc, ib, "old@audit3")
-	if _, err := svc.Update(inboundSvc, a.Id, model.Client{Email: "new@audit3", ID: id, Password: "pw", Enable: true}, 0); err != nil {
+	if _, err := svc.Update(inboundSvc, a.Id, model.Client{Email: "new@audit3", ID: id, Password: "pw", Enable: true}); err != nil {
 		t.Fatalf("public rename: %v", err)
 	}
 	if _, _, err := inboundSvc.AddTraffic(nil, []*xray.ClientTraffic{{Email: "old@audit3", TuicTrafficID: trafficID, TuicUUID: id, TuicInboundId: ib.Id, Up: 123, Down: 456}}); err != nil {
