@@ -411,42 +411,36 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 // cpuAlarmWanted reports whether any notifier is configured to receive cpu.high
 // alerts, so the minute-long blocking CPU sampler only runs when it's needed.
 func (s *Server) cpuAlarmWanted() bool {
-	wants := func(events string, threshold int) bool {
-		if threshold <= 0 {
-			return false
-		}
-		for e := range strings.SplitSeq(events, ",") {
-			if strings.TrimSpace(e) == string(eventbus.EventCPUHigh) {
-				return true
-			}
-		}
-		return false
+	if webhookConfigured() {
+		return true
 	}
-	if on, _ := s.settingService.GetTgbotEnabled(); on {
-		events, _ := s.settingService.GetTgEnabledEvents()
-		cpu, _ := s.settingService.GetTgCpu()
-		if wants(events, cpu) {
-			return true
-		}
-	}
-	if on, _ := s.settingService.GetSmtpEnable(); on {
-		events, _ := s.settingService.GetSmtpEnabledEvents()
-		cpu, _ := s.settingService.GetSmtpCpu()
-		if wants(events, cpu) {
-			return true
-		}
-	}
-	return false
+	return s.anyNotifierWants(string(eventbus.EventCPUHigh), s.settingService.GetTgCpu, s.settingService.GetSmtpCpu)
 }
 
 // memoryAlarmWanted reports whether any notifier is configured to receive memory.high alerts.
 func (s *Server) memoryAlarmWanted() bool {
+	if webhookConfigured() {
+		return true
+	}
+	return s.anyNotifierWants(string(eventbus.EventMemoryHigh), s.settingService.GetTgMemory, s.settingService.GetSmtpMemory)
+}
+
+// webhookConfigured reports whether the env-only webhook notifier is set up. It
+// has no DB setting and no per-event subscription, so it always wants the
+// sampled metric events and applies its own threshold on delivery.
+func webhookConfigured() bool {
+	return strings.TrimSpace(os.Getenv("XUI_WEBHOOK_URL")) != ""
+}
+
+// anyNotifierWants reports whether Telegram or SMTP is enabled, subscribed to
+// the given event, and configured with a positive threshold for it.
+func (s *Server) anyNotifierWants(event string, tgThreshold, smtpThreshold func() (int, error)) bool {
 	wants := func(events string, threshold int) bool {
 		if threshold <= 0 {
 			return false
 		}
 		for e := range strings.SplitSeq(events, ",") {
-			if strings.TrimSpace(e) == string(eventbus.EventMemoryHigh) {
+			if strings.TrimSpace(e) == event {
 				return true
 			}
 		}
@@ -454,14 +448,14 @@ func (s *Server) memoryAlarmWanted() bool {
 	}
 	if on, _ := s.settingService.GetTgbotEnabled(); on {
 		events, _ := s.settingService.GetTgEnabledEvents()
-		mem, _ := s.settingService.GetTgMemory()
-		if wants(events, mem) {
+		cpu, _ := tgThreshold()
+		if wants(events, cpu) {
 			return true
 		}
 	}
 	if on, _ := s.settingService.GetSmtpEnable(); on {
 		events, _ := s.settingService.GetSmtpEnabledEvents()
-		mem, _ := s.settingService.GetSmtpMemory()
+		mem, _ := smtpThreshold()
 		if wants(events, mem) {
 			return true
 		}

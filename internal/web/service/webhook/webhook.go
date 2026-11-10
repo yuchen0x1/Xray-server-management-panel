@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -24,11 +25,48 @@ type Payload struct {
 	Data      any       `json:"data,omitempty"`
 }
 
+const (
+	// defaultCPUThreshold and defaultMemoryThreshold match the panel's own
+	// settings defaults, so a webhook-only deployment alerts at the same level
+	// the UI would suggest rather than every minute on an idle host.
+	defaultCPUThreshold    = 90.0
+	defaultMemoryThreshold = 90.0
+	// maxConcurrentDispatches bounds in-flight outbound requests. Every event
+	// used to spawn an unbounded goroutine holding a socket; login attempts in
+	// particular reach this without any authentication.
+	maxConcurrentDispatches = 16
+)
+
+func envThreshold(name string, fallback float64) float64 {
+	raw := strings.TrimSpace(os.Getenv(name))
+	if raw == "" {
+		return fallback
+	}
+	value, err := strconv.ParseFloat(raw, 64)
+	if err != nil || value <= 0 || value > 100 {
+		logger.Warning(fmt.Sprintf("webhook: ignoring invalid %s=%q", name, raw))
+		return fallback
+	}
+	return value
+}
+
 type Subscriber struct {
-	webhookURL string
-	secret     string
-	client     *http.Client
-	limiter    *eventbus.RateLimiter
+	webhookURL    string
+	secret        string
+	client        *http.Client
+	limiter       *eventbus.RateLimiter
+	metrics       metricThresholds
+	dispatchSlots chan struct{}
+}
+
+// metricThresholds is this subscriber's own alerting threshold for the sampled
+// system metrics. The cpu.high and memory.high events carry a raw percentage on
+// every tick, so each notifier decides for itself whether the reading is worth
+// reporting; sharing another notifier's threshold would either spam the webhook
+// on a healthy host or drop real alerts.
+type metricThresholds struct {
+	cpuPercent    float64
+	memoryPercent float64
 }
 
 func NewSubscriber(webhookURL, secret string) *Subscriber {
@@ -43,9 +81,23 @@ func NewSubscriber(webhookURL, secret string) *Subscriber {
 	return &Subscriber{
 		webhookURL: strings.TrimSpace(webhookURL),
 		secret:     strings.TrimSpace(secret),
+		metrics: metricThresholds{
+			cpuPercent:    envThreshold("XUI_WEBHOOK_CPU_THRESHOLD", defaultCPUThreshold),
+			memoryPercent: envThreshold("XUI_WEBHOOK_MEMORY_THRESHOLD", defaultMemoryThreshold),
+		},
+		dispatchSlots: make(chan struct{}, maxConcurrentDispatches),
 		client: &http.Client{
 			Transport: transport,
 			Timeout:   10 * time.Second,
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				if len(via) > 0 && !strings.EqualFold(req.URL.Host, via[0].URL.Host) {
+					return fmt.Errorf("webhook: refusing redirect to another host: %s", req.URL.Host)
+				}
+				if len(via) >= 3 {
+					return fmt.Errorf("webhook: stopped after %d redirects", len(via))
+				}
+				return nil
+			},
 		},
 		limiter: eventbus.NewRateLimiter(1 * time.Minute),
 	}
@@ -56,13 +108,17 @@ func (s *Subscriber) HandleEvent(e eventbus.Event) {
 		return
 	}
 
+	if !s.wants(e) {
+		return
+	}
+
 	if e.Type != eventbus.EventLoginAttempt {
 		if !s.limiter.Allow(e.Type, e.Source) {
 			return
 		}
 	}
 
-	summary := formatSummary(e)
+	summary := formatSummary(e, s.metrics)
 	host, _ := os.Hostname()
 
 	payload := Payload{
@@ -74,10 +130,36 @@ func (s *Subscriber) HandleEvent(e eventbus.Event) {
 		Data:      e.Data,
 	}
 
-	go s.dispatch(payload)
+	select {
+	case s.dispatchSlots <- struct{}{}:
+		go func() {
+			defer func() { <-s.dispatchSlots }()
+			s.dispatch(payload)
+		}()
+	default:
+		logger.Debug("webhook: dropping event, too many deliveries in flight:", e.Type)
+	}
 }
 
-func formatSummary(e eventbus.Event) string {
+// wants decides whether this subscriber should report the event at all. The
+// sampled metric events fire on every tick regardless of load, so they are
+// gated here against this subscriber's own configured threshold.
+func (s *Subscriber) wants(e eventbus.Event) bool {
+	data, ok := e.Data.(*eventbus.SystemMetricData)
+	if !ok {
+		return true
+	}
+	switch e.Type {
+	case eventbus.EventCPUHigh:
+		return data.Percent > s.metrics.cpuPercent
+	case eventbus.EventMemoryHigh:
+		return data.Percent > s.metrics.memoryPercent
+	default:
+		return true
+	}
+}
+
+func formatSummary(e eventbus.Event, thresholds metricThresholds) string {
 	switch e.Type {
 	case eventbus.EventOutboundDown:
 		return fmt.Sprintf("Outbound [%s] is DOWN", e.Source)
@@ -91,12 +173,12 @@ func formatSummary(e eventbus.Event) string {
 		return fmt.Sprintf("Node [%s] is UP", e.Source)
 	case eventbus.EventCPUHigh:
 		if data, ok := e.Data.(*eventbus.SystemMetricData); ok {
-			return fmt.Sprintf("CPU usage high: %.1f%% (threshold: %d%%)", data.Percent, data.Threshold)
+			return fmt.Sprintf("CPU usage high: %.1f%% (threshold: %.0f%%)", data.Percent, thresholds.cpuPercent)
 		}
 		return "CPU usage high"
 	case eventbus.EventMemoryHigh:
 		if data, ok := e.Data.(*eventbus.SystemMetricData); ok {
-			return fmt.Sprintf("Memory usage high: %.1f%% (threshold: %d%%)", data.Percent, data.Threshold)
+			return fmt.Sprintf("Memory usage high: %.1f%% (threshold: %.0f%%)", data.Percent, thresholds.memoryPercent)
 		}
 		return "Memory usage high"
 	case eventbus.EventLoginAttempt:
