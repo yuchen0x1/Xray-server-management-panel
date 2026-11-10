@@ -1,7 +1,9 @@
 package sub
 
 import (
+	"net"
 	"net/http"
+	"net/netip"
 	"strconv"
 	"strings"
 	"sync"
@@ -73,9 +75,9 @@ func (l *subLimiter) registerMiss(ip string) {
 	if !ok {
 		if len(l.records) >= subLimitMaxRecords {
 			l.evictExpiredLocked(now)
-			if len(l.records) >= subLimitMaxRecords {
-				return
-			}
+		}
+		if len(l.records) >= subLimitMaxRecords {
+			l.shedOldestLocked()
 		}
 		record = &subLimitRecord{windowStart: now}
 		l.records[ip] = record
@@ -106,11 +108,54 @@ func (l *subLimiter) evictExpiredLocked(now time.Time) {
 	}
 }
 
+// shedOldestLocked makes room for a new source once the map is at its cap and
+// nothing has expired. Dropping the newcomer instead would fail open: an
+// attacker holding many addresses could fill the map and then guess subIds
+// untracked from every further address. The record with the oldest window is
+// the one closest to being stale anyway, so it goes first.
+func (l *subLimiter) shedOldestLocked() {
+	var oldestIP string
+	var oldest time.Time
+	for ip, record := range l.records {
+		if oldestIP == "" || record.windowStart.Before(oldest) {
+			oldestIP = ip
+			oldest = record.windowStart
+		}
+	}
+	if oldestIP != "" {
+		delete(l.records, oldestIP)
+	}
+}
+
+// subLimiterKey normalizes the client address so one host cannot present
+// thousands of identities. An IPv6 client is counted per /64, the smallest
+// block a single subscriber is normally delegated; IPv4 stays per address.
+func subLimiterKey(remoteAddr string) string {
+	host, _, err := net.SplitHostPort(remoteAddr)
+	if err != nil {
+		host = remoteAddr
+	}
+	addr, err := netip.ParseAddr(strings.TrimSpace(host))
+	if err != nil {
+		return strings.TrimSpace(host)
+	}
+	addr = addr.Unmap()
+	bits := 32
+	if addr.Is6() {
+		bits = 64
+	}
+	prefix, err := addr.Prefix(bits)
+	if err != nil {
+		return addr.String()
+	}
+	return prefix.String()
+}
+
 // rateLimitMiddleware blocks cooldown IPs up front and feeds every 404 the
 // wrapped handlers produce back into the limiter.
 func (a *SUBController) rateLimitMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ip := c.ClientIP()
+		ip := subLimiterKey(c.ClientIP())
 		if blockedUntil, blocked := a.limiter.blocked(ip); blocked {
 			retryAfter := int(time.Until(blockedUntil).Seconds() + 0.5)
 			if retryAfter < 1 {
