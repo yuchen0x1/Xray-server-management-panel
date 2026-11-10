@@ -47,3 +47,9 @@ docker-compose.override.yml
 
 # Ignore .env (Environment Variables) file
 .env
+
+# Ignore AI agent working notes and one-off audit drafts; these are local
+# scratch output, not project documentation, and must not be published.
+.autonomous-upgrade/
+PROJECT_AUDIT_REPORT.md
+UPGRADE_PLAN.md
