@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -25,10 +26,24 @@ func TestGetPanelVersion(t *testing.T) {
 	}
 }
 
+// TestGetBaseVersionIsUtf8 guards the embedded version file, not a specific
+// release number: a truncated embed or a mangled encoding must fail here, while
+// bumping the version must not require editing this test.
 func TestGetBaseVersionIsUtf8(t *testing.T) {
 	got := GetBaseVersion()
-	if got != "3.8.0" {
-		t.Fatalf("base version = %q, want %q", got, "3.8.0")
+	if got == "" {
+		t.Fatal("embedded version file is empty")
+	}
+	if strings.TrimSpace(got) != got {
+		t.Fatalf("base version = %q carries stray whitespace", got)
+	}
+	for _, r := range got {
+		if r != '.' && (r < '0' || r > '9') {
+			t.Fatalf("base version = %q contains %q; want digits and dots only", got, r)
+		}
+	}
+	if !strings.Contains(got, ".") {
+		t.Fatalf("base version = %q, want a dotted release number", got)
 	}
 }
 
