@@ -86,3 +86,96 @@
 | `go test -run 'TestEnsureRelay\|TestRelayBudget' ./internal/tuic/` | 3/3 通过 |
 | `go test -shuffle=on -count=1 ./...` | 全部通过 |
 | `golangci-lint run` | 0 issues |
+
+---
+
+## 轮次 3 — API 令牌作用域与过期（2026-11-10 14:00–22:20）
+
+### 3.1 令牌等同管理员且永久有效（high）
+
+`internal/database/model/model.go`、`internal/web/service/panel/api_token.go`、
+`internal/web/controller/api.go`、`internal/web/controller/setting.go`
+
+**问题**：`ApiToken` 只有 name/token/enabled/createdAt。任何令牌——给监控脚本的、
+给某个节点用的——都拥有完整管理员权限，而且永不过期。一个被泄露的低价值令牌
+等于交出整个面板。
+
+**修复**：
+
+- 模型新增 `Scope`（默认 `admin`）与 `ExpiresAt`（0 = 永不过期），`Token` 列加索引。
+- `MatchToken` 按哈希走索引单条查询后校验 scope 与过期；未知 scope 直接判为不可用，
+  不回退为管理员。`Match` 保留为布尔包装，调用方无需改变。
+- 新增 `enforceTokenScope` 中间件，按 Gin 路由模式白名单放行：
+  - `monitor`：`/server/status`、`cpuHistory`、`history`、xray 指标与 observatory、
+    `getXrayVersion`、`getPanelUpdateInfo`、`nodes/history`；
+  - `node-sync`：`runtime/remote.go` 实际使用的全部集群 RPC；
+  - `node-admin`：node-sync + `/server/updatePanel`。
+- 会话登录用户与 admin 令牌行为完全不变（不带 `api_token_scope` 即跳过校验）。
+- `DeleteExpectedScope` / `SetEnabledExpectedScope` 提供可选的 TOCTOU 保护；缺省时
+  回退到按 ID 操作，保证旧调用方与旧前端不被破坏。
+
+**关键判断**：node-sync 白名单是"漏一项就静默 403 破坏集群同步"的高风险面，因此
+不是照抄上游列表，而是从本仓库 `runtime/remote.go` 与 `node.go` 的真实调用点反推，
+并用 `api_scope_test.go` 的 `nodeSyncRequiredRoutes` 表把两者钉死。
+
+### 3.2 旧库升级后令牌全部失效的风险（high，迁移）
+
+`internal/database/db.go`
+
+**问题**：`Scope` 的 `default:admin` 只对 INSERT 生效。若某驱动的 `ALTER TABLE`
+没把默认值回填到既有行，这些行 scope 为空，而 `MatchToken` 拒绝未知 scope——
+升级即等于吊销所有已签发令牌。
+
+**修复**：新增 `backfillApiTokenScope()`，在 `initModels` 中把 `scope` 为 NULL 或空
+字符串的行显式更新为 `admin`，并打印回填数量。
+
+### 3.3 `-getApiToken` 无限累积管理员令牌（medium）
+
+`main.go`
+
+**问题**：已有令牌时，CLI 每次调用都新建一个 `cli-fallback-<unix>`，名字唯一所以
+永远删不掉、也列不全，实际是一堆无法审计的管理员凭据。
+
+**修复**：新增 `ApiTokenService.RecreateByName`，按名字在事务内替换为唯一一条；
+保留原令牌的过期时间（已过期则拒绝复活），保留原 scope（未知 scope 拒绝 rotate）。
+CLI 改为固定名 `cli-fallback` 的轮换。
+
+### 3.4 前端与文档
+
+- `SecurityTab.tsx`：新增 scope 选择器、过期时间选择器、每行 scope 标签；
+  删除/启停带上 `expectedScope`；保留创建时间显示。
+- 13 个 locale 各补 9 个键（scope 名称、含义、过期时间、永不过期）。
+- `endpoints.ts` 更新请求体与响应示例；`npm run gen` 重新生成
+  `frontend/src/generated/*` 与 `frontend/public/openapi.json`。
+
+### 3.5 验证
+
+| 检查 | 结果 |
+|---|---|
+| `go test ./internal/web/service/panel/ ./internal/database/` | 通过 |
+| `go test ./internal/web/controller/` | 通过 |
+| `go test -shuffle=on -count=1 ./...` | 全部通过 |
+| `golangci-lint run` | 0 issues |
+| `npm run typecheck` / `npm run lint` | 通过 |
+| `npm run test` | 84 文件 / 971 测试通过 |
+| `npm run build` | 成功 |
+
+**测试过程中发现并修正的两处自身错误**：
+1. 种子辅助函数用 `Enabled: false` 直接 Create，命中 GORM `default:true` 省略零值的
+   行为，行被写成启用态——改为插入后显式 Update，并在注释里记下这个陷阱。
+2. 新增行渲染时挤掉了"创建时间"，被既有测试 `api-token-date.test.tsx` 抓住；
+   改为创建时间与过期时间同时显示。
+
+---
+
+## 发布 — v3.12.0（2026-11-10）
+
+- 版本文件 `internal/config/version` → `3.12.0`。
+- 跳过 `v3.9.0`–`v3.11.0`：这三个号属于上游 3x-ui，本仓库标签命名空间与之重叠，
+  复用会让 `git fetch --tags upstream` 因同名标签拒绝覆盖。
+- 把 `TestGetBaseVersionIsUtf8` 从硬编码版本号改为校验"非空 + 仅数字与点"，
+  保留"嵌入文件损坏能被发现"的原意，同时不再需要每次发版改测试。
+- `main` fast-forward 合入，推 tag `v3.12.0`。
+- 工作流默认 `prerelease: true`，而面板更新器读 `/releases/latest`（GitHub 会排除
+  预发布），等于发不出去。已改为正式发布并设置为 latest。
+- 产物：linux amd64/arm64/armv7/armv6/armv5/386/s390x + windows-amd64，共 8 个。
