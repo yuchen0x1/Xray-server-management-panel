@@ -281,8 +281,13 @@ func (s *SocksUDPSession) Close() error {
 	if s.onClose != nil {
 		s.onClose()
 	}
-	_ = s.udpConn.Close()
-	return s.ctrl.Close()
+	if s.udpConn != nil {
+		_ = s.udpConn.Close()
+	}
+	if s.ctrl != nil {
+		return s.ctrl.Close()
+	}
+	return nil
 }
 
 func buildSocks5UDPHeader(target *Address) []byte {
