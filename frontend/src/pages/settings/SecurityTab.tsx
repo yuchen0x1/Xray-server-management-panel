@@ -6,17 +6,21 @@ import {
   Form,
   Input,
   Modal,
+  Select,
   Space,
   Spin,
   Switch,
   Tabs,
+  Tag,
   message,
 } from 'antd';
 import { ApiOutlined, SafetyOutlined, UserOutlined } from '@ant-design/icons';
+import type { Dayjs } from 'dayjs';
 import { ClipboardManager, HttpUtil, IntlUtil, RandomUtil } from '@/utils';
 import { withBasePath } from '@/utils/base-path';
 import type { AllSetting } from '@/models/setting';
 import { SettingListItem } from '@/components/ui';
+import DateTimePicker from '@/components/form/DateTimePicker';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { catTabLabel } from './catTabLabel';
 import TwoFactorModal from './TwoFactorModal';
@@ -28,11 +32,31 @@ interface ApiMsg<T = unknown> {
   obj?: T;
 }
 
+type ApiTokenScope = 'admin' | 'monitor' | 'node-sync' | 'node-admin';
+
+const API_TOKEN_SCOPES: ApiTokenScope[] = ['admin', 'monitor', 'node-sync', 'node-admin'];
+
+const API_TOKEN_SCOPE_COLOR: Record<ApiTokenScope, string> = {
+  admin: 'red',
+  monitor: 'blue',
+  'node-sync': 'green',
+  'node-admin': 'orange',
+};
+
+const API_TOKEN_SCOPE_LABEL_KEY: Record<ApiTokenScope, string> = {
+  admin: 'apiTokenScopeAdmin',
+  monitor: 'apiTokenScopeMonitor',
+  'node-sync': 'apiTokenScopeNodeSync',
+  'node-admin': 'apiTokenScopeNodeAdmin',
+};
+
 interface ApiTokenRow {
   id: number;
   name: string;
   enabled: boolean;
   createdAt: number;
+  scope?: ApiTokenScope;
+  expiresAt?: number;
 }
 
 interface SecurityTabProps {
@@ -86,6 +110,8 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
   const [apiTokensLoading, setApiTokensLoading] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [createName, setCreateName] = useState('');
+  const [createScope, setCreateScope] = useState<ApiTokenScope>('admin');
+  const [createExpiry, setCreateExpiry] = useState<Dayjs | null>(null);
   const [creating, setCreating] = useState(false);
   const [createdToken, setCreatedToken] = useState<{ name: string; token: string } | null>(null);
 
@@ -154,6 +180,8 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
 
   function openCreateModal() {
     setCreateName('');
+    setCreateScope('admin');
+    setCreateExpiry(null);
     setCreateOpen(true);
   }
 
@@ -165,7 +193,11 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
     }
     setCreating(true);
     try {
-      const msg = await HttpUtil.post('/panel/api/setting/apiTokens/create', { name }) as ApiMsg<{ token?: string }>;
+      const msg = await HttpUtil.post('/panel/api/setting/apiTokens/create', {
+        name,
+        scope: createScope,
+        expiresAt: createExpiry ? createExpiry.valueOf() : 0,
+      }) as ApiMsg<{ token?: string }>;
       if (msg?.success) {
         setCreateOpen(false);
         await loadApiTokens();
@@ -187,7 +219,9 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
       cancelText: t('cancel'),
       okType: 'danger',
       onOk: async () => {
-        const msg = await HttpUtil.post(`/panel/api/setting/apiTokens/delete/${row.id}`) as ApiMsg;
+        const msg = await HttpUtil.post(`/panel/api/setting/apiTokens/delete/${row.id}`, {
+          expectedScope: row.scope || 'admin',
+        }) as ApiMsg;
         if (msg?.success) await loadApiTokens();
       },
     });
@@ -195,7 +229,10 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
 
   async function toggleTokenEnabled(row: ApiTokenRow) {
     const target = !row.enabled;
-    const msg = await HttpUtil.post(`/panel/api/setting/apiTokens/setEnabled/${row.id}`, { enabled: target }) as ApiMsg;
+    const msg = await HttpUtil.post(`/panel/api/setting/apiTokens/setEnabled/${row.id}`, {
+      enabled: target,
+      expectedScope: row.scope || 'admin',
+    }) as ApiMsg;
     if (msg?.success) {
       setApiTokens((prev) => prev.map((r) => (r.id === row.id ? { ...r, enabled: target } : r)));
     }
@@ -204,6 +241,10 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
   function formatTokenDate(ts: number): string {
     if (!ts) return '';
     return IntlUtil.formatDate(apiTokenCreatedAtMilliseconds(ts));
+  }
+
+  function scopeLabel(scope: ApiTokenScope): string {
+    return t(`pages.settings.security.${API_TOKEN_SCOPE_LABEL_KEY[scope]}`);
   }
 
   function toggleTwoFactor() {
@@ -316,7 +357,18 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
                     <div className="api-token-row-head">
                       <div className="api-token-name-wrap">
                         <span className="api-token-name">{row.name}</span>
-                        <span className="api-token-created">{formatTokenDate(row.createdAt)}</span>
+                        <Tag color={API_TOKEN_SCOPE_COLOR[row.scope || 'admin']}>
+                          {scopeLabel(row.scope || 'admin')}
+                        </Tag>
+                        <span className="api-token-created">
+                          {formatTokenDate(row.createdAt)}
+                        </span>
+                        <span className="api-token-created">
+                          {t('pages.settings.security.apiTokenExpires')}:{' '}
+                          {row.expiresAt
+                            ? formatTokenDate(row.expiresAt)
+                            : t('pages.settings.security.apiTokenExpiresNever')}
+                        </span>
                       </div>
                       <div className="api-token-actions">
                         <Switch size="small" checked={row.enabled} onChange={() => toggleTokenEnabled(row)} />
@@ -350,6 +402,24 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
               placeholder={t('pages.settings.security.apiTokenNamePlaceholder') || 'e.g. central-panel-a'}
               onChange={(e) => setCreateName(e.target.value)}
               onPressEnter={confirmCreateToken}
+            />
+          </Form.Item>
+          <Form.Item
+            label={t('pages.settings.security.apiTokenScope')}
+            extra={t('pages.settings.security.apiTokenScopeHint')}
+          >
+            <Select
+              value={createScope}
+              options={API_TOKEN_SCOPES.map((scope) => ({ value: scope, label: scopeLabel(scope) }))}
+              onChange={(value: ApiTokenScope) => setCreateScope(value)}
+            />
+          </Form.Item>
+          <Form.Item label={t('pages.settings.security.apiTokenExpiry')}>
+            <DateTimePicker
+              value={createExpiry}
+              onChange={setCreateExpiry}
+              showTime
+              placeholder={t('pages.settings.security.apiTokenExpiresNever')}
             />
           </Form.Item>
         </Form>

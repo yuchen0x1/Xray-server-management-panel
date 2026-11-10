@@ -221,11 +221,18 @@ func (a *SettingController) getDefaultXrayConfig(c *gin.Context) {
 }
 
 type apiTokenCreateForm struct {
-	Name string `json:"name" form:"name"`
+	Name      string `json:"name" form:"name"`
+	Scope     string `json:"scope" form:"scope"`
+	ExpiresAt int64  `json:"expiresAt" form:"expiresAt"`
 }
 
 type apiTokenEnabledForm struct {
-	Enabled bool `json:"enabled" form:"enabled"`
+	Enabled       bool   `json:"enabled" form:"enabled"`
+	ExpectedScope string `json:"expectedScope" form:"expectedScope"`
+}
+
+type apiTokenDeleteForm struct {
+	ExpectedScope string `json:"expectedScope" form:"expectedScope"`
 }
 
 func (a *SettingController) listApiTokens(c *gin.Context) {
@@ -243,7 +250,7 @@ func (a *SettingController) createApiToken(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
 		return
 	}
-	row, err := a.apiTokenService.Create(form.Name)
+	row, err := a.apiTokenService.Create(form.Name, form.Scope, form.ExpiresAt)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
 		return
@@ -257,7 +264,18 @@ func (a *SettingController) deleteApiToken(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
 		return
 	}
-	jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), a.apiTokenService.Delete(id))
+	form := &apiTokenDeleteForm{}
+	if bindErr := c.ShouldBind(form); bindErr != nil {
+		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), bindErr)
+		return
+	}
+	if form.ExpectedScope == "" {
+		// Legacy callers predate scope guards. Deleting by id alone still works
+		// for them; clients that know the scope get the TOCTOU check below.
+		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), a.apiTokenService.Delete(id))
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), a.apiTokenService.DeleteExpectedScope(id, form.ExpectedScope))
 }
 
 func (a *SettingController) setApiTokenEnabled(c *gin.Context) {
@@ -271,7 +289,12 @@ func (a *SettingController) setApiTokenEnabled(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), bindErr)
 		return
 	}
-	jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), a.apiTokenService.SetEnabled(id, form.Enabled))
+	if form.ExpectedScope == "" {
+		// Legacy callers predate scope guards; keep their toggle working.
+		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), a.apiTokenService.SetEnabled(id, form.Enabled))
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), a.apiTokenService.SetEnabledExpectedScope(id, form.ExpectedScope, form.Enabled))
 }
 
 func (a *SettingController) testSmtp(c *gin.Context) {

@@ -1253,7 +1253,16 @@
         "apiTokenEmpty": "Поки немає токенів — створіть один для автентифікації ботів або віддалених панелей.",
         "apiTokenDeleteWarning": "Будь-який клієнт, що використовує цей токен, негайно втратить автентифікацію.",
         "apiTokenCreatedTitle": "Токен створено",
-        "apiTokenCreatedNotice": "Скопіюйте цей токен зараз. З міркувань безпеки він не зберігається у читабельному вигляді й більше не відображатиметься."
+        "apiTokenCreatedNotice": "Скопіюйте цей токен зараз. З міркувань безпеки він не зберігається у читабельному вигляді й більше не відображатиметься.",
+        "apiTokenScope": "Обсяг прав",
+        "apiTokenScopeHint": "Admin може все. Monitor лише читає стан і метрики. Node sync керує вхідними та клієнтами для головної панелі. Node admin додатково дозволяє самоновлення панелі.",
+        "apiTokenScopeAdmin": "Адміністратор",
+        "apiTokenScopeMonitor": "Моніторинг",
+        "apiTokenScopeNodeSync": "Синхронізація вузла",
+        "apiTokenScopeNodeAdmin": "Адміністратор вузла",
+        "apiTokenExpires": "Спливає",
+        "apiTokenExpiresNever": "Ніколи",
+        "apiTokenExpiry": "Дата спливання"
       },
       "toasts": {
         "modifySettings": "Параметри було змінено.",

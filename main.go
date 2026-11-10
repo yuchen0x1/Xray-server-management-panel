@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 	_ "unsafe"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
@@ -442,6 +441,14 @@ func GetListenIP(getListen bool) {
 	}
 }
 
+// cliFallbackTokenName and installTokenName are the two names the CLI reuses,
+// so repeated -getApiToken invocations rotate a credential instead of piling
+// up admin-equivalent tokens nobody can enumerate.
+const (
+	cliFallbackTokenName = "cli-fallback"
+	installTokenName     = "install"
+)
+
 func GetApiToken(getApiToken bool) {
 	if !getApiToken {
 		return
@@ -461,18 +468,16 @@ func GetApiToken(getApiToken bool) {
 		fmt.Printf("There are %d API token(s) configured. Existing tokens cannot be retrieved in plaintext because only hashes are stored.\n", len(tokens))
 		fmt.Println("If you have lost your token, you can manage and generate new tokens through the Panel UI (Settings -> API Tokens).")
 
-		// Create a new fallback token so the CLI is still useful without the UI
-		fallbackName := fmt.Sprintf("cli-fallback-%d", time.Now().Unix())
-		created, err := apiTokenService.Create(fallbackName)
+		created, err := apiTokenService.RecreateByName(cliFallbackTokenName, "")
 		if err != nil {
 			fmt.Println("Failed to create a fallback API token:", err)
 			return
 		}
-		fmt.Println("\nA new fallback token has been generated for your convenience:")
+		fmt.Printf("\nThe API token %q has been regenerated (any previous one is now invalid):\n", cliFallbackTokenName)
 		fmt.Println("apiToken:", created.Token)
 		return
 	}
-	created, err := apiTokenService.Create("install")
+	created, err := apiTokenService.Create(installTokenName, "", 0)
 	if err != nil {
 		fmt.Println("create apiToken failed, error info:", err)
 		return

@@ -1253,7 +1253,16 @@
         "apiTokenEmpty": "暂无令牌 — 创建一个用于认证机器人或远程面板。",
         "apiTokenDeleteWarning": "使用此令牌的任何调用方将立即无法认证。",
         "apiTokenCreatedTitle": "令牌已创建",
-        "apiTokenCreatedNotice": "请立即复制此令牌。出于安全考虑，它不会以可读形式存储，也不会再次显示。"
+        "apiTokenCreatedNotice": "请立即复制此令牌。出于安全考虑，它不会以可读形式存储，也不会再次显示。",
+        "apiTokenScope": "权限范围",
+        "apiTokenScopeHint": "管理员可执行全部操作；监控只读状态与指标；节点同步可为主面板管理入站与客户端；节点管理员额外允许面板自更新。",
+        "apiTokenScopeAdmin": "管理员",
+        "apiTokenScopeMonitor": "监控",
+        "apiTokenScopeNodeSync": "节点同步",
+        "apiTokenScopeNodeAdmin": "节点管理员",
+        "apiTokenExpires": "过期时间",
+        "apiTokenExpiresNever": "永不过期",
+        "apiTokenExpiry": "过期时间"
       },
       "toasts": {
         "modifySettings": "参数已更改。",

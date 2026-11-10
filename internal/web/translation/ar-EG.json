@@ -1253,7 +1253,16 @@
         "apiTokenEmpty": "لا توجد رموز بعد — أنشئ واحدًا لمصادقة الروبوتات أو اللوحات البعيدة.",
         "apiTokenDeleteWarning": "أي عميل يستخدم هذا الرمز سيفقد المصادقة فورًا.",
         "apiTokenCreatedTitle": "تم إنشاء الرمز",
-        "apiTokenCreatedNotice": "انسخ هذا الرمز الآن. لأسباب أمنية لا يتم تخزينه بصيغة قابلة للقراءة ولن يتم عرضه مرة أخرى."
+        "apiTokenCreatedNotice": "انسخ هذا الرمز الآن. لأسباب أمنية لا يتم تخزينه بصيغة قابلة للقراءة ولن يتم عرضه مرة أخرى.",
+        "apiTokenScope": "النطاق",
+        "apiTokenScopeHint": "المشرف يستطيع كل شيء. المراقب يقرأ الحالة والمقاييس فقط. مزامنة العقدة تدير الواردات والعملاء للوحة الرئيسية. مشرف العقدة يسمح أيضًا بتحديث اللوحة ذاتيًا.",
+        "apiTokenScopeAdmin": "مشرف",
+        "apiTokenScopeMonitor": "مراقب",
+        "apiTokenScopeNodeSync": "مزامنة العقدة",
+        "apiTokenScopeNodeAdmin": "مشرف العقدة",
+        "apiTokenExpires": "ينتهي",
+        "apiTokenExpiresNever": "أبدًا",
+        "apiTokenExpiry": "تاريخ الانتهاء"
       },
       "toasts": {
         "modifySettings": "تم تغيير المعلمات.",

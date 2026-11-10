@@ -963,10 +963,17 @@
           "enabled": {
             "type": "boolean"
           },
+          "expiresAt": {
+            "format": "int64",
+            "type": "integer"
+          },
           "id": {
             "type": "integer"
           },
           "name": {
+            "type": "string"
+          },
+          "scope": {
             "type": "string"
           },
           "token": {
@@ -977,8 +984,10 @@
         "required": [
           "createdAt",
           "enabled",
+          "expiresAt",
           "id",
           "name",
+          "scope",
           "token"
         ],
         "type": "object"
@@ -994,12 +1003,21 @@
             "example": true,
             "type": "boolean"
           },
+          "expiresAt": {
+            "example": 0,
+            "format": "int64",
+            "type": "integer"
+          },
           "id": {
             "example": 2,
             "type": "integer"
           },
           "name": {
             "example": "central-panel-a",
+            "type": "string"
+          },
+          "scope": {
+            "example": "admin",
             "type": "string"
           },
           "token": {
@@ -1010,8 +1028,10 @@
         "required": [
           "createdAt",
           "enabled",
+          "expiresAt",
           "id",
-          "name"
+          "name",
+          "scope"
         ],
         "type": "object"
       },
@@ -2962,7 +2982,7 @@
     },
     {
       "name": "API Tokens",
-      "description": "Manage Bearer tokens used for programmatic auth (bots, central panels acting on this node, CI). Each token has a unique name and an enabled flag — disable to revoke without deleting, delete to revoke permanently. Tokens are stored as SHA-256 hashes and the plaintext is returned only once, in the create response — it cannot be retrieved afterwards, so copy it then. Send one as <code>Authorization: Bearer &lt;token&gt;</code> on any /panel/api/* request — the token is a full-admin credential."
+      "description": "Manage Bearer tokens used for programmatic auth (bots, central panels acting on this node, CI). Each token has a unique name, a scope, and an optional expiry. Scopes: <code>admin</code> (full access), <code>monitor</code> (read-only status/metrics), <code>node-sync</code> (inbounds and clients for a master panel), <code>node-admin</code> (node sync plus panel self-update). Tokens are stored as SHA-256 hashes and the plaintext is returned only once, in the create response — it cannot be retrieved afterwards, so copy it then. Send one as <code>Authorization: Bearer &lt;token&gt;</code> on any /panel/api/* request; endpoints outside the token&rsquo;s scope answer 403."
     },
     {
       "name": "Xray Settings",
@@ -10163,7 +10183,7 @@
         "tags": [
           "API Tokens"
         ],
-        "summary": "List every API token, enabled or not. The token value is never returned — only metadata.",
+        "summary": "List every API token, enabled or not. The token value is never returned — only metadata including scope and expiry.",
         "operationId": "get_panel_api_setting_apiTokens",
         "responses": {
           "200": {
@@ -10189,7 +10209,9 @@
                       "id": 1,
                       "name": "default",
                       "enabled": true,
-                      "createdAt": 1736000000
+                      "createdAt": 1736000000,
+                      "scope": "admin",
+                      "expiresAt": 0
                     }
                   ]
                 }
@@ -10204,7 +10226,7 @@
         "tags": [
           "API Tokens"
         ],
-        "summary": "Mint a new API token. Name must be unique and 1-64 characters; the token string is server-generated and returned only in this response — it is stored hashed and cannot be retrieved later.",
+        "summary": "Mint a new API token. Name must be unique and 1-64 characters. Scope defaults to admin when omitted; expiresAt is a unix-milliseconds deadline, or 0 for a token that never expires. The token string is server-generated and returned only in this response.",
         "operationId": "post_panel_api_setting_apiTokens_create",
         "requestBody": {
           "required": true,
@@ -10216,14 +10238,26 @@
                   "name": {
                     "type": "string",
                     "description": "Human-readable label, e.g. \"central-panel-a\"."
+                  },
+                  "scope": {
+                    "type": "string",
+                    "description": "One of admin, monitor, node-sync, node-admin. Defaults to admin."
+                  },
+                  "expiresAt": {
+                    "type": "integer",
+                    "description": "Unix-milliseconds expiry, or 0 for never."
                   }
                 },
                 "required": [
-                  "name"
+                  "name",
+                  "scope",
+                  "expiresAt"
                 ]
               },
               "example": {
-                "name": "central-panel-a"
+                "name": "central-panel-a",
+                "scope": "node-sync",
+                "expiresAt": 0
               }
             }
           }
@@ -10252,8 +10286,10 @@
                   "obj": {
                     "createdAt": 1736000000,
                     "enabled": true,
+                    "expiresAt": 0,
                     "id": 2,
                     "name": "central-panel-a",
+                    "scope": "admin",
                     "token": "new-token-string"
                   }
                 }
@@ -10290,7 +10326,7 @@
         "tags": [
           "API Tokens"
         ],
-        "summary": "Permanently delete a token. Any caller using it stops authenticating immediately.",
+        "summary": "Permanently delete a token. Any caller using it stops authenticating immediately. Pass expectedScope to make the delete fail if the row was replaced by a token with a different scope.",
         "operationId": "post_panel_api_setting_apiTokens_delete_id",
         "parameters": [
           {
@@ -10303,6 +10339,28 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedScope": {
+                    "type": "string",
+                    "description": "Optional. When set, the delete only applies if the stored scope matches."
+                  }
+                },
+                "required": [
+                  "expectedScope"
+                ]
+              },
+              "example": {
+                "expectedScope": "monitor"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful response",
@@ -10334,7 +10392,7 @@
         "tags": [
           "API Tokens"
         ],
-        "summary": "Toggle a token enabled/disabled without deleting it. Disabled tokens are rejected by checkAPIAuth on the next request.",
+        "summary": "Toggle a token enabled/disabled without deleting it. Disabled tokens are rejected by checkAPIAuth on the next request. Pass expectedScope to make the toggle fail if the row was replaced.",
         "operationId": "post_panel_api_setting_apiTokens_setEnabled_id",
         "parameters": [
           {
@@ -10357,14 +10415,20 @@
                   "enabled": {
                     "type": "boolean",
                     "description": "New enabled state."
+                  },
+                  "expectedScope": {
+                    "type": "string",
+                    "description": "Optional. When set, the toggle only applies if the stored scope matches."
                   }
                 },
                 "required": [
-                  "enabled"
+                  "enabled",
+                  "expectedScope"
                 ]
               },
               "example": {
-                "enabled": false
+                "enabled": false,
+                "expectedScope": "monitor"
               }
             }
           }

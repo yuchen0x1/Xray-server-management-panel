@@ -1253,7 +1253,16 @@
         "apiTokenEmpty": "Nenhum token ainda — crie um para autenticar bots ou painéis remotos.",
         "apiTokenDeleteWarning": "Qualquer cliente usando este token deixará de se autenticar imediatamente.",
         "apiTokenCreatedTitle": "Token criado",
-        "apiTokenCreatedNotice": "Copie este token agora. Por segurança, ele não é armazenado de forma legível e não será exibido novamente."
+        "apiTokenCreatedNotice": "Copie este token agora. Por segurança, ele não é armazenado de forma legível e não será exibido novamente.",
+        "apiTokenScope": "Escopo",
+        "apiTokenScopeHint": "Admin pode tudo. Monitor apenas lê estado e métricas. Node sync gerencia inbounds e clientes para um painel mestre. Node admin também permite a autoatualização do painel.",
+        "apiTokenScopeAdmin": "Administrador",
+        "apiTokenScopeMonitor": "Monitor",
+        "apiTokenScopeNodeSync": "Sincronização de nó",
+        "apiTokenScopeNodeAdmin": "Administrador de nó",
+        "apiTokenExpires": "Expira",
+        "apiTokenExpiresNever": "Nunca",
+        "apiTokenExpiry": "Data de expiração"
       },
       "toasts": {
         "modifySettings": "Os parâmetros foram alterados.",

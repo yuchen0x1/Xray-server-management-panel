@@ -1253,7 +1253,16 @@
         "apiTokenEmpty": "Henüz token yok — botları veya uzak panelleri doğrulamak için bir tane oluşturun.",
         "apiTokenDeleteWarning": "Bu token'ı kullanan tüm bağlantılar anında kimlik doğrulamasını kaybeder.",
         "apiTokenCreatedTitle": "Token Oluşturuldu",
-        "apiTokenCreatedNotice": "Bu token'ı şimdi kopyalayın. Güvenlik nedeniyle okunabilir biçimde saklanmaz ve tekrar gösterilmez."
+        "apiTokenCreatedNotice": "Bu token'ı şimdi kopyalayın. Güvenlik nedeniyle okunabilir biçimde saklanmaz ve tekrar gösterilmez.",
+        "apiTokenScope": "Kapsam",
+        "apiTokenScopeHint": "Admin her şeyi yapabilir. Monitor yalnızca durum ve metrikleri okur. Node sync, ana panel için gelen bağlantıları ve istemcileri yönetir. Node admin ayrıca panelin kendini güncellemesine izin verir.",
+        "apiTokenScopeAdmin": "Yönetici",
+        "apiTokenScopeMonitor": "İzleme",
+        "apiTokenScopeNodeSync": "Düğüm eşitleme",
+        "apiTokenScopeNodeAdmin": "Düğüm yöneticisi",
+        "apiTokenExpires": "Sona erer",
+        "apiTokenExpiresNever": "Asla",
+        "apiTokenExpiry": "Sona erme tarihi"
       },
       "toasts": {
         "modifySettings": "Parametreler değiştirildi.",

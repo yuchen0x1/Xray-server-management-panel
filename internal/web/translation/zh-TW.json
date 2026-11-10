@@ -1253,7 +1253,16 @@
         "apiTokenEmpty": "尚無令牌 — 建立一個以認證機器人或遠端面板。",
         "apiTokenDeleteWarning": "使用此令牌的任何呼叫方將立即無法認證。",
         "apiTokenCreatedTitle": "權杖已建立",
-        "apiTokenCreatedNotice": "請立即複製此權杖。基於安全考量，它不會以可讀形式儲存，也不會再次顯示。"
+        "apiTokenCreatedNotice": "請立即複製此權杖。基於安全考量，它不會以可讀形式儲存，也不會再次顯示。",
+        "apiTokenScope": "權限範圍",
+        "apiTokenScopeHint": "管理員可執行全部操作；監控僅唯讀狀態與指標；節點同步可為主面板管理入站與用戶端；節點管理員額外允許面板自我更新。",
+        "apiTokenScopeAdmin": "管理員",
+        "apiTokenScopeMonitor": "監控",
+        "apiTokenScopeNodeSync": "節點同步",
+        "apiTokenScopeNodeAdmin": "節點管理員",
+        "apiTokenExpires": "過期時間",
+        "apiTokenExpiresNever": "永不過期",
+        "apiTokenExpiry": "過期時間"
       },
       "toasts": {
         "modifySettings": "參數已更改。",

@@ -105,6 +105,9 @@ func initModels() error {
 	if err := normalizeApiTokenCreatedAtSeconds(); err != nil {
 		return err
 	}
+	if err := backfillApiTokenScope(); err != nil {
+		return err
+	}
 	if err := dropLegacyForeignKeys(); err != nil {
 		return err
 	}
@@ -2016,6 +2019,23 @@ func normalizeApiTokenCreatedAtSeconds() error {
 	return db.Model(&model.ApiToken{}).
 		Where("created_at >= ?", model.ApiTokenUnixMillisecondsThreshold).
 		UpdateColumn("created_at", gorm.Expr("created_at / ?", 1000)).Error
+}
+
+// backfillApiTokenScope gives pre-scope rows their historical meaning. The
+// column default only applies to inserts, so rows created before the column
+// existed can hold an empty scope; MatchToken rejects unknown scopes, and
+// without this every previously issued token would stop authenticating.
+func backfillApiTokenScope() error {
+	updated := db.Model(&model.ApiToken{}).
+		Where("scope IS NULL OR scope = ?", "").
+		UpdateColumn("scope", model.ApiScopeAdmin)
+	if updated.Error != nil {
+		return updated.Error
+	}
+	if updated.RowsAffected > 0 {
+		log.Printf("Backfilled %d API token scope(s) to %s", updated.RowsAffected, model.ApiScopeAdmin)
+	}
+	return nil
 }
 
 // openPostgresWithRetry retries the initial PostgreSQL connection with

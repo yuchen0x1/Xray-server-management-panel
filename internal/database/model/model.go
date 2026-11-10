@@ -151,6 +151,25 @@ type HistoryOfSeeders struct {
 	SeederName string `json:"seederName"`
 }
 
+const (
+	ApiScopeAdmin     = "admin"
+	ApiScopeMonitor   = "monitor"
+	ApiScopeNodeSync  = "node-sync"
+	ApiScopeNodeAdmin = "node-admin"
+)
+
+// IsKnownApiScope reports whether a stored scope is one this build issued. A
+// row holding anything else is treated as unusable rather than falling back to
+// admin, so a hand-edited database cannot escalate a restricted token.
+func IsKnownApiScope(s string) bool {
+	switch s {
+	case ApiScopeAdmin, ApiScopeMonitor, ApiScopeNodeSync, ApiScopeNodeAdmin:
+		return true
+	default:
+		return false
+	}
+}
+
 // ApiTokenUnixMillisecondsThreshold separates legacy millisecond timestamps
 // from the seconds-based API token timestamp contract.
 const ApiTokenUnixMillisecondsThreshold int64 = 100_000_000_000
@@ -158,9 +177,11 @@ const ApiTokenUnixMillisecondsThreshold int64 = 100_000_000_000
 type ApiToken struct {
 	Id        int    `json:"id" gorm:"primaryKey;autoIncrement"`
 	Name      string `json:"name" gorm:"uniqueIndex;not null"`
-	Token     string `json:"token" gorm:"not null"` // SHA-256 hash; the plaintext is shown only once at creation
+	Token     string `json:"token" gorm:"not null;index:idx_api_tokens_token"` // SHA-256 hash; the plaintext is shown only once at creation
 	Enabled   bool   `json:"enabled" gorm:"default:true"`
 	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime"`
+	Scope     string `json:"scope" gorm:"not null;default:admin"`
+	ExpiresAt int64  `json:"expiresAt" gorm:"not null;default:0"`
 }
 
 // MarshalJSON emits settings, streamSettings, and sniffing as nested JSON

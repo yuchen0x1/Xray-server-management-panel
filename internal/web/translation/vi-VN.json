@@ -1253,7 +1253,16 @@
         "apiTokenEmpty": "Chưa có token nào — tạo một token để xác thực bot hoặc panel từ xa.",
         "apiTokenDeleteWarning": "Mọi client đang dùng token này sẽ ngừng xác thực ngay lập tức.",
         "apiTokenCreatedTitle": "Đã tạo token",
-        "apiTokenCreatedNotice": "Hãy sao chép token này ngay bây giờ. Vì lý do bảo mật, token không được lưu ở dạng đọc được và sẽ không hiển thị lại."
+        "apiTokenCreatedNotice": "Hãy sao chép token này ngay bây giờ. Vì lý do bảo mật, token không được lưu ở dạng đọc được và sẽ không hiển thị lại.",
+        "apiTokenScope": "Phạm vi",
+        "apiTokenScopeHint": "Admin có thể làm mọi thứ. Monitor chỉ đọc trạng thái và số liệu. Node sync quản lý inbound và client cho bảng điều khiển chính. Node admin còn cho phép bảng điều khiển tự cập nhật.",
+        "apiTokenScopeAdmin": "Quản trị viên",
+        "apiTokenScopeMonitor": "Giám sát",
+        "apiTokenScopeNodeSync": "Đồng bộ nút",
+        "apiTokenScopeNodeAdmin": "Quản trị nút",
+        "apiTokenExpires": "Hết hạn",
+        "apiTokenExpiresNever": "Không bao giờ",
+        "apiTokenExpiry": "Ngày hết hạn"
       },
       "toasts": {
         "modifySettings": "Các tham số đã được thay đổi.",

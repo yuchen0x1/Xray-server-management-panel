@@ -1374,7 +1374,16 @@
         "apiTokenEmpty": "No tokens yet — create one to authenticate bots or remote panels.",
         "apiTokenDeleteWarning": "Any caller using this token will stop authenticating immediately.",
         "apiTokenCreatedTitle": "Token created",
-        "apiTokenCreatedNotice": "Copy this token now. For security it is not stored in readable form and will not be shown again."
+        "apiTokenCreatedNotice": "Copy this token now. For security it is not stored in readable form and will not be shown again.",
+        "apiTokenScope": "Scope",
+        "apiTokenScopeHint": "Admin can do everything. Monitor is read-only status/metrics. Node sync can manage inbounds and clients for a master panel. Node admin additionally allows panel self-update.",
+        "apiTokenScopeAdmin": "Admin",
+        "apiTokenScopeMonitor": "Monitor",
+        "apiTokenScopeNodeSync": "Node sync",
+        "apiTokenScopeNodeAdmin": "Node admin",
+        "apiTokenExpires": "Expires",
+        "apiTokenExpiresNever": "Never",
+        "apiTokenExpiry": "Expiry date"
       },
       "toasts": {
         "modifySettings": "The parameters have been changed.",

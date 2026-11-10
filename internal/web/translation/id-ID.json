@@ -1253,7 +1253,16 @@
         "apiTokenEmpty": "Belum ada token — buat satu untuk mengautentikasi bot atau panel jarak jauh.",
         "apiTokenDeleteWarning": "Setiap pemanggil yang menggunakan token ini akan berhenti terautentikasi segera.",
         "apiTokenCreatedTitle": "Token dibuat",
-        "apiTokenCreatedNotice": "Salin token ini sekarang. Demi keamanan, token tidak disimpan dalam bentuk yang dapat dibaca dan tidak akan ditampilkan lagi."
+        "apiTokenCreatedNotice": "Salin token ini sekarang. Demi keamanan, token tidak disimpan dalam bentuk yang dapat dibaca dan tidak akan ditampilkan lagi.",
+        "apiTokenScope": "Cakupan",
+        "apiTokenScopeHint": "Admin dapat melakukan semua hal. Monitor hanya membaca status dan metrik. Node sync mengelola inbound dan klien untuk panel utama. Node admin juga mengizinkan pembaruan mandiri panel.",
+        "apiTokenScopeAdmin": "Admin",
+        "apiTokenScopeMonitor": "Monitor",
+        "apiTokenScopeNodeSync": "Sinkronisasi node",
+        "apiTokenScopeNodeAdmin": "Admin node",
+        "apiTokenExpires": "Kedaluwarsa",
+        "apiTokenExpiresNever": "Tidak pernah",
+        "apiTokenExpiry": "Tanggal kedaluwarsa"
       },
       "toasts": {
         "modifySettings": "Parameter telah diubah.",
