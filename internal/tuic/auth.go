@@ -17,6 +17,14 @@ var (
 	ErrInvalidTLSState = errors.New("tuic: TLS connection state not available")
 )
 
+// One credential's limits across all its connections: each UDP relay holds a
+// host port, so a per-connection cap alone lets one client take the host's
+// whole ephemeral range.
+const (
+	maxUserSessions  = 32
+	maxUserUdpRelays = 512
+)
+
 // User represents a configured TUIC client for authentication and billing.
 type User struct {
 	TrafficID int
@@ -26,6 +34,7 @@ type User struct {
 	Email     string
 	Traffic   *UserTraffic
 	sessions  atomic.Int64
+	udpRelays atomic.Int64
 }
 
 type UserTraffic struct {
