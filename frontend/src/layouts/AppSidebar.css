@@ -64,7 +64,7 @@
   justify-content: center;
   color: var(--ant-color-text-secondary);
   text-decoration: none;
-  cursor: default;
+  cursor: pointer;
   flex-shrink: 0;
   transition: background-color 0.2s, transform 0.15s, color 0.2s;
 }
@@ -92,7 +92,7 @@
   justify-content: center;
   color: var(--ant-color-text-secondary);
   text-decoration: none;
-  cursor: default;
+  cursor: pointer;
   flex-shrink: 0;
   transition: background-color 0.2s, transform 0.15s, color 0.2s;
 }

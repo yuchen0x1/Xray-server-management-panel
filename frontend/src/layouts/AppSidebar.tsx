@@ -41,6 +41,8 @@ import './AppSidebar.css';
 
 const SIDEBAR_COLLAPSED_KEY = 'isSidebarCollapsed';
 const LOGOUT_KEY = '__logout__';
+const DOCUMENTATION_URL = 'https://docs.sanaei.dev';
+const DONATION_URL = 'https://donate.sanaei.dev/';
 
 type IconName = 'dashboard' | 'inbound' | 'team' | 'groups' | 'setting' | 'tool' | 'cluster' | 'hosts' | 'logout' | 'apidocs' | 'outbound' | 'routing';
 
@@ -69,27 +71,31 @@ function readCollapsed(): boolean {
 
 function DonateButton({ ariaLabel }: { ariaLabel: string }) {
   return (
-    <button
-      type="button"
+    <a
       className="sidebar-donate"
       aria-label={ariaLabel}
       title={ariaLabel}
+      href={DONATION_URL}
+      target="_blank"
+      rel="noreferrer"
     >
       <HeartOutlined />
-    </button>
+    </a>
   );
 }
 
 function DocsButton({ ariaLabel }: { ariaLabel: string }) {
   return (
-    <button
-      type="button"
+    <a
       className="sidebar-docs"
       aria-label={ariaLabel}
       title={ariaLabel}
+      href={DOCUMENTATION_URL}
+      target="_blank"
+      rel="noreferrer"
     >
       <ReadOutlined />
-    </button>
+    </a>
   );
 }
 
