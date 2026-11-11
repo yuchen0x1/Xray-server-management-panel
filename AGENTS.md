@@ -76,6 +76,14 @@ file locations when it can answer in one hop.
 - Conventional-commit prefixes (`feat`, `fix`, `refactor`, `chore`, `docs`,
   `style`): `<area>: short imperative summary`, then a body explaining the why.
 
+## Branch policy
+- This repository's only development and release branch is `main`.
+- Keep `main` checked out for routine updates and push it to `origin/main`.
+- Do not create, merge, or publish project feature branches unless the user
+  explicitly requests a separate review branch.
+- Keep `upstream` read-only for comparing or selectively bringing in upstream
+  changes; never publish upstream branches to `origin`.
+
 ## Go conventions
 - Stdlib `testing` only (no testify). Table-driven, `t.Run` subtests,
   `t.Helper()` on helpers. Assert the exact value / typed error / emitted

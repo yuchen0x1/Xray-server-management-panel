@@ -297,11 +297,10 @@ CI runs this for you nightly (and on demand) via `.github/workflows/mutation.yml
 
 ### 分支管理
 
-从 `main` 分支切出工作分支，命名建议：
-- 新功能：`feat/xxx`
-- Bug 修复：`fix/xxx`
-- 文档更新：`docs/xxx`
-- 代码重构：`refactor/xxx`
+本仓库统一在 `main` 分支进行日常开发、修复、发布和推送，目标远端为
+`origin/main`。除非维护者明确要求代码审查分支，否则不要创建或发布额外的
+项目分支。`upstream` 仅用于读取、比较和选择性同步上游改动，不要把上游分支
+发布到 `origin`。
 
 ### 提交信息规范
 
@@ -326,14 +325,13 @@ CI runs this for you nightly (and on demand) via `.github/workflows/mutation.yml
 
 ## Sending a pull request
 
-1. Branch off `main` (e.g. `feat/short-description`).
-2. Keep the diff focused — separate refactors from feature work.
-3. Run the relevant checks before pushing:
+1. Keep the diff focused — separate refactors from feature work.
+2. Run the relevant checks before pushing:
    - `go build ./...`
    - `go test ./...` (when Go code changed)
    - `cd frontend && npm run typecheck && npm run lint && npm run test && npm run build && npm run build-storybook` (when the frontend changed; CI runs this same set on every PR via `.github/workflows/ci.yml`)
-4. Commit messages follow the existing pattern in `git log` — `<area>: short imperative summary`, then a body explaining the *why*. Conventional-commit prefixes (`feat`, `fix`, `refactor`, `chore`, `style`, `docs`) are encouraged.
-5. Open the PR against `main` with a brief description of what changed and how to test it.
+3. Commit messages follow the existing pattern in `git log` — `<area>: short imperative summary`, then a body explaining the *why*. Conventional-commit prefixes (`feat`, `fix`, `refactor`, `chore`, `style`, `docs`) are encouraged.
+4. Push routine updates to `origin/main`. Open a pull request against `main` only when a separate review branch was explicitly requested.
 
 ## Useful environment variables
 
