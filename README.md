@@ -57,6 +57,7 @@
 - 面板内置 Swagger UI 并生成 OpenAPI JSON，支持登录会话或 Bearer Token 调用 `/panel/api/*`。
 - 数据库同时支持 SQLite 与 PostgreSQL：默认 SQLite，生产或多实例场景可切换 PostgreSQL。
 - 前端多语言、浅色 / 深色 / 极暗主题，附带 Storybook 与 Vitest 测试。
+- 在线更新：面板支持稳定版与 `dev-latest` 渠道，发布流程生成 `SHA256SUMS`，详见 [`docs/AUTO_UPDATE.md`](docs/AUTO_UPDATE.md)。
 
 ## 四、技术栈
 

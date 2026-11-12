@@ -40,6 +40,12 @@ _fail() {
 xui_update_run_id="${XUI_UPDATE_RUN_ID:-0}"
 [[ "${xui_update_run_id}" =~ ^[0-9]+$ ]] || xui_update_run_id="0"
 xui_update_status_file="${XUI_UPDATE_STATUS_FILE:-/etc/x-ui/update-status.json}"
+xui_update_transaction_active=false
+xui_update_backup_dir=""
+xui_update_old_folder=""
+xui_update_service_backup=""
+xui_update_rc_backup=""
+xui_update_control_script_backup=""
 
 _write_update_status() {
     local state="$1"
@@ -53,8 +59,65 @@ _write_update_status() {
     mv -f "${tmp_file}" "${xui_update_status_file}" > /dev/null 2>&1
 }
 
+_rollback_update_transaction() {
+    [[ "${xui_update_transaction_active}" == "true" ]] || return 0
+    echo -e "${yellow}Update failed after the service was stopped; restoring the previous installation...${plain}" >&2
+
+    if [[ "${release:-}" == "alpine" ]]; then
+        rc-service x-ui stop > /dev/null 2>&1 || true
+    else
+        systemctl stop x-ui > /dev/null 2>&1 || true
+    fi
+
+    if [[ -n "${xui_folder}" && -d "${xui_folder}" && "${xui_folder}" != "/" ]]; then
+        rm -rf -- "${xui_folder}" > /dev/null 2>&1 || true
+    fi
+    if [[ -n "${xui_update_old_folder}" && -d "${xui_update_old_folder}" ]]; then
+        mv -f -- "${xui_update_old_folder}" "${xui_folder}" > /dev/null 2>&1 || true
+    fi
+
+    if [[ "${release:-}" == "alpine" ]]; then
+        if [[ -n "${xui_update_rc_backup}" && -f "${xui_update_rc_backup}" ]]; then
+            mkdir -p /etc/init.d > /dev/null 2>&1 || true
+            cp -f -- "${xui_update_rc_backup}" /etc/init.d/x-ui > /dev/null 2>&1 || true
+            chmod +x /etc/init.d/x-ui > /dev/null 2>&1 || true
+        fi
+        rc-update add x-ui > /dev/null 2>&1 || true
+        rc-service x-ui start > /dev/null 2>&1 || true
+    else
+        if [[ -n "${xui_update_service_backup}" && -f "${xui_update_service_backup}" ]]; then
+            mkdir -p "${xui_service}" > /dev/null 2>&1 || true
+            cp -f -- "${xui_update_service_backup}" "${xui_service}/x-ui.service" > /dev/null 2>&1 || true
+            chown root:root "${xui_service}/x-ui.service" > /dev/null 2>&1 || true
+            chmod 644 "${xui_service}/x-ui.service" > /dev/null 2>&1 || true
+        fi
+        systemctl daemon-reload > /dev/null 2>&1 || true
+        systemctl enable x-ui > /dev/null 2>&1 || true
+        systemctl start x-ui > /dev/null 2>&1 || true
+    fi
+
+    if [[ -n "${xui_update_control_script_backup}" && -f "${xui_update_control_script_backup}" ]]; then
+        cp -f -- "${xui_update_control_script_backup}" /usr/bin/x-ui > /dev/null 2>&1 || true
+        chmod +x /usr/bin/x-ui > /dev/null 2>&1 || true
+    fi
+
+    rm -rf -- "${xui_update_backup_dir}" > /dev/null 2>&1 || true
+    xui_update_transaction_active=false
+}
+
+_commit_update_transaction() {
+    [[ "${xui_update_transaction_active}" == "true" ]] || return 0
+    if ! rm -rf -- "${xui_update_backup_dir}" > /dev/null 2>&1; then
+        echo -e "${yellow}The update succeeded, but the temporary rollback backup could not be removed: ${xui_update_backup_dir}${plain}" >&2
+    fi
+    xui_update_transaction_active=false
+}
+
 _report_update_exit() {
     local code=$?
+    if [[ "${code}" -ne 0 ]]; then
+        _rollback_update_transaction
+    fi
     if [[ "${code}" -eq 0 ]]; then
         _write_update_status "success" "0"
     else
@@ -362,7 +425,7 @@ _region_fetch_latest_tag() {
 # region, with automatic fallback to the other channel.
 _region_download_release_tarball() {
     local out="$1" tag="$2" region
-    local primary_base fallback_base try_url
+    local primary_base fallback_base try_url checksum_url checksum_file expected actual
     region="$(detect_update_region)"
     if [[ "$region" == "cn" ]]; then
         primary_base="https://gitee.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/download"
@@ -380,7 +443,37 @@ _region_download_release_tarball() {
         rm -f "$out"
         _region_curl -fLR --retry 5 --retry-delay 3 --connect-timeout 15 --speed-limit 1 --speed-time 300 -o "$out" "$try_url" > /dev/null 2>&1
         if [[ $? -eq 0 && -s "$out" ]]; then
-            echo -e "${green}Downloaded $(basename "$try_url") successfully.${plain}" >&2
+            checksum_file="${out}.SHA256SUMS"
+            rm -f "$checksum_file"
+            for checksum_url in \
+                "${primary_base}/${tag}/SHA256SUMS" \
+                "${fallback_base}/${tag}/SHA256SUMS"; do
+                if _region_url_safe "$checksum_url" && \
+                    _region_curl -fL --retry 5 --retry-delay 3 --connect-timeout 15 -o "$checksum_file" "$checksum_url" > /dev/null 2>&1 && \
+                    [[ -s "$checksum_file" ]]; then
+                    break
+                fi
+                rm -f "$checksum_file"
+            done
+            if [[ ! -s "$checksum_file" ]]; then
+                echo -e "${yellow}Release checksum manifest is unavailable; refusing to install an unverified archive.${plain}" >&2
+                rm -f "$out"
+                continue
+            fi
+            expected="$(awk -v asset="$(basename "$out")" '$2 == asset || $2 == "*" asset {print $1; exit}' "$checksum_file")"
+            if [[ ! "$expected" =~ ^[0-9a-fA-F]{64}$ ]]; then
+                echo -e "${yellow}Release checksum manifest has no valid entry for $(basename "$out").${plain}" >&2
+                rm -f "$out" "$checksum_file"
+                continue
+            fi
+            actual="$(sha256sum "$out" | awk '{print $1}')"
+            rm -f "$checksum_file"
+            if [[ "${actual,,}" != "${expected,,}" ]]; then
+                echo -e "${yellow}SHA-256 verification failed for $(basename "$out").${plain}" >&2
+                rm -f "$out"
+                continue
+            fi
+            echo -e "${green}Downloaded and verified $(basename "$try_url") successfully.${plain}" >&2
             return 0
         fi
         echo -e "${yellow}Download from ${try_url} failed, trying the other channel ...${plain}" >&2
@@ -1324,7 +1417,50 @@ update_x-ui() {
         _fail "ERROR: Downloaded x-ui release archive is empty, please be sure that your server can access GitHub"
     fi
 
+    release_archive="${xui_folder}-linux-$(arch).tar.gz"
+    release_stage="$(mktemp -d "${TMPDIR:-/tmp}/x-ui-archive.XXXXXX")"
+    if ! tar -tzf "$release_archive" > "${release_stage}/contents" 2> /dev/null; then
+        rm -rf "$release_stage" "$release_archive"
+        _fail "ERROR: Downloaded x-ui release archive is not a valid tar.gz file"
+    fi
+    if grep -Eq '(^/|(^|/)\.\.(\/|$))' "${release_stage}/contents"; then
+        rm -rf "$release_stage" "$release_archive"
+        _fail "ERROR: Downloaded x-ui release archive contains an unsafe path"
+    fi
+    if tar -tvzf "$release_archive" 2> /dev/null | awk '$1 !~ /^[-d]/ {found=1} END {exit found ? 0 : 1}'; then
+        rm -rf "$release_stage" "$release_archive"
+        _fail "ERROR: Downloaded x-ui release archive contains a link or special file"
+    fi
+    if ! grep -Eq '^x-ui/x-ui$' "${release_stage}/contents"; then
+        rm -rf "$release_stage" "$release_archive"
+        _fail "ERROR: Downloaded x-ui release archive does not contain the panel binary"
+    fi
+    rm -rf "$release_stage"
+
     if [[ -e ${xui_folder}/ ]]; then
+        xui_update_backup_dir="$(mktemp -d "${xui_folder%/x-ui}/.x-ui-update-backup.XXXXXX")" || _fail "ERROR: Failed to create the update rollback workspace"
+        if [[ -z "${xui_update_backup_dir}" || ! -d "${xui_update_backup_dir}" ]]; then
+            _fail "ERROR: Failed to create the update rollback workspace"
+        fi
+        xui_update_old_folder="${xui_update_backup_dir}/x-ui-old"
+        xui_update_service_backup="${xui_update_backup_dir}/x-ui.service"
+        xui_update_rc_backup="${xui_update_backup_dir}/x-ui.rc"
+        xui_update_control_script_backup="${xui_update_backup_dir}/x-ui-control.sh"
+        if ! mv -f -- "${xui_folder}" "${xui_update_old_folder}"; then
+            rm -rf -- "${xui_update_backup_dir}" > /dev/null 2>&1
+            _fail "ERROR: Failed to stage the previous x-ui installation for rollback"
+        fi
+        xui_update_transaction_active=true
+        if [[ -f /usr/bin/x-ui ]]; then
+            cp -f -- /usr/bin/x-ui "${xui_update_control_script_backup}" || _fail "ERROR: Failed to back up the x-ui control script"
+        fi
+        if [[ "${release}" == "alpine" ]]; then
+            if [[ -f /etc/init.d/x-ui ]]; then
+                cp -f -- /etc/init.d/x-ui "${xui_update_rc_backup}" || _fail "ERROR: Failed to back up the x-ui startup unit"
+            fi
+        elif [[ -f "${xui_service}/x-ui.service" ]]; then
+            cp -f -- "${xui_service}/x-ui.service" "${xui_update_service_backup}" || _fail "ERROR: Failed to back up the x-ui service unit"
+        fi
         echo -e "${green}Stopping x-ui...${plain}"
         if [[ $release == "alpine" ]]; then
             if [ -f "/etc/init.d/x-ui" ]; then
@@ -1353,21 +1489,6 @@ update_x-ui() {
         # an inbound port with an outdated secret, silently breaking new clients.
         # The new panel respawns a clean mtg per inbound on next start.
         pkill -f 'mtg-linux-[^ ]* run ' > /dev/null 2>&1 || true
-        echo -e "${green}Removing old x-ui version...${plain}"
-        rm ${xui_folder} -f > /dev/null 2>&1
-        rm ${xui_folder}/x-ui.service -f > /dev/null 2>&1
-        rm ${xui_folder}/x-ui.service.debian -f > /dev/null 2>&1
-        rm ${xui_folder}/x-ui.service.arch -f > /dev/null 2>&1
-        rm ${xui_folder}/x-ui.service.rhel -f > /dev/null 2>&1
-        rm ${xui_folder}/x-ui -f > /dev/null 2>&1
-        rm ${xui_folder}/x-ui.sh -f > /dev/null 2>&1
-        echo -e "${green}Removing old mtg version...${plain}"
-        rm ${xui_folder}/bin/mtg-linux-$(arch) -f > /dev/null 2>&1
-        echo -e "${green}Removing old xray version...${plain}"
-        rm ${xui_folder}/bin/xray-linux-$(arch) -f > /dev/null 2>&1
-        echo -e "${green}Removing old README and LICENSE file...${plain}"
-        rm ${xui_folder}/bin/README.md -f > /dev/null 2>&1
-        rm ${xui_folder}/bin/LICENSE -f > /dev/null 2>&1
     else
         rm x-ui-linux-$(arch).tar.gz -f > /dev/null 2>&1
         _fail "ERROR: x-ui not installed."
@@ -1377,12 +1498,20 @@ update_x-ui() {
     tar zxvf x-ui-linux-$(arch).tar.gz > /dev/null 2>&1
     if [[ $? -ne 0 ]]; then
         rm x-ui-linux-$(arch).tar.gz -f > /dev/null 2>&1
-        _fail "ERROR: Failed to extract the x-ui release archive -- the previous installation has already been removed, so the panel will not start until this is fixed; try running the update again"
+        _fail "ERROR: Failed to extract the x-ui release archive; the previous installation will be restored"
     fi
     rm x-ui-linux-$(arch).tar.gz -f > /dev/null 2>&1
     cd x-ui > /dev/null 2>&1
     if [[ $? -ne 0 || ! -s x-ui ]]; then
-        _fail "ERROR: Extracted x-ui archive is missing the x-ui binary -- the previous installation has already been removed, so the panel will not start until this is fixed; try running the update again"
+        _fail "ERROR: Extracted x-ui archive is missing the x-ui binary; the previous installation will be restored"
+    fi
+    if [[ -n "${xui_update_old_folder}" && -f "${xui_update_old_folder}/bin/config.json" ]]; then
+        mkdir -p bin
+        cp -f -- "${xui_update_old_folder}/bin/config.json" bin/config.json || _fail "ERROR: Failed to preserve the existing Xray configuration"
+    fi
+    if [[ -n "${xui_update_old_folder}" && -d "${xui_update_old_folder}/bin/mtproto" ]]; then
+        rm -rf -- bin/mtproto
+        cp -a -- "${xui_update_old_folder}/bin/mtproto" bin/mtproto || _fail "ERROR: Failed to preserve the existing MTProto configuration"
     fi
     chmod +x x-ui > /dev/null 2>&1
 
@@ -1454,7 +1583,9 @@ update_x-ui() {
         chmod +x /etc/init.d/x-ui > /dev/null 2>&1
         chown root:root /etc/init.d/x-ui > /dev/null 2>&1
         rc-update add x-ui > /dev/null 2>&1
-        rc-service x-ui start > /dev/null 2>&1
+        if ! rc-service x-ui start > /dev/null 2>&1; then
+            _fail "ERROR: The updated x-ui service failed to start; the previous installation will be restored"
+        fi
     else
         if [ -f "x-ui.service" ]; then
             echo -e "${green}Installing systemd unit...${plain}"
@@ -1517,15 +1648,27 @@ update_x-ui() {
         chmod 644 ${xui_service}/x-ui.service > /dev/null 2>&1
         systemctl daemon-reload > /dev/null 2>&1
         systemctl enable x-ui > /dev/null 2>&1
-        systemctl start x-ui > /dev/null 2>&1
+        if ! systemctl start x-ui > /dev/null 2>&1; then
+            _fail "ERROR: The updated x-ui service failed to start; the previous installation will be restored"
+        fi
     fi
 
     config_after_update
+
+    if [[ "${release}" == "alpine" ]]; then
+        if ! rc-service x-ui status > /dev/null 2>&1; then
+            _fail "ERROR: The updated x-ui service is not running after configuration; the previous installation will be restored"
+        fi
+    elif ! systemctl is-active --quiet x-ui; then
+        _fail "ERROR: The updated x-ui service is not active after configuration; the previous installation will be restored"
+    fi
 
     # IP Limit relies on fail2ban; install + configure it now so the feature
     # works out of the box on update too (no-op when XUI_ENABLE_FAIL2BAN=false).
     # Never fatal.
     setup_fail2ban
+
+    _commit_update_transaction
 
     echo -e "${green}x-ui ${tag_version}${plain} updating finished, it is running now..."
     echo -e ""
