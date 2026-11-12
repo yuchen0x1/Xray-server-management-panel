@@ -443,33 +443,26 @@ _region_download_release_tarball() {
         rm -f "$out"
         _region_curl -fLR --retry 5 --retry-delay 3 --connect-timeout 15 --speed-limit 1 --speed-time 300 -o "$out" "$try_url" > /dev/null 2>&1
         if [[ $? -eq 0 && -s "$out" ]]; then
+            actual="$(sha256sum "$out" | awk '{print $1}')"
+            checksum_verified=false
             checksum_file="${out}.SHA256SUMS"
-            rm -f "$checksum_file"
             for checksum_url in \
                 "${primary_base}/${tag}/SHA256SUMS" \
                 "${fallback_base}/${tag}/SHA256SUMS"; do
+                rm -f "$checksum_file"
                 if _region_url_safe "$checksum_url" && \
                     _region_curl -fL --retry 5 --retry-delay 3 --connect-timeout 15 -o "$checksum_file" "$checksum_url" > /dev/null 2>&1 && \
                     [[ -s "$checksum_file" ]]; then
-                    break
+                    expected="$(awk -v asset="$(basename "$out")" '$2 == asset || $2 == "*" asset {print $1; exit}' "$checksum_file")"
+                    if [[ "$expected" =~ ^[0-9a-fA-F]{64}$ && "${actual,,}" == "${expected,,}" ]]; then
+                        checksum_verified=true
+                        break
+                    fi
                 fi
-                rm -f "$checksum_file"
             done
-            if [[ ! -s "$checksum_file" ]]; then
-                echo -e "${yellow}Release checksum manifest is unavailable; refusing to install an unverified archive.${plain}" >&2
-                rm -f "$out"
-                continue
-            fi
-            expected="$(awk -v asset="$(basename "$out")" '$2 == asset || $2 == "*" asset {print $1; exit}' "$checksum_file")"
-            if [[ ! "$expected" =~ ^[0-9a-fA-F]{64}$ ]]; then
-                echo -e "${yellow}Release checksum manifest has no valid entry for $(basename "$out").${plain}" >&2
-                rm -f "$out" "$checksum_file"
-                continue
-            fi
-            actual="$(sha256sum "$out" | awk '{print $1}')"
             rm -f "$checksum_file"
-            if [[ "${actual,,}" != "${expected,,}" ]]; then
-                echo -e "${yellow}SHA-256 verification failed for $(basename "$out").${plain}" >&2
+            if [[ "$checksum_verified" != true ]]; then
+                echo -e "${yellow}No trusted release checksum manifest matched the archive; refusing to install an unverified archive.${plain}" >&2
                 rm -f "$out"
                 continue
             fi
