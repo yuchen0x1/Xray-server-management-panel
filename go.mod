@@ -4,7 +4,7 @@ go 1.27.4
 
 require (
 	github.com/apernet/quic-go v0.61.1-0.20260806010916-184d081eef3e
-	github.com/gin-contrib/gzip v1.2.6
+	github.com/gin-contrib/gzip v1.2.10
 	github.com/gin-contrib/sessions v1.1.0
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-ldap/ldap/v3 v3.4.15
