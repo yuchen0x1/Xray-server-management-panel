@@ -1,6 +1,6 @@
 module github.com/mhsanaei/3x-ui/v3
 
-go 1.27.3
+go 1.27.4
 
 require (
 	github.com/apernet/quic-go v0.61.1-0.20260806010916-184d081eef3e

@@ -6,6 +6,8 @@ deliberately skipped so the two tag namespaces never collide.
 
 ## v3.12.1 — 2026-11-13
 
+- Raise the minimum Go version and Docker builder to 1.27.4 to fix the reachable
+  net/http server crash vulnerability GO-2026-6859.
 - Linux updates verify release archives against either configured checksum mirror
   before installation and roll back when the updated service cannot start.
 - Sidebar project and community links are actionable, and release archives include

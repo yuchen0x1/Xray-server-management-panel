@@ -10,6 +10,7 @@
 - 恢复前核对文件名和覆盖范围，支持取消，拦截空文件及重复恢复；失败后可重新操作。
 - Linux 在线更新校验归档与镜像校验清单，更新后服务启动失败时恢复旧版本。
 - 侧栏项目与交流链接可直接打开，恢复提示覆盖全部 13 种语言。
+- 升级 Go 1.27.4，修复可能导致 HTTP 服务崩溃的标准库漏洞。
 
 [完整版本记录](docs/releases/release-notes.md) · [技术变更记录](CHANGELOG.md)
 
@@ -73,7 +74,7 @@
 
 ## 四、技术栈
 
-- **后端**：Go 1.27.3+（以 `go.mod` 为准）、Gin、GORM、SQLite、PostgreSQL、go-i18n、gopsutil、gorilla/websocket
+- **后端**：Go 1.27.4+（以 `go.mod` 为准）、Gin、GORM、SQLite、PostgreSQL、go-i18n、gopsutil、gorilla/websocket
 - **代理核心**：Xray-core，含 MTProto sidecar 支持
 - **前端**：React 19、TypeScript 6、Vite 8、Ant Design 6、React Router、TanStack Query、Zod、i18next
 - **API / Schema**：由 Go 源码生成 OpenAPI、TypeScript 类型和 Zod Schema
@@ -304,7 +305,7 @@ x-ui migrate-db -dsn "postgres://xui:password@127.0.0.1:5432/xui?sslmode=disable
 
 开发环境要求：
 
-- Go `1.26.6`。
+- Go `1.27.4` 或更新版本（以 `go.mod` 为准）。
 - Node.js `>=24.0.0`，npm `>=10.0.0`，建议使用仓库 `.nvmrc`。
 - 运行 SQLite 相关 Go 测试或 race detector 时，需要可用的 C 编译器。
 - 文档站使用 pnpm，`docs/package.json` 声明 `pnpm@11.15.1`。
