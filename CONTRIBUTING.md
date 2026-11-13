@@ -302,6 +302,22 @@ CI runs this for you nightly (and on demand) via `.github/workflows/mutation.yml
 项目分支。`upstream` 仅用于读取、比较和选择性同步上游改动，不要把上游分支
 发布到 `origin`。
 
+Dependabot 的版本更新 PR 上限设为 `0`，仓库设置中的自动安全修复 PR 也关闭，
+避免持续创建额外分支。漏洞告警、依赖图和 CI 安全检查保留；依赖升级需在
+`main` 上人工评估并通过检查。恢复自动 PR 前，应先明确允许的分支策略。
+
+### 本地文件与发布记录
+
+运行数据库、私钥、`.env`、下载归档、构建缓存、测试报告和一次性审计笔记不应
+提交。共享 `.vscode/launch.json`、`.vscode/tasks.json` 及 `.env.example` 是开发
+模板，可以保留，但不得填入真实凭据。不要删除测试夹具、生成的 API 源文件或
+仍被文档引用的资源。
+
+历史发布以 `docs/releases/release-notes.md` 为用户向记录、`CHANGELOG.md` 为技术
+记录，日期统一为 Asia/Shanghai。补写历史记录时核对标签和提交，不改写原标签
+或替换旧发布附件。清理可重建依赖后，在 `frontend` 运行 `npm ci`；文档依赖使用
+`pnpm -C docs install --frozen-lockfile`。前端静态产物通过 `npm run build` 重建。
+
 ### 提交信息规范
 
 建议使用 Conventional Commits 前缀，格式：

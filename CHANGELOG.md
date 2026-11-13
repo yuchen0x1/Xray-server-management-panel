@@ -3,6 +3,16 @@
 All notable changes to this fork are recorded here. Versions follow the fork's
 own numbering; tags `v3.9.0`–`v3.11.0` belong to upstream 3x-ui and are
 deliberately skipped so the two tag namespaces never collide.
+Dates use Asia/Shanghai. User-facing Chinese release notes and the release index
+are maintained in [docs/releases/release-notes.md](docs/releases/release-notes.md).
+
+## Unreleased
+
+- Stop bundling the fixed third-party OpenSSL installer in future Windows
+  archives; document how to obtain OpenSSL separately. Existing release assets
+  are unchanged.
+- Keep dependency updates on main: disable automatic update PR creation while
+  retaining vulnerability alerts and CI security checks.
 
 ## v3.12.1 — 2026-11-13
 
@@ -101,3 +111,31 @@ existing API token keeps working with the privileges it already had.
 
 - The bundled Xray binary is pinned to `v26.10.21`, matching the Xray library
   version this build compiles against.
+
+## v3.8.0 — 2026-11-08
+
+- Add TUIC v5 inbounds and align the quic-go dependency with the ported protocol.
+- Show associated host remarks in the inbound list and add a Ctrl+K command
+  palette for navigation and common operations.
+- Use the light theme by default on new installations; retain theme selection.
+- Propagate client traffic persistence failures instead of silently ignoring them.
+- Accept the legacy string representation of xdns finalmask configuration.
+- Fix TUIC test assumptions around stream close timing and repository signatures.
+- Upgrade to Go 1.27.3 and address the dependency and CodeQL findings identified
+  at the time. This is a historical result, not a current security guarantee.
+- Remove release path filtering that could suppress builds for pushed tags.
+- Compare: https://github.com/yuchen0x1/Xray-server-management-panel/compare/v3.7.0...v3.8.0
+
+## v3.7.0 — 2026-11-07
+
+- Add subscription import links for Clash, Sing-box, Hiddify, Surge and Loon,
+  plus desktop import entry points selected by subscription format.
+- Add Webhook notifications for DingTalk, WeCom, Feishu and Discord, configured
+  with XUI_WEBHOOK_URL and XUI_WEBHOOK_SECRET.
+- Rate-limit subscription ID probing per source with a sliding window and a
+  15-minute block; apply trusted proxy configuration when resolving client IPs.
+- Switch between Gitee and GitHub immediately on API 403/429 responses during
+  install and update instead of repeatedly retrying the limited endpoint.
+- First retained stable release in this fork. Existing upstream functionality
+  is part of the baseline, not newly introduced by this release.
+- Source: https://github.com/yuchen0x1/Xray-server-management-panel/tree/v3.7.0

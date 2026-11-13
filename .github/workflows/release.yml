@@ -356,15 +356,23 @@ jobs:
           RELEASE_COMMIT: ${{ github.sha }}
         working-directory: release-assets
         run: |
+          printf 'commit=%s\n\n' "$RELEASE_COMMIT" > "$RUNNER_TEMP/dev-release-notes.md"
+          awk '$1 == "##" { if (found) exit; if ($2 == "dev-latest") found = 1 } found { print }' \
+            "$GITHUB_WORKSPACE/docs/releases/release-notes.md" >> "$RUNNER_TEMP/dev-release-notes.md"
+          printf '\n' >> "$RUNNER_TEMP/dev-release-notes.md"
+          awk '$1 == "##" { if (found) exit; if ($2 == "未发布") found = 1 } found { print }' \
+            "$GITHUB_WORKSPACE/docs/releases/release-notes.md" >> "$RUNNER_TEMP/dev-release-notes.md"
+          printf '\n[完整版本记录](https://github.com/%s/blob/%s/docs/releases/release-notes.md)\n' \
+            "$GH_REPO" "$RELEASE_COMMIT" >> "$RUNNER_TEMP/dev-release-notes.md"
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release edit "$RELEASE_TAG" \
               --title "3X-UI development build ${RELEASE_COMMIT:0:8}" \
-              --notes "commit=${RELEASE_COMMIT}" \
+              --notes-file "$RUNNER_TEMP/dev-release-notes.md" \
               --prerelease
           else
             gh release create "$RELEASE_TAG" \
               --title "3X-UI development build ${RELEASE_COMMIT:0:8}" \
-              --notes "commit=${RELEASE_COMMIT}" \
+              --notes-file "$RUNNER_TEMP/dev-release-notes.md" \
               --prerelease
           fi
           gh release upload "$RELEASE_TAG" x-ui-* SHA256SUMS --clobber

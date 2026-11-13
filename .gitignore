@@ -1,6 +1,8 @@
 # Ignore editor and IDE settings
 .idea/
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
 .cursor/
 .specify/
 .claude/
@@ -14,6 +16,11 @@
 # Ignore temporary files
 tmp/
 *.tar.gz
+*.zip
+*.7z
+*.bak
+*.old
+*.tmp
 .localrun/
 
 # Ignore build and distribution directories
@@ -26,6 +33,13 @@ internal/web/dist/*
 !internal/web/dist/.gitkeep
 release/
 node_modules/
+coverage/
+storybook-static/
+test-results/
+playwright-report/
+.next/
+.source/
+*.tsbuildinfo
 
 # Ignore compiled binaries
 main
@@ -39,6 +53,11 @@ Thumbs.db
 x-ui.db
 x-ui.db-shm
 x-ui.db-wal
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
 system_metrics.gob
 *.dump
 
@@ -47,6 +66,14 @@ docker-compose.override.yml
 
 # Ignore .env (Environment Variables) file
 .env
+.env.*
+!.env.example
+!*.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.msi
 
 # Ignore AI agent working notes and one-off audit drafts; these are local
 # scratch output, not project documentation, and must not be published.

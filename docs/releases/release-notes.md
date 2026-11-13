@@ -1,6 +1,19 @@
 # 版本记录
 
-本页记录此维护分支面向使用者的版本变化。历史技术细节保留在 [CHANGELOG](../../CHANGELOG.md)。
+本页记录此维护分支实际发布的版本，依据对应标签、提交差异和 GitHub Release 整理。日期使用北京时间（Asia/Shanghai）；技术细节见 [CHANGELOG](../../CHANGELOG.md)。
+
+| 版本                                                                                      | 发布日期   | 主要变化                                         |
+| ----------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------ |
+| [v3.12.1](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.12.1) | 2026-11-13 | 一致性备份、恢复确认、更新校验和 Docker 架构修复 |
+| [v3.12.0](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.12.0) | 2026-11-10 | API 令牌权限与有效期、TUIC 和通知安全加固        |
+| [v3.8.0](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.8.0)   | 2026-11-08 | TUIC v5、全局命令面板、入站主机备注              |
+| [v3.7.0](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.7.0)   | 2026-11-07 | 多客户端订阅导入、Webhook 通知、订阅防爆破       |
+
+`v3.9.0` 至 `v3.11.0` 等标签属于上游项目，本维护分支没有以这些编号发布版本。它们不应混入本页的发布记录。
+
+## 未发布
+
+- 后续 Windows 归档不再附带固定版本的第三方 OpenSSL 安装器；证书管理可自行安装 OpenSSL，使用说明将提供获取入口。已经发布的历史附件保持原样。
 
 ## v3.12.1 — 2026-11-13
 
@@ -28,10 +41,82 @@
 - SHA-256 校验用于验证文件完整性，不等同于发布者签名。Windows 产物尚未配置 Authenticode 签名。
 - 恢复互斥只覆盖单个面板进程；共享 PostgreSQL 的多个实例仍需协调停写。
 
+### 发布与验证
+
+- 提供 Linux 七种架构和 Windows amd64 安装包；Docker 提供 amd64、arm64、arm/v7、arm/v6、386 镜像。
+- CI、Linux amd64/arm64 干净安装、Windows 下载校验与版本检查通过；Docker 五架构均验证面板、Xray 和 MTProto 程序可启动。
+- 干净安装验证不代表已经完成生产环境跨版本更新与故障回滚演练。
+- 应用标签对应 `76f49f14`；Docker 打包修复在后续 `main` 提交 `05d59020` 落地，镜像仍使用此版本的已校验归档。
+- [应用提交差异](https://github.com/yuchen0x1/Xray-server-management-panel/compare/v3.12.0...v3.12.1) · [Docker 打包修复](https://github.com/yuchen0x1/Xray-server-management-panel/commit/05d590204bf94b7ee5952b19110514d8f02287e4)
+
 ## v3.12.0 — 2026-11-10
 
-- API 令牌支持权限范围与到期时间，已有令牌维持兼容行为。
-- 加固双重认证、TUIC 连接准入、订阅请求限流与 Webhook 请求处理。
-- 完整历史见 [v3.12.0 发布说明](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.12.0)及 [CHANGELOG](../../CHANGELOG.md)。
+### API 令牌与账户安全
 
-更早的版本见 [Release 历史](https://github.com/yuchen0x1/Xray-server-management-panel/releases)。
+- API 令牌可指定管理员、只读监控、节点同步、节点管理四种权限范围，并设置到期时间；界面显示权限与有效期。
+- 已有令牌迁移为管理员权限，未设置有效期时继续长期有效；异常权限值不再按管理员放行。
+- 删除、启用和停用令牌时可校验预期权限，减少旧页面误操作；数据库按令牌哈希查询，不保存令牌明文。
+- 命令行获取 API 令牌改为轮换同一枚 CLI 令牌，避免反复生成无法管理的长期令牌。
+- 重新绑定双重认证需要验证当前验证码，防止保存设置时直接替换 TOTP 密钥。
+
+### 连接、订阅与通知
+
+- TUIC 增加 QUIC Retry 和连接准入限制，约束全局与每来源的待认证连接、认证前数据流、账户并发会话及 UDP 中继。
+- 修复 TUIC 会话尚未建立完整连接就关闭时的空指针错误，失败或关闭后释放中继配额。
+- 订阅限流表满时回收过期和最旧记录，IPv6 来源按 /64 网段统计，减少轮换地址绕过限制的机会。
+- Webhook 拒绝跨主机重定向，防止通知密钥随请求泄漏；CPU、内存告警遵循配置阈值，限制同时发送的请求数量。
+- 随包 Xray 固定为 `v26.10.21`，与面板使用的核心库版本对齐。
+
+### 升级说明
+
+- API 令牌字段会自动迁移，原有令牌权限保持兼容；新增令牌可按实际用途缩小权限范围。
+- TUIC 的连接与会话限制会影响超过配额的连接；Webhook 接收地址应直接指向最终主机。
+- [完整提交差异](https://github.com/yuchen0x1/Xray-server-management-panel/compare/v3.8.0...v3.12.0)
+
+## v3.8.0 — 2026-11-08
+
+### 新功能与体验
+
+- 新增 TUIC v5 入站协议，支持对应客户端连接。
+- 入站列表直接显示关联主机备注，便于识别多节点配置。
+- 新增 `Ctrl+K` 全局命令面板，快速跳转入站、设置及常用操作。
+- 新安装默认使用浅色主题，可在外观设置切换深色主题。
+
+### 修复与兼容
+
+- 客户端流量写入失败时返回错误，避免统计保存失败被静默忽略。
+- 兼容 Xray xdns finalmask 的旧字符串配置格式，减少升级后的配置解析错误。
+- 对齐 quic-go 依赖并修正 TUIC 测试中的流关闭时序假设。
+- 更新 Go 至 1.27.3 并处理当时发现的 Go、前端及文档依赖安全告警；这些结果不代表该旧版本长期无漏洞。
+- 修复版本标签推送可能被工作流路径过滤跳过的问题，使标签能正常触发构建。
+
+### 升级说明
+
+- 使用 TUIC 时需选择支持 TUIC v5 的客户端，并放通入站使用的 UDP 端口。
+- 原有 xdns 字符串配置保留兼容；主题可以在面板中调整。
+- [完整提交差异](https://github.com/yuchen0x1/Xray-server-management-panel/compare/v3.7.0...v3.8.0)
+
+## v3.7.0 — 2026-11-07
+
+### 新功能
+
+- 订阅页新增 Clash、Sing-box、Hiddify、Surge、Loon 的客户端唤醒链接和桌面导入入口，按订阅格式选择导入源。
+- 新增 Webhook 通知，可适配钉钉、企业微信、飞书和 Discord；通过 `XUI_WEBHOOK_URL`、`XUI_WEBHOOK_SECRET` 配置。
+- 订阅端针对 subId 猜测和路径探测进行按 IP 滑动窗口限流，超限后封禁 15 分钟。
+- 订阅服务接入可信代理设置，避免直接信任任意来源的 `X-Forwarded-For`。
+
+### 修复与升级说明
+
+- 安装和更新时遇到 Gitee/GitHub API 403、429 限流，立即切换备用通道，减少无效重试。
+- Webhook 为按需配置功能；反向代理部署应核对可信代理设置，以便正确识别来源 IP。
+- 这是本维护仓库当前保留的首个正式 Release，继承功能以对应标签源码为准；不将全部上游历史功能计作本版新增。
+- [对应源码](https://github.com/yuchen0x1/Xray-server-management-panel/tree/v3.7.0)
+
+## dev-latest — 滚动预发布
+
+- 跟随 `main` 更新，用于提前验证尚未进入下一稳定版的改动，不是新的正式版本号。
+- GitHub 发布说明首行 `commit=<完整提交哈希>` 表示该批附件实际构建的提交；同名附件会被后续构建替换。
+- 开发版会包含最近稳定版的功能和之后的维护变更；部署前另存数据库备份，需要固定版本时选择正式 Release。
+- 保留此渠道是为了兼容面板的开发版更新入口；它是发布标签，不是开发分支。
+
+[查看全部发布附件](https://github.com/yuchen0x1/Xray-server-management-panel/releases)
