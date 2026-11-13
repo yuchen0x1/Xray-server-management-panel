@@ -1,4 +1,6 @@
 .git
+.localrun
+.autonomous-upgrade
 **/node_modules
 internal/web/dist
 build

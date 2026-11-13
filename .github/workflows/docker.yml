@@ -24,6 +24,33 @@ jobs:
         with:
           submodules: true
 
+      - name: Resolve published release
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          REQUESTED_TAG: ${{ inputs.tag }}
+        run: |
+          tag="$REQUESTED_TAG"
+          if [ -z "$tag" ]; then
+            if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+              tag="$GITHUB_REF_NAME"
+            else
+              tag="v$(cat internal/config/version)"
+            fi
+          fi
+          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          for attempt in $(seq 1 60); do
+            if gh release view "$tag" --json isDraft,assets > "$RUNNER_TEMP/release.json" 2>/dev/null &&
+               jq -e '.isDraft == false and ([.assets[].name] | index("SHA256SUMS") != null)' "$RUNNER_TEMP/release.json" >/dev/null; then
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "Published release $tag is not ready" >&2
+          exit 1
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v6
@@ -31,11 +58,8 @@ jobs:
           images: |
             ghcr.io/yuchen0x1/xray-panel
           tags: |
-            type=ref,event=branch,enable=${{ inputs.tag == '' }}
-            type=ref,event=tag
-            type=semver,pattern={{version}}
-            type=raw,value=${{ inputs.tag }},enable=${{ inputs.tag != '' }}
-            type=semver,pattern={{version}},value=${{ inputs.tag }},enable=${{ inputs.tag != '' }}
+            type=raw,value=${{ steps.release.outputs.tag }}
+            type=semver,pattern={{version}},value=${{ steps.release.outputs.tag }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -54,7 +78,28 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
+          build-args: |
+            BINARY_SOURCE=release-binaries
+            RELEASE_TAG=${{ steps.release.outputs.tag }}
+            RELEASE_REPOSITORY=${{ github.repository }}
           push: true
           platforms: linux/amd64,linux/arm64/v8,linux/arm/v7,linux/arm/v6,linux/386
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Verify published platform binaries
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          image="ghcr.io/yuchen0x1/xray-panel:$RELEASE_TAG"
+          for platform in linux/amd64 linux/arm64/v8 linux/arm/v7 linux/arm/v6 linux/386; do
+            actual=$(docker run --rm --platform "$platform" --entrypoint /app/x-ui "$image" -v)
+            test "$actual" = "${RELEASE_TAG#v}"
+            case "$platform" in
+              linux/arm/v*) xray=arm32; mtg=arm ;;
+              linux/arm64/*) xray=arm64; mtg=arm64 ;;
+              *) xray="${platform#linux/}"; mtg="$xray" ;;
+            esac
+            docker run --rm --platform "$platform" --entrypoint "/app/bin/xray-linux-$xray" "$image" version
+            docker run --rm --platform "$platform" --entrypoint "/app/bin/mtg-linux-$mtg" "$image" --version
+          done

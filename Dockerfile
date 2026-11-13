@@ -1,6 +1,7 @@
 # ========================================================
 # Stage: Frontend (Vite)
 # ========================================================
+ARG BINARY_SOURCE=builder
 FROM --platform=$BUILDPLATFORM node:24-alpine AS frontend
 WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
@@ -15,6 +16,7 @@ RUN npm run build
 FROM golang:1.27.4-alpine AS builder
 WORKDIR /app
 ARG TARGETARCH
+ARG TARGETVARIANT
 
 RUN apk --no-cache --update add \
   build-base \
@@ -28,7 +30,19 @@ COPY --from=frontend /src/internal/web/dist ./internal/web/dist
 ENV CGO_ENABLED=1
 ENV CGO_CFLAGS="-D_LARGEFILE64_SOURCE"
 RUN go build -ldflags "-w -s" -o build/x-ui main.go
-RUN ./DockerInit.sh "$TARGETARCH"
+RUN ./DockerInit.sh "$TARGETARCH" "$TARGETVARIANT"
+
+FROM --platform=$BUILDPLATFORM alpine AS release-binaries
+WORKDIR /app
+ARG TARGETARCH
+ARG TARGETVARIANT
+ARG RELEASE_TAG
+ARG RELEASE_REPOSITORY
+RUN apk add --no-cache curl
+COPY tools/docker-release-binaries.sh /tmp/docker-release-binaries.sh
+RUN sh /tmp/docker-release-binaries.sh "$RELEASE_REPOSITORY" "$RELEASE_TAG" "$TARGETARCH" "$TARGETVARIANT"
+
+FROM ${BINARY_SOURCE} AS binaries
 
 # ========================================================
 # Stage: Final Image of 3x-ui
@@ -45,10 +59,10 @@ RUN apk add --no-cache --update \
   curl \
   openssl
 
-COPY --from=builder /app/build/ /app/
-COPY --from=builder /app/DockerEntrypoint.sh /app/
-COPY --from=builder /app/x-ui.sh /usr/bin/x-ui
-COPY --from=builder /app/internal/web/translation /app/internal/web/translation
+COPY --from=binaries /app/build/ /app/
+COPY DockerEntrypoint.sh /app/
+COPY --from=binaries /app/x-ui.sh /usr/bin/x-ui
+COPY internal/web/translation /app/internal/web/translation
 
 
 # Configure fail2ban
