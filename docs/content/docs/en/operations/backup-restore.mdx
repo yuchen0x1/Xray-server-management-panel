@@ -16,14 +16,31 @@ database. Back it up regularly so you can recover or migrate.
 
 ## Manual backup
 
-You can download a backup from the panel's overview, or copy the database file
-directly from the server:
+Prefer downloading from the overview. SQLite downloads use `VACUUM INTO` for a
+consistent snapshot including committed WAL data while the panel stays online.
+Export requires temporary disk space and still loads the completed backup into memory.
+
+For a direct file copy, stop the panel cleanly and ensure no other database
+writers remain first. Do not copy just the live `.db` file while omitting its WAL:
 
 ```bash title="copy the SQLite database"
 cp /etc/x-ui/x-ui.db /root/x-ui-backup-$(date +%F).db
 ```
 
 To restore, stop the panel, put the database back in place, and start it again.
+
+## Restore through the panel
+
+1. Download a current backup, then choose a `.db` or `.dump` file with **Restore**.
+2. Check the filename and overwrite warning. Only restore trusted files: restoration
+   replaces current panel data and restarts services.
+3. Confirm to upload, or cancel without sending the file. Empty files are rejected.
+4. A successful import requests a panel restart and page reload. On failure, inspect
+   the error before retrying; repeated submissions are blocked while restoring.
+
+Only one restore can run per panel process, including calls from different service
+instances. This is not a distributed maintenance lock: operators must coordinate
+other panel instances writing to the same PostgreSQL database.
 
 <Callout type="warn">
   Restore a backup onto the **same major version** it came from when possible.
@@ -50,6 +67,10 @@ x-ui migrate-db --restore /root/x-ui.sql     # SQL text -> SQLite
 ```
 
 To move to PostgreSQL instead, see [Database](/docs/reference/database).
+
+SQL dumps read schema and data in one transaction and preserve BLOB storage types,
+embedded NUL text, and quoted table names. Newly created dump files use mode `0600`;
+Windows access remains governed by ACLs.
 
 <Callout type="info">
   Whatever method you use, store backups **off the server** and test a restore

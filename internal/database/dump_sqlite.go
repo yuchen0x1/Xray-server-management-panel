@@ -3,11 +3,11 @@ package database
 import (
 	"context"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
-	"unicode/utf8"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -24,7 +24,7 @@ func DumpSQLite(srcPath, outPath string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(outPath, data, 0o644)
+	return os.WriteFile(outPath, data, 0o600)
 }
 
 // DumpSQLiteToBytes builds the same `sqlite3 .dump`-style SQL text as DumpSQLite
@@ -43,7 +43,15 @@ func DumpSQLiteToBytes(srcPath string) ([]byte, error) {
 		return nil, err
 	}
 	defer sqlDB.Close()
+	tx, err := sqlDB.BeginTx(context.Background(), nil)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = tx.Rollback() }()
+	return dumpSQLiteSnapshot(tx)
+}
 
+func dumpSQLiteSnapshot(tx *sql.Tx) ([]byte, error) {
 	var b strings.Builder
 	b.WriteString("PRAGMA foreign_keys=OFF;\n")
 	b.WriteString("BEGIN TRANSACTION;\n")
@@ -51,7 +59,7 @@ func DumpSQLiteToBytes(srcPath string) ([]byte, error) {
 	// Tables in creation order, each followed by its data.
 	type object struct{ name, ddl string }
 	var tables []object
-	rows, err := sqlDB.QueryContext(context.Background(), `SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND sql IS NOT NULL ORDER BY rowid`)
+	rows, err := tx.QueryContext(context.Background(), `SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND sql IS NOT NULL ORDER BY rowid`)
 	if err != nil {
 		return nil, err
 	}
@@ -70,21 +78,21 @@ func DumpSQLiteToBytes(srcPath string) ([]byte, error) {
 	for _, t := range tables {
 		b.WriteString(t.ddl)
 		b.WriteString(";\n")
-		if err := dumpTableData(sqlDB, t.name, &b); err != nil {
+		if err := dumpTableData(tx, t.name, &b); err != nil {
 			return nil, err
 		}
 	}
 
 	// AUTOINCREMENT bookkeeping, restored verbatim like the sqlite3 CLI does.
-	if sqliteTableExists(sqlDB, "sqlite_sequence") {
+	if sqliteTableExists(tx, "sqlite_sequence") {
 		b.WriteString("DELETE FROM sqlite_sequence;\n")
-		if err := dumpTableData(sqlDB, "sqlite_sequence", &b); err != nil {
+		if err := dumpTableData(tx, "sqlite_sequence", &b); err != nil {
 			return nil, err
 		}
 	}
 
 	// Indexes, triggers and views after the data is in place.
-	rows2, err := sqlDB.QueryContext(context.Background(), `SELECT sql FROM sqlite_master WHERE type IN ('index','trigger','view') AND sql IS NOT NULL ORDER BY rowid`)
+	rows2, err := tx.QueryContext(context.Background(), `SELECT sql FROM sqlite_master WHERE type IN ('index','trigger','view') AND sql IS NOT NULL ORDER BY rowid`)
 	if err != nil {
 		return nil, err
 	}
@@ -137,8 +145,9 @@ func RestoreSQLite(dumpPath, dstPath string) error {
 }
 
 // dumpTableData appends one INSERT statement per row of table to b.
-func dumpTableData(db *sql.DB, table string, b *strings.Builder) error {
-	rows, err := db.QueryContext(context.Background(), `SELECT * FROM "`+table+`"`)
+func dumpTableData(db *sql.Tx, table string, b *strings.Builder) error {
+	identifier := `"` + strings.ReplaceAll(table, `"`, `""`) + `"`
+	rows, err := db.QueryContext(context.Background(), `SELECT * FROM `+identifier)
 	if err != nil {
 		return err
 	}
@@ -149,7 +158,7 @@ func dumpTableData(db *sql.DB, table string, b *strings.Builder) error {
 		return err
 	}
 	n := len(cols)
-	prefix := `INSERT INTO "` + table + `" VALUES(`
+	prefix := `INSERT INTO ` + identifier + ` VALUES(`
 
 	for rows.Next() {
 		vals := make([]any, n)
@@ -189,26 +198,24 @@ func sqliteLiteral(v any) string {
 	case string:
 		return quoteSQLiteText(x)
 	case []byte:
-		if utf8.Valid(x) {
-			return quoteSQLiteText(string(x))
-		}
-		var sb strings.Builder
-		sb.WriteString("X'")
-		for _, c := range x {
-			fmt.Fprintf(&sb, "%02x", c)
-		}
-		sb.WriteByte('\'')
-		return sb.String()
+		return "X'" + hex.EncodeToString(x) + "'"
 	default:
 		return quoteSQLiteText(fmt.Sprintf("%v", x))
 	}
 }
 
 func quoteSQLiteText(s string) string {
+	if strings.ContainsRune(s, '\x00') {
+		return "CAST(X'" + hex.EncodeToString([]byte(s)) + "' AS TEXT)"
+	}
 	return "'" + strings.ReplaceAll(s, "'", "''") + "'"
 }
 
-func sqliteTableExists(db *sql.DB, name string) bool {
+type sqliteRowQuerier interface {
+	QueryRowContext(context.Context, string, ...any) *sql.Row
+}
+
+func sqliteTableExists(db sqliteRowQuerier, name string) bool {
 	var found string
 	err := db.QueryRowContext(context.Background(), `SELECT name FROM sqlite_master WHERE type='table' AND name=?`, name).Scan(&found)
 	return err == nil

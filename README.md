@@ -2,6 +2,17 @@
 
 > Go + React 打造的一体化 Xray-core Web 管理后台：入站、客户端、订阅、节点、路由、通知、监控，一个页面全部搞定。
 
+## 最新更新
+
+### v3.12.1 — 2026-11-13
+
+- SQLite 备份采用一致性快照，包含已提交的 WAL 数据，特殊字段迁移更可靠。
+- 恢复前核对文件名和覆盖范围，支持取消，拦截空文件及重复恢复；失败后可重新操作。
+- Linux 在线更新校验归档与镜像校验清单，更新后服务启动失败时恢复旧版本。
+- 侧栏项目与交流链接可直接打开，恢复提示覆盖全部 13 种语言。
+
+[完整版本记录](docs/releases/release-notes.md) · [技术变更记录](CHANGELOG.md)
+
 ## 一、项目简介
 
 本仓库托管于 Gitee，是在上游开源项目 3X-UI（及其更早的前身 x-ui）基础上继续维护的二次修改分支。仓库内的安装脚本、更新脚本和文档链接已统一指向当前仓库。
@@ -51,6 +62,7 @@
 
 - 节点协同：远程节点列表、健康状态、证书、节点升级、节点侧入站与订阅链接处理。
 - 运维监控：系统状态、CPU / 内存 / 网络历史、Xray observatory 指标、日志、数据库备份恢复、证书工具、Fail2ban、Telegram 与邮件通知。
+- 备份保护：SQLite 下载使用一致性快照；恢复前显示文件名与覆盖确认，拒绝空文件及同时进行的重复恢复。详见[备份与恢复](docs/content/docs/zh/operations/backup-restore.mdx)。
 
 ### 开发者友好
 
@@ -61,7 +73,7 @@
 
 ## 四、技术栈
 
-- **后端**：Go 1.26.6、Gin、GORM、SQLite、PostgreSQL、go-i18n、gopsutil、gorilla/websocket
+- **后端**：Go 1.27.3+（以 `go.mod` 为准）、Gin、GORM、SQLite、PostgreSQL、go-i18n、gopsutil、gorilla/websocket
 - **代理核心**：Xray-core，含 MTProto sidecar 支持
 - **前端**：React 19、TypeScript 6、Vite 8、Ant Design 6、React Router、TanStack Query、Zod、i18next
 - **API / Schema**：由 Go 源码生成 OpenAPI、TypeScript 类型和 Zod Schema
@@ -442,7 +454,8 @@ make verify
 
 ## 十八、更新日志说明
 
-当前仓库未维护独立 `CHANGELOG.md`。请通过 Git 提交历史、Release 页面或上游项目记录追踪变更；不要假设本分支与上游发布内容完全一致。
+面向使用者的版本记录见 [完整版本记录](docs/releases/release-notes.md)，详细变更见
+[CHANGELOG.md](CHANGELOG.md)。本分支与上游的版本编号和发布内容分别维护。
 
 ## 十九、开源协议
 

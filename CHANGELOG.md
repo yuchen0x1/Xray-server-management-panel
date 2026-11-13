@@ -4,6 +4,25 @@ All notable changes to this fork are recorded here. Versions follow the fork's
 own numbering; tags `v3.9.0`–`v3.11.0` belong to upstream 3x-ui and are
 deliberately skipped so the two tag namespaces never collide.
 
+## v3.12.1 — 2026-11-13
+
+- Linux updates verify release archives against either configured checksum mirror
+  before installation and roll back when the updated service cannot start.
+- Sidebar project and community links are actionable, and release archives include
+  a checksum manifest. Stable releases become public after all assets are uploaded.
+
+- SQLite database downloads now use `VACUUM INTO` to create a consistent snapshot,
+  including committed WAL data, instead of copying a live database file.
+- SQLite SQL dumps read schema and data in one transaction and preserve BLOB
+  storage types, embedded NUL text, and quoted table names. Newly created dump
+  files use owner-only permissions on systems that support POSIX file modes.
+- Database restore now requires a filename/overwrite confirmation, rejects empty
+  uploads, prevents repeated submissions, and releases the busy state on errors.
+  All 13 locales include the new prompts.
+- Concurrent restore calls are rejected across service instances before they
+  touch staging files or restart services. No schema or API route changes.
+- Development prerequisites now match the Go version required by `go.mod`.
+
 ## v3.12.0 — 2026-11-10
 
 Security and reliability release. No breaking configuration changes: every

@@ -16,7 +16,7 @@ Windows 构建可以通过 Release 下载，但面板自更新脚本目前只支
 
 `.github/workflows/release.yml` 负责构建 Linux 和 Windows 产物，并在发布阶段统一生成 `SHA256SUMS`：
 
-- 推送 `vMAJOR.MINOR.PATCH` 标签：创建正式 Release，上传全部归档和校验清单。
+- 推送 `vMAJOR.MINOR.PATCH` 标签：读取 `docs/releases/release-notes.md` 中对应版本的说明，创建草稿 Release；全部归档和校验清单上传完成后再公开正式版。
 - 推送 `main`：更新固定的 `dev-latest` 预发布 Release，正文包含完整 `commit=<sha>` 标记，供 Dev 渠道比较提交。
 - Release 工作流使用 `GITHUB_TOKEN` 的 `contents: write` 权限，不需要额外的发布密钥。
 - 日常开发和自动构建统一在 `main` 分支；其他分支不会触发该发布工作流。正式发布需要显式创建版本标签。
@@ -24,8 +24,8 @@ Windows 构建可以通过 Release 下载，但面板自更新脚本目前只支
 发布前检查：
 
 ```bash
-git tag v3.13.0
-git push origin v3.13.0
+git tag -a v3.12.1 -m "Release v3.12.1"
+git push origin v3.12.1
 ```
 
 Release 发布后，应确认归档、`SHA256SUMS`、目标架构和 Release 类型均正确。工作流不会替用户配置代码签名证书。
@@ -52,4 +52,4 @@ Release 发布后，应确认归档、`SHA256SUMS`、目标架构和 Release 类
 - 前端类型检查、Lint、Vitest 和生产构建
 - 发布工作流的 YAML 变更审查
 
-当前环境没有 Go 工具链，也不是 Linux systemd 主机，因此无法在本机真实执行服务停止、归档替换、重启和回滚流程；这些属于发布前的外部验收项，不能标记为已通过。
+Windows 本地可执行 Go/CGo 构建、单元测试和隔离实例的 API 检查；Linux systemd 服务停止、归档替换、重启与回滚仍需在相应环境验收。本地构建通过不等同于跨版本更新安装通过。

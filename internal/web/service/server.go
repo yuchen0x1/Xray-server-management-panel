@@ -1303,25 +1303,7 @@ func (s *ServerService) GetDb() ([]byte, error) {
 	if database.IsPostgres() {
 		return s.exportPostgresDB()
 	}
-	// Update by manually trigger a checkpoint operation
-	err := database.Checkpoint()
-	if err != nil {
-		return nil, err
-	}
-	// Open the file for reading
-	file, err := os.Open(config.GetDBPath())
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	// Read the file contents
-	fileContents, err := io.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
-
-	return fileContents, nil
+	return database.SnapshotSQLiteToBytes(config.GetDBPath())
 }
 
 // BackupFilename returns the filename for a database backup, named after the
@@ -1432,7 +1414,14 @@ func (s *ServerService) GetMigration() ([]byte, string, error) {
 	return data, "x-ui.dump", nil
 }
 
+var databaseImportMu sync.Mutex
+
 func (s *ServerService) ImportDB(file multipart.File) error {
+	if !databaseImportMu.TryLock() {
+		return common.NewError("A database restore is already in progress; wait for it to finish before retrying")
+	}
+	defer databaseImportMu.Unlock()
+
 	if database.IsPostgres() {
 		return s.importPostgresDB(file)
 	}

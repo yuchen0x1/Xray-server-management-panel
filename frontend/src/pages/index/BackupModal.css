@@ -19,9 +19,21 @@
 
 .backup-meta {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.backup-file-name {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  .backup-item {
+    gap: 12px;
+    padding: 12px;
+  }
 }
 
 .backup-title {
