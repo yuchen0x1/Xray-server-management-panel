@@ -24,8 +24,8 @@ Windows 构建可以通过 Release 下载，但面板自更新脚本目前只支
 发布前检查：
 
 ```bash
-git tag -a v3.12.1 -m "Release v3.12.1"
-git push origin v3.12.1
+git tag -a v3.13.0 -m "Release v3.13.0"
+git push origin v3.13.0
 ```
 
 Release 发布后，应确认归档、`SHA256SUMS`、目标架构和 Release 类型均正确。工作流不会替用户配置代码签名证书。

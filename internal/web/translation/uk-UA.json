@@ -335,6 +335,7 @@
       "inboundJsonTitle": "JSON вхідного",
       "resetTrafficContent": "Ви впевнені, що хочете скинути трафік?",
       "copyLink": "Копіювати URL",
+      "copyShareLinks": "Копіювати посилання для спільного доступу",
       "address": "Адреса",
       "network": "Мережа",
       "destinationPort": "Порт призначення",

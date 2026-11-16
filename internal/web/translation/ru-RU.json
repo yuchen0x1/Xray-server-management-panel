@@ -335,6 +335,7 @@
       "inboundJsonTitle": "JSON входящего",
       "resetTrafficContent": "Вы уверены, что хотите сбросить трафик?",
       "copyLink": "Копировать ссылку",
+      "copyShareLinks": "Копировать ссылки общего доступа",
       "address": "Адрес",
       "network": "Сеть",
       "destinationPort": "Порт назначения",

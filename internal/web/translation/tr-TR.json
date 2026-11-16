@@ -335,6 +335,7 @@
       "inboundJsonTitle": "Gelen Bağlantı JSON",
       "resetTrafficContent": "Trafiği sıfırlamak istediğinizden emin misiniz?",
       "copyLink": "URL'yi Kopyala",
+      "copyShareLinks": "Paylaşım bağlantılarını kopyala",
       "address": "Adres",
       "network": "Ağ",
       "destinationPort": "Hedef Port",

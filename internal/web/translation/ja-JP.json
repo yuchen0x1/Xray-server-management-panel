@@ -335,6 +335,7 @@
       "inboundJsonTitle": "インバウンド JSON",
       "resetTrafficContent": "トラフィックをリセットしてもよろしいですか？",
       "copyLink": "リンクをコピー",
+      "copyShareLinks": "共有リンクをコピー",
       "address": "アドレス",
       "network": "ネットワーク",
       "destinationPort": "宛先ポート",

@@ -29,6 +29,22 @@ cp /etc/x-ui/x-ui.db /root/x-ui-backup-$(date +%F).db
 
 To restore, stop the panel, put the database back in place, and start it again.
 
+## Optional local retention
+
+Successful database downloads and Telegram backups can also be copied into a
+local retention directory when explicitly enabled. Set either variable in the
+panel environment:
+
+```bash
+XUI_BACKUP_RETENTION_COUNT=7
+XUI_BACKUP_RETENTION_DAYS=30
+```
+
+Snapshots are written below `${XUI_DB_FOLDER}/backups` with mode `0600`, an
+atomic rename, and a filesystem sync before they become visible. The default
+is disabled. Only files created by the panel's `x-ui-backup-` prefix are
+eligible for cleanup; manually placed files and temporary files are preserved.
+
 ## Restore through the panel
 
 1. Download a current backup, then choose a `.db` or `.dump` file with **Restore**.

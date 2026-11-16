@@ -168,6 +168,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
         working-directory: frontend
+      - name: Translation keys
+        run: npm run check:translations
+        working-directory: frontend
       - name: Install Playwright Chromium (Storybook story tests)
         run: npx playwright install --with-deps chromium
         working-directory: frontend

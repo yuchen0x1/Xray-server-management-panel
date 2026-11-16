@@ -453,6 +453,51 @@ func TestFormatEndpointsRawViewBypassesBrowserPage(t *testing.T) {
 	}
 }
 
+func TestSubscriptionETagSupportsConditionalRequests(t *testing.T) {
+	seedSubDB(t)
+	ib := seedSubInbound(t, "etag", "etag", 4482, 1, `{"network":"ws","security":"none","wsSettings":{"path":"/one"}}`)
+	router := newSubscriptionTestRouter(subscriptionTestRouterConfig{})
+
+	first := httptest.NewRecorder()
+	router.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "http://sub.example.com/sub/etag", nil))
+	if first.Code != http.StatusOK {
+		t.Fatalf("first status = %d, want 200", first.Code)
+	}
+	etag := first.Header().Get("ETag")
+	if etag == "" || !strings.HasPrefix(etag, `"`) || !strings.HasSuffix(etag, `"`) {
+		t.Fatalf("first ETag = %q, want quoted value", etag)
+	}
+	if first.Body.Len() == 0 {
+		t.Fatal("first response body is empty")
+	}
+
+	conditional := httptest.NewRequest(http.MethodGet, "http://sub.example.com/sub/etag", nil)
+	conditional.Header.Set("If-None-Match", etag)
+	second := httptest.NewRecorder()
+	router.ServeHTTP(second, conditional)
+	if second.Code != http.StatusNotModified {
+		t.Fatalf("conditional status = %d, want 304", second.Code)
+	}
+	if second.Body.Len() != 0 {
+		t.Fatalf("conditional body length = %d, want 0", second.Body.Len())
+	}
+	if got := second.Header().Get("ETag"); got != etag {
+		t.Fatalf("conditional ETag = %q, want %q", got, etag)
+	}
+
+	if err := database.GetDB().Model(&model.Inbound{}).Where("id = ?", ib.Id).Update("stream_settings", `{"network":"ws","security":"none","wsSettings":{"path":"/two"}}`).Error; err != nil {
+		t.Fatalf("update stream settings: %v", err)
+	}
+	changed := httptest.NewRecorder()
+	router.ServeHTTP(changed, httptest.NewRequest(http.MethodGet, "http://sub.example.com/sub/etag", nil))
+	if changed.Code != http.StatusOK {
+		t.Fatalf("changed status = %d, want 200", changed.Code)
+	}
+	if changed.Header().Get("ETag") == etag {
+		t.Fatal("ETag did not change after subscription content changed")
+	}
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {

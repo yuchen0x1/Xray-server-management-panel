@@ -13,6 +13,7 @@
     "build": "npm run gen:api && vite build",
     "preview": "vite preview",
     "lint": "eslint src",
+    "check:translations": "node scripts/check-translations.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

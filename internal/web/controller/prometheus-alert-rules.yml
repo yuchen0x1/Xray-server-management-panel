@@ -1,0 +1,43 @@
+groups:
+  - name: xui-panel
+    rules:
+      - alert: XUIPanelMetricsMissing
+        expr: absent(xui_panel_up)
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Xray panel metrics are missing
+          description: The Xray panel metrics endpoint has not been scraped for two minutes.
+      - alert: XUIXrayDown
+        expr: xui_xray_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Managed Xray is down
+          description: The panel reports that the managed Xray process is not running.
+      - alert: XUISystemCpuHigh
+        expr: xui_system_cpu_percent > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host CPU usage is high
+          description: Host CPU usage has stayed above 80 percent for ten minutes.
+      - alert: XUISystemMemoryHigh
+        expr: xui_system_memory_total_bytes > 0 and xui_system_memory_used_bytes / xui_system_memory_total_bytes > 0.9
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host memory usage is high
+          description: Host memory usage has stayed above 90 percent for ten minutes.
+      - alert: XUIObservatoryNoHealthyTargets
+        expr: xui_xray_observatory_targets > 0 and xui_xray_observatory_alive == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: All Xray observatory targets are unhealthy
+          description: Every configured Xray observatory target has failed its latest probe.

@@ -335,6 +335,7 @@
       "inboundJsonTitle": "Inbound JSON",
       "resetTrafficContent": "Are you sure you want to reset traffic?",
       "copyLink": "Copy URL",
+      "copyShareLinks": "Copy share links",
       "address": "Address",
       "network": "Network",
       "destinationPort": "Destination Port",

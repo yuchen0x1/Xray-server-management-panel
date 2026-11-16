@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type Key } from 'react';
+import { useCallback, useEffect, useMemo, useState, type Key } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
@@ -35,6 +35,24 @@ import InboundStatsModal from './InboundStatsModal';
 import type { DBInboundRecord, GeneralAction, InboundListProps, RowAction } from './types';
 import './InboundList.css';
 
+const FILTER_STATE_KEY = 'xui.inbounds.filters';
+
+type FilterState = {
+  nodeFilter: number | 'all';
+  searchKey: string;
+};
+
+const readFilterState = (): FilterState => {
+  if (typeof window === 'undefined') return { nodeFilter: 'all', searchKey: '' };
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(FILTER_STATE_KEY) || '{}') as { nodeFilter?: unknown; searchKey?: unknown };
+    const nodeFilter = raw.nodeFilter === 'all' || typeof raw.nodeFilter === 'number' ? raw.nodeFilter : 'all';
+    return { nodeFilter, searchKey: typeof raw.searchKey === 'string' ? raw.searchKey : '' };
+  } catch {
+    return { nodeFilter: 'all', searchKey: '' };
+  }
+};
+
 export default function InboundList({
   dbInbounds,
   clientCount,
@@ -56,15 +74,29 @@ export default function InboundList({
   const { t } = useTranslation();
   const [statsRecord, setStatsRecord] = useState<DBInboundRecord | null>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
-  // Node filter (#4997): 'all' shows everything, 0 is the local-panel
-  // sentinel (inbounds without a nodeId), otherwise a node id. Session-only.
-  const [nodeFilter, setNodeFilter] = useState<number | 'all'>('all');
-  const [searchKey, setSearchKey] = useState('');
+  const [initialFilterState] = useState<FilterState>(() => readFilterState());
+  const [nodeFilter, setNodeFilter] = useState<number | 'all'>(initialFilterState.nodeFilter);
+  const [searchKey, setSearchKey] = useState(initialFilterState.searchKey);
 
   const showNodeFilter = useMemo(
     () => nodesById.size > 0 || dbInbounds.some((ib) => ib.nodeId != null),
     [nodesById, dbInbounds],
   );
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(FILTER_STATE_KEY, JSON.stringify({ nodeFilter, searchKey }));
+    } catch {
+      return;
+    }
+  }, [nodeFilter, searchKey]);
+
+  useEffect(() => {
+    if (nodeFilter === 'all' || nodeFilter === 0) return;
+    if (!showNodeFilter) return;
+    if (nodesById.has(nodeFilter) || dbInbounds.some((ib) => ib.nodeId === nodeFilter)) return;
+    setNodeFilter('all');
+  }, [dbInbounds, nodeFilter, nodesById, showNodeFilter]);
 
   const nodeFilterOptions = useMemo(
     () => [

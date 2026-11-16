@@ -2,6 +2,7 @@ package sub
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -424,11 +426,11 @@ func (a *SUBController) subs(c *gin.Context) {
 			result.WriteString("\n")
 		}
 
+		body := []byte(result.String())
 		if a.subEncrypt {
-			c.String(200, base64.StdEncoding.EncodeToString([]byte(result.String())))
-		} else {
-			c.String(200, result.String())
+			body = []byte(base64.StdEncoding.EncodeToString(body))
 		}
+		writeSubscriptionBody(c, "text/plain; charset=utf-8", body)
 	}
 }
 
@@ -688,7 +690,7 @@ func (a *SUBController) serveJsonBody(c *gin.Context, alwaysReturnArray bool, co
 		c.Writer.Header().Set("Content-Disposition", `attachment; filename="subscription.json"`)
 	}
 
-	c.Data(200, contentType, []byte(jsonSub))
+	writeSubscriptionBody(c, contentType, []byte(jsonSub))
 	return true
 }
 
@@ -729,8 +731,61 @@ func (a *SUBController) serveClashBody(c *gin.Context, rawDownload bool) bool {
 		// Clash clients commonly use Content-Disposition to choose the imported profile name.
 		c.Writer.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename*=UTF-8''%s`, url.PathEscape(a.subTitle)))
 	}
-	c.Data(200, "application/yaml; charset=utf-8", []byte(clashSub))
+	writeSubscriptionBody(c, "application/yaml; charset=utf-8", []byte(clashSub))
 	return true
+}
+
+func writeSubscriptionBody(c *gin.Context, contentType string, body []byte) {
+	c.Header("Cache-Control", "no-cache")
+	etag := subscriptionETag(contentType, body, c.Writer.Header())
+	c.Header("ETag", etag)
+	if matchesETag(c.GetHeader("If-None-Match"), etag) {
+		c.Status(http.StatusNotModified)
+		return
+	}
+	c.Data(http.StatusOK, contentType, body)
+}
+
+func subscriptionETag(contentType string, body []byte, headers http.Header) string {
+	hash := sha256.New()
+	hash.Write(body)
+	hash.Write([]byte{0})
+	hash.Write([]byte(contentType))
+	keys := make([]string, 0, len(headers))
+	for key := range headers {
+		if strings.EqualFold(key, "ETag") {
+			continue
+		}
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		values := append([]string(nil), headers.Values(key)...)
+		sort.Strings(values)
+		hash.Write([]byte{0})
+		hash.Write([]byte(key))
+		for _, value := range values {
+			hash.Write([]byte{0})
+			hash.Write([]byte(value))
+		}
+	}
+	return fmt.Sprintf("\"%x\"", hash.Sum(nil))
+}
+
+func matchesETag(header, etag string) bool {
+	for _, candidate := range strings.Split(header, ",") {
+		candidate = strings.TrimSpace(candidate)
+		if candidate == "*" {
+			return true
+		}
+		if strings.HasPrefix(candidate, "W/") {
+			candidate = strings.TrimSpace(strings.TrimPrefix(candidate, "W/"))
+		}
+		if candidate == etag {
+			return true
+		}
+	}
+	return false
 }
 
 // ApplyCommonHeaders sets common HTTP headers for subscription responses including user info, update interval, and profile title.

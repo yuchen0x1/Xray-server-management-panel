@@ -335,6 +335,7 @@
       "inboundJsonTitle": "JSON inbound",
       "resetTrafficContent": "Xác nhận đặt lại lưu lượng?",
       "copyLink": "Sao chép liên kết",
+      "copyShareLinks": "Sao chép liên kết chia sẻ",
       "address": "Địa chỉ",
       "network": "Mạng",
       "destinationPort": "Cổng đích",

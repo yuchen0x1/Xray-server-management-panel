@@ -335,6 +335,7 @@
       "inboundJsonTitle": "入站 JSON",
       "resetTrafficContent": "確定要重置流量嗎？",
       "copyLink": "複製連結",
+      "copyShareLinks": "複製分享連結",
       "address": "地址",
       "network": "網路",
       "destinationPort": "目標埠",

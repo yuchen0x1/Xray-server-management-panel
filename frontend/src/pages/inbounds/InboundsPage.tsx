@@ -22,7 +22,7 @@ import {
   BarsOutlined,
 } from '@ant-design/icons';
 
-import { HttpUtil, SizeFormatter, RandomUtil } from '@/utils';
+import { ClipboardManager, HttpUtil, SizeFormatter, RandomUtil } from '@/utils';
 import { createDefaultInboundSettings } from '@/lib/xray/inbound-defaults';
 import { genInboundLinks, genWireguardLinks, preferPublicHost } from '@/lib/xray/inbound-link';
 import { inboundFromDb } from '@/lib/xray/inbound-from-db';
@@ -290,6 +290,18 @@ export default function InboundsPage() {
     openText({ title: t('pages.inbounds.inboundJsonTitle'), content: JSON.stringify(dbInbound, null, 2), json: true });
   }, [openText, t]);
 
+  const copyInboundLinks = useCallback(async (dbInbound: DBInbound) => {
+    const projected = checkFallback(dbInbound);
+    const genInput = {
+      inbound: inboundFromDb(projected),
+      remark: projected.remark,
+      hostOverride: hostOverrideFor(dbInbound),
+      fallbackHostname: preferPublicHost(window.location.hostname, subSettings.publicHost),
+    };
+    const content = projected.isWireguard ? genWireguardLinks(genInput) : genInboundLinks(genInput);
+    if (await ClipboardManager.copyText(content)) messageApi.success(t('copied'));
+  }, [checkFallback, hostOverrideFor, messageApi, subSettings.publicHost, t]);
+
   const exportInboundSubs = useCallback((dbInbound: DBInbound) => {
     const settings = coerceInboundJsonField(dbInbound.settings) as { clients?: { subId?: string }[] };
     const clients = settings.clients || [];
@@ -492,7 +504,7 @@ export default function InboundsPage() {
         });
         break;
       default:
-        messageApi.info(`General action "${key}" — coming in a later 5f subphase`);
+        messageApi.warning(t('somethingWentWrong'));
     }
   }, [modal, importInbound, exportAllLinks, exportAllSubs, refresh, messageApi, t]);
 
@@ -500,7 +512,7 @@ export default function InboundsPage() {
     // Actions that touch per-client secrets (uuid, password, flow, ...) need
     // the full payload that the slim list view does not ship. Hydrate first
     // and then operate on the rehydrated record.
-    const hydratingKeys: RowAction[] = ['edit', 'showInfo', 'qrcode', 'export', 'subs', 'clipboard', 'clone', 'attachClients', 'addToGroup'];
+    const hydratingKeys: RowAction[] = ['edit', 'showInfo', 'qrcode', 'export', 'subs', 'clipboard', 'copyLinks', 'clone', 'attachClients', 'addToGroup'];
     let target = dbInbound;
     if (hydratingKeys.includes(key)) {
       const hydrated = await hydrateInbound(dbInbound.id);
@@ -527,6 +539,9 @@ export default function InboundsPage() {
         break;
       case 'clipboard':
         exportInboundClipboard(target);
+        break;
+      case 'copyLinks':
+        await copyInboundLinks(target);
         break;
       case 'delete':
         confirmDelete(target);
@@ -557,9 +572,9 @@ export default function InboundsPage() {
         confirmClone(target);
         break;
       default:
-        messageApi.info(`Action "${key}" — coming in a later 5f subphase`);
+        messageApi.warning(t('somethingWentWrong'));
     }
-  }, [hydrateInbound, openEdit, checkFallback, findClientIndex, exportInboundLinks, exportInboundSubs, exportInboundClipboard, confirmDelete, confirmResetTraffic, confirmDelAllClients, confirmClone, messageApi]);
+  }, [hydrateInbound, openEdit, checkFallback, findClientIndex, exportInboundLinks, exportInboundSubs, exportInboundClipboard, copyInboundLinks, confirmDelete, confirmResetTraffic, confirmDelAllClients, confirmClone, messageApi, t]);
 
   return (
     <ConfigProvider theme={antdThemeConfig}>

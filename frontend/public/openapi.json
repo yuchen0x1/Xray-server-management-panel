@@ -4165,6 +4165,48 @@
         }
       }
     },
+    "/panel/api/server/metrics": {
+      "get": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "Expose low-cardinality Prometheus metrics for panel, Xray, host resources, and Xray observatory health. The response is text/plain and is intended for an authenticated scrape or a trusted reverse proxy.",
+        "operationId": "get_panel_api_server_metrics",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/server/alertRules": {
+      "get": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "Download the versioned Prometheus alert rules that use the metric names exposed by /panel/api/server/metrics.",
+        "operationId": "get_panel_api_server_alertRules",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/server/fail2banStatus": {
       "get": {
         "tags": [

@@ -43,6 +43,8 @@ func NewServerController(g *gin.RouterGroup) *ServerController {
 // initRouter sets up the routes for server status, Xray management, and utility endpoints.
 func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.GET("/status", a.status)
+	g.GET("/metrics", a.prometheusMetrics)
+	g.GET("/alertRules", a.alertRules)
 	g.GET("/cpuHistory/:bucket", a.getCpuHistoryBucket)
 	g.GET("/history/:metric/:bucket", a.getMetricHistoryBucket)
 	g.GET("/xrayMetricsState", a.getXrayMetricsState)

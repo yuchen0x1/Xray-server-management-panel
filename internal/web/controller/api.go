@@ -87,6 +87,8 @@ func (a *APIController) checkAPIAuth(c *gin.Context) {
 // reach by inventing a path parameter.
 var monitorScopeAllow = map[string]map[string]struct{}{
 	"/server/status":                              {http.MethodGet: {}},
+	"/server/metrics":                             {http.MethodGet: {}},
+	"/server/alertRules":                          {http.MethodGet: {}},
 	"/server/cpuHistory/:bucket":                  {http.MethodGet: {}},
 	"/server/history/:metric/:bucket":             {http.MethodGet: {}},
 	"/server/xrayMetricsState":                    {http.MethodGet: {}},

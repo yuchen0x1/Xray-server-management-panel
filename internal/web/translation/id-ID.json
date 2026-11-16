@@ -335,6 +335,7 @@
       "inboundJsonTitle": "JSON inbound",
       "resetTrafficContent": "Apakah Anda yakin ingin mereset traffic?",
       "copyLink": "Salin URL",
+      "copyShareLinks": "Salin tautan berbagi",
       "address": "Alamat",
       "network": "Jaringan",
       "destinationPort": "Port Tujuan",

@@ -163,6 +163,10 @@ type cachedXrayVersions struct {
 // quarter-hour staleness window is fine and saves the API budget.
 const xrayVersionsCacheTTL = 15 * time.Minute
 
+const localBackupPrefix = "x-ui-backup-"
+
+var localBackupMu sync.Mutex
+
 // allowedHistoryBuckets is the bucket-second whitelist for time-series
 // aggregation endpoints (server + node metrics). Restricting it prevents
 // callers from triggering arbitrary aggregation work and keeps the
@@ -1300,10 +1304,161 @@ func (s *ServerService) GetConfigJson() (any, error) {
 }
 
 func (s *ServerService) GetDb() ([]byte, error) {
+	var data []byte
+	var err error
 	if database.IsPostgres() {
-		return s.exportPostgresDB()
+		data, err = s.exportPostgresDB()
+	} else {
+		data, err = database.SnapshotSQLiteToBytes(config.GetDBPath())
 	}
-	return database.SnapshotSQLiteToBytes(config.GetDBPath())
+	if err != nil {
+		return nil, err
+	}
+	if err := s.persistLocalBackup(data, s.BackupFilename("")); err != nil {
+		logger.Warning("Failed to persist local backup:", err)
+	}
+	return data, nil
+}
+
+func (s *ServerService) persistLocalBackup(data []byte, filename string) error {
+	localBackupMu.Lock()
+	defer localBackupMu.Unlock()
+
+	count, maxAge, err := backupRetentionConfig()
+	if err != nil {
+		return err
+	}
+	if count == 0 && maxAge == 0 {
+		return nil
+	}
+
+	dir := filepath.Join(config.GetDBFolderPath(), "backups")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return err
+	}
+
+	base := filepath.Base(filename)
+	if base == "." || base == string(filepath.Separator) || base != filename || strings.ContainsAny(filename, `/\\`) {
+		return fmt.Errorf("invalid backup filename")
+	}
+	target := filepath.Join(dir, localBackupPrefix+base)
+	if _, err := os.Stat(target); err == nil {
+		ext := filepath.Ext(target)
+		target = strings.TrimSuffix(target, ext) + "-" + strconv.FormatInt(time.Now().UnixNano(), 10) + ext
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+
+	tmp, err := os.CreateTemp(dir, ".x-ui-backup-*.tmp")
+	if err != nil {
+		return err
+	}
+	tmpPath := tmp.Name()
+	defer os.Remove(tmpPath)
+	if err := tmp.Chmod(0o600); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if _, err := tmp.Write(data); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(tmpPath, target); err != nil {
+		return err
+	}
+	if err := os.Chmod(target, 0o600); err != nil {
+		return err
+	}
+	if err := pruneLocalBackups(dir, count, maxAge, target, time.Now()); err != nil {
+		return err
+	}
+	return nil
+}
+
+func backupRetentionConfig() (int, time.Duration, error) {
+	count, err := nonNegativeEnvInt("XUI_BACKUP_RETENTION_COUNT")
+	if err != nil {
+		return 0, 0, err
+	}
+	days, err := nonNegativeEnvInt("XUI_BACKUP_RETENTION_DAYS")
+	if err != nil {
+		return 0, 0, err
+	}
+	return count, time.Duration(days) * 24 * time.Hour, nil
+}
+
+func nonNegativeEnvInt(name string) (int, error) {
+	value := strings.TrimSpace(os.Getenv(name))
+	if value == "" {
+		return 0, nil
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed < 0 {
+		if err == nil {
+			err = fmt.Errorf("must be non-negative")
+		}
+		return 0, fmt.Errorf("%s=%q: %w", name, value, err)
+	}
+	return parsed, nil
+}
+
+func pruneLocalBackups(dir string, count int, maxAge time.Duration, target string, now time.Time) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+	type backupEntry struct {
+		path    string
+		modTime time.Time
+	}
+	backups := make([]backupEntry, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasPrefix(entry.Name(), localBackupPrefix) || strings.HasSuffix(entry.Name(), ".tmp") {
+			continue
+		}
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		backups = append(backups, backupEntry{path: filepath.Join(dir, entry.Name()), modTime: info.ModTime()})
+	}
+	slices.SortFunc(backups, func(a, b backupEntry) int {
+		if a.modTime.After(b.modTime) {
+			return -1
+		}
+		if a.modTime.Before(b.modTime) {
+			return 1
+		}
+		return strings.Compare(a.path, b.path)
+	})
+	kept := 0
+	for _, backup := range backups {
+		if backup.path == target {
+			kept++
+			continue
+		}
+		if maxAge > 0 && now.Sub(backup.modTime) >= maxAge {
+			if err := os.Remove(backup.path); err != nil && !errors.Is(err, os.ErrNotExist) {
+				return err
+			}
+			continue
+		}
+		if count > 0 && kept >= count {
+			if err := os.Remove(backup.path); err != nil && !errors.Is(err, os.ErrNotExist) {
+				return err
+			}
+			continue
+		}
+		kept++
+	}
+	return nil
 }
 
 // BackupFilename returns the filename for a database backup, named after the

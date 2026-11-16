@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter, type RouteObject } from 'react-router';
 
 import PanelLayout from '@/layouts/PanelLayout';
+import PageErrorBoundary from '@/components/feedback/PageErrorBoundary';
 import { normalizeBasePath } from '@/utils/base-path';
 
 const IndexPage = lazy(() => import('@/pages/index/IndexPage'));
@@ -15,7 +16,11 @@ const XrayPage = lazy(() => import('@/pages/xray/XrayPage'));
 const ApiDocsPage = lazy(() => import('@/pages/api-docs/ApiDocsPage'));
 
 function withSuspense(node: React.ReactNode) {
-  return <Suspense fallback={null}>{node}</Suspense>;
+  return (
+    <PageErrorBoundary>
+      <Suspense fallback={null}>{node}</Suspense>
+    </PageErrorBoundary>
+  );
 }
 
 const routes: RouteObject[] = [

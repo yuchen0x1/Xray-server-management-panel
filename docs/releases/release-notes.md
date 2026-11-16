@@ -4,6 +4,7 @@
 
 | 版本                                                                                      | 发布日期   | 主要变化                                         |
 | ----------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------ |
+| [v3.13.0](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.13.0) | 2026-11-16 | 观测、订阅、备份与入站运维体验增强                 |
 | [v3.12.1](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.12.1) | 2026-11-13 | 一致性备份、恢复确认、更新校验和 Docker 架构修复 |
 | [v3.12.0](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.12.0) | 2026-11-10 | API 令牌权限与有效期、TUIC 和通知安全加固        |
 | [v3.8.0](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.8.0)   | 2026-11-08 | TUIC v5、全局命令面板、入站主机备注              |
@@ -13,7 +14,36 @@
 
 ## 未发布
 
-- 后续 Windows 归档不再附带固定版本的第三方 OpenSSL 安装器；证书管理可自行安装 OpenSSL，使用说明将提供获取入口。已经发布的历史附件保持原样。
+- 暂无新的未发布变更。
+
+## v3.13.0 — 2026-11-16
+
+### 入站与任务稳定性
+
+- 入站列表的复制分享链接动作恢复正常，并继续复用现有链接生成和剪贴板流程。
+- 入站搜索词和节点筛选会在刷新后恢复；节点被删除后，失效筛选会自动清理。
+- LDAP 同步配置和数据读取错误会记录具体字段并结束当前任务轮次，不再直接触发调度器 panic。
+- 页面级错误边界保留侧栏，并提供重试和返回首页入口。
+
+### 订阅、备份与监控
+
+- raw、JSON 和 Clash 订阅支持 ETag 与 `If-None-Match`；内容未变化时返回 `304 Not Modified`。
+- 可选本地数据库备份保留按数量或天数清理快照，默认关闭；启用后使用原子写入、同步落盘和 0600 权限。
+- 新增受认证保护的低基数 Prometheus 指标和告警规则下载，指标不包含客户端、入站或凭据标识。
+
+### 发布与维护
+
+- CI 增加 13 个语言包的 key、额外 key 和占位符一致性检查。
+- Windows 后续归档不再附带固定版本的第三方 OpenSSL 安装器；证书管理可按文档单独安装 OpenSSL，已经发布的历史附件保持原样。
+- 依赖更新保持在 `main` 上验证，关闭自动更新 PR 创建，同时保留漏洞告警和 CI 安全检查。
+
+### 升级说明
+
+- 本版没有新增数据库字段或迁移；备份保留策略只有显式设置 `XUI_BACKUP_RETENTION_COUNT` 或 `XUI_BACKUP_RETENTION_DAYS` 时才启用。
+- Prometheus 端点使用面板会话或 Bearer token 认证，建议仅向受信任的监控系统开放。
+- Windows 更新不再从归档中提供固定版本 OpenSSL 安装器，证书功能使用前请按文档准备 OpenSSL。
+
+[完整变更记录](https://github.com/yuchen0x1/Xray-server-management-panel/compare/v3.12.1...v3.13.0)
 
 ## v3.12.1 — 2026-11-13
 

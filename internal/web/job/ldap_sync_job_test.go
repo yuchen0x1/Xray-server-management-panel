@@ -2,6 +2,7 @@ package job
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
@@ -25,6 +26,44 @@ func TestBuildClient_ConvertsDefaultTotalGBToBytes(t *testing.T) {
 	if want := int64(10) * 1024 * 1024 * 1024; c.TotalGB != want {
 		t.Errorf("TotalGB = %d, want %d", c.TotalGB, want)
 	}
+}
+
+func TestLdapLoadConfigReportsInvalidSetting(t *testing.T) {
+	initLdapJobDB(t)
+	db := database.GetDB()
+	if err := db.Create(&model.Setting{Key: "ldapPort", Value: "not-an-integer"}).Error; err != nil {
+		t.Fatalf("create invalid LDAP setting: %v", err)
+	}
+
+	job := NewLdapSyncJob()
+	config, err := job.loadConfig()
+	if err == nil {
+		t.Fatalf("loadConfig() error = nil, config = %#v", config)
+	}
+	if !strings.Contains(err.Error(), "ldap port") {
+		t.Fatalf("loadConfig() error = %q, want ldap port context", err)
+	}
+}
+
+func TestLdapRunReturnsOnInvalidSetting(t *testing.T) {
+	initLdapJobDB(t)
+	db := database.GetDB()
+	settings := []model.Setting{
+		{Key: "ldapEnable", Value: "true"},
+		{Key: "ldapPort", Value: "not-an-integer"},
+	}
+	for _, setting := range settings {
+		if err := db.Create(&setting).Error; err != nil {
+			t.Fatalf("create LDAP setting %s: %v", setting.Key, err)
+		}
+	}
+
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			t.Fatalf("Run() panicked: %v", recovered)
+		}
+	}()
+	NewLdapSyncJob().Run()
 }
 
 func TestLdapCreateClients_AttachesToAllConfiguredInbounds(t *testing.T) {

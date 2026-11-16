@@ -335,6 +335,7 @@
       "inboundJsonTitle": "JSON الوارد",
       "resetTrafficContent": "متأكد إنك عايز تعيد ضبط الترافيك؟",
       "copyLink": "انسخ الرابط",
+      "copyShareLinks": "نسخ روابط المشاركة",
       "address": "العنوان",
       "network": "الشبكة",
       "destinationPort": "بورت الوجهة",

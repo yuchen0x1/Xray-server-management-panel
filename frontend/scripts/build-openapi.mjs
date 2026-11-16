@@ -146,10 +146,9 @@ function buildOperation(ep, tag) {
       successExample = { success: true, obj: ep.responseSchemaArray ? [obj] : obj };
     }
   }
-  responses['200'] = {
-    description: 'Successful response',
-    content: {
-      'application/json': {
+  const responseContentType = ep.responseContentType || 'application/json';
+  const responseContent = responseContentType === 'application/json'
+    ? {
         schema: {
           type: 'object',
           properties: {
@@ -159,7 +158,14 @@ function buildOperation(ep, tag) {
           },
         },
         ...(successExample !== undefined ? { example: successExample } : {}),
-      },
+      }
+    : {
+        schema: { type: 'string' },
+      };
+  responses['200'] = {
+    description: 'Successful response',
+    content: {
+      [responseContentType]: responseContent,
     },
   };
 

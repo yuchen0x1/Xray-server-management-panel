@@ -8,9 +8,23 @@ are maintained in [docs/releases/release-notes.md](docs/releases/release-notes.m
 
 ## Unreleased
 
-- Stop bundling the fixed third-party OpenSSL installer in future Windows
-  archives; document how to obtain OpenSSL separately. Existing release assets
-  are unchanged.
+- 暂无新的未发布变更。
+
+## v3.13.0 — 2026-11-16
+
+- Complete a source, build, release-chain and open-source comparison audit;
+  record 17 researched projects and a 46-item upgrade roadmap.
+- Fix the inbound copy-share-links action so it generates the current inbound
+  links and copies them through the existing clipboard path.
+- Make LDAP sync configuration reads recoverable: field-specific errors are
+  logged and the current run exits without panicking the scheduler.
+- Add a CI translation-key and placeholder check covering all 13 locales.
+- Persist inbound list search and node filters across page reloads, clearing stale node selections automatically.
+- Add authenticated low-cardinality Prometheus metrics and downloadable alert rules.
+- Add optional local database backup retention with atomic 0600 snapshots; it stays disabled unless configured.
+- Add conditional subscription requests with ETag/304 support and page-level React error recovery.
+- Stop bundling the fixed third-party OpenSSL installer in Windows archives;
+  document how to obtain OpenSSL separately.
 - Keep dependency updates on main: disable automatic update PR creation while
   retaining vulnerability alerts and CI security checks.
 

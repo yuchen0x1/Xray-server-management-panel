@@ -335,6 +335,7 @@
       "inboundJsonTitle": "JSON da entrada",
       "resetTrafficContent": "Tem certeza de que deseja redefinir o tráfego?",
       "copyLink": "Copiar URL",
+      "copyShareLinks": "Copiar links de compartilhamento",
       "address": "Endereço",
       "network": "Rede",
       "destinationPort": "Porta de Destino",

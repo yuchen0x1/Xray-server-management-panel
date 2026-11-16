@@ -27,6 +27,20 @@ cp /etc/x-ui/x-ui.db /root/x-ui-backup-$(date +%F).db
 
 要恢复时，先停止面板，把数据库文件放回原位，然后重新启动面板。
 
+## 可选的本地保留策略
+
+成功生成的数据库下载或 Telegram 备份可以额外写入本地保留目录，但必须显式
+配置环境变量：
+
+```bash
+XUI_BACKUP_RETENTION_COUNT=7
+XUI_BACKUP_RETENTION_DAYS=30
+```
+
+快照保存到 `${XUI_DB_FOLDER}/backups`，使用 `0600` 权限、原子重命名，并在文件
+可见前执行同步。默认关闭。只有面板创建的 `x-ui-backup-` 前缀文件会被清理，
+手工放入的文件和临时文件会保留。
+
 ## 通过面板恢复
 
 1. 先下载当前数据库的备份，再点击「恢复」选择 `.db` 或 `.dump` 文件。
