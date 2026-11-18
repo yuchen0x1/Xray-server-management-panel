@@ -4,23 +4,24 @@
 
 ## 最新更新
 
-### v3.13.0 — 2026-11-16
+<!-- github-release:start -->
 
-- 入站列表的复制分享链接动作恢复正常，并保留搜索词和节点筛选，刷新页面后仍可继续运维。
-- LDAP 同步遇到配置或数据读取错误时记录具体字段并结束当前轮次，不再让调度任务直接 panic。
-- 订阅 raw、JSON 和 Clash 输出支持 ETag 条件请求；页面级错误恢复保留侧栏并提供重试入口。
-- 可选本地备份保留按数量或天数清理快照；默认关闭，启用后使用原子写入和 0600 权限。
-- 增加受认证保护的低基数 Prometheus 指标和对应告警规则下载，方便接入现有监控系统。
-- Windows 后续归档不再附带固定版本的第三方 OpenSSL 安装器，文档提供单独获取方式。
+**[v3.13.0](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.13.0)** · 2026-11-16
+
+v3.13.0 聚焦观测能力、订阅缓存、本地备份保留与入站运维体验。新增受认证保护的低基数 Prometheus 指标、可选本地备份保留策略，以及订阅请求 ETag/304 支持；同时修复入站分享链接复制与 LDAP 同步异常中断问题。此版本没有数据库迁移，也没有引入破坏性配置变更。
+
+[全部发行记录](https://github.com/yuchen0x1/Xray-server-management-panel/releases)
+
+<!-- github-release:end -->
 
 [完整版本记录](docs/releases/release-notes.md) · [技术变更记录](CHANGELOG.md)
 
 ## 一、项目简介
 
-本仓库托管于 Gitee，是在上游开源项目 3X-UI（及其更早的前身 x-ui）基础上继续维护的二次修改分支。仓库内的安装脚本、更新脚本和文档链接已统一指向当前仓库。
+本仓库是在上游开源项目 3X-UI（及其更早的前身 x-ui）基础上继续维护的二次修改分支。
 
-- 仓库地址：<https://gitee.com/yuchen0x1/Xray-server-management-panel>
-- 克隆命令：`git clone https://gitee.com/yuchen0x1/Xray-server-management-panel.git`
+- 仓库地址：<https://github.com/yuchen0x1/Xray-server-management-panel>
+- 克隆命令：`git clone https://github.com/yuchen0x1/Xray-server-management-panel.git`
 - 安装脚本只拉取仓库已发布的 Release 与 raw 资源。如需验证本地未发布的改动，请使用 Docker 本地构建或源码构建。
 
 请仅在你拥有授权的服务器、网络和业务场景中使用本项目。
@@ -97,7 +98,7 @@
 执行安装：
 
 ```bash
-bash <(curl -Ls https://gitee.com/yuchen0x1/Xray-server-management-panel/raw/main/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/yuchen0x1/Xray-server-management-panel/main/install.sh)
 ```
 
 脚本会创建面板服务，生成随机用户名 / 密码 / 端口 / Web base path / API token，并把安装结果写入 `/etc/x-ui/install-result.env`（文件权限 `600`）。常见字段包括：
@@ -119,7 +120,7 @@ XUI_DB_TYPE=...
 环境要求：Docker 与 Docker Compose v2，默认监听 `2053` 端口。
 
 ```bash
-git clone https://gitee.com/yuchen0x1/Xray-server-management-panel.git
+git clone https://github.com/yuchen0x1/Xray-server-management-panel.git
 cd Xray-server-management-panel
 docker compose up -d --build
 ```
@@ -156,7 +157,7 @@ docker compose --profile postgres up -d --build
 ### 5.4 无人值守安装
 
 ```bash
-XUI_NONINTERACTIVE=1 bash <(curl -Ls https://gitee.com/yuchen0x1/Xray-server-management-panel/raw/main/install.sh)
+XUI_NONINTERACTIVE=1 bash <(curl -Ls https://raw.githubusercontent.com/yuchen0x1/Xray-server-management-panel/main/install.sh)
 ```
 
 非交互模式适合 cloud-init 或自动化部署。安装完成后同样读取 `/etc/x-ui/install-result.env` 获取访问地址和凭据。
