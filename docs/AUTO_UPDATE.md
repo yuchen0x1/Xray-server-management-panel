@@ -1,55 +1,46 @@
 # 自动更新与发布
 
-本项目的在线更新适用于 Linux 安装版面板。更新入口位于面板首页的版本信息中，后端通过 GitHub Releases 查询版本，并在中国大陆环境下保留 Gitee 镜像回退路径。
+本指南适用于 v3.13.1 起的 GitHub 发行归档。Linux 服务安装使用面板首页或 `x-ui update`。Windows 维护版是便携服务，Docker 和 NAS 使用镜像更新。
 
-## 更新流程
+## Linux 服务更新
 
-1. 面板调用 GitHub Releases API 查询最新稳定版；启用 Dev 渠道时查询固定标签 `dev-latest`。
-2. 用户确认后，面板以独立进程启动 `update.sh`，并通过 `update-status.json` 回传 `pending`、`success` 或 `failed`。
-3. 更新脚本从 GitHub/Gitee 下载当前架构的归档和 `SHA256SUMS`。
-4. 归档必须通过 SHA-256 校验、tar 路径安全检查，并包含 `x-ui/x-ui` 主程序后，才会进入安装阶段。
-5. 校验失败、归档损坏或下载失败时，旧版本不会被替换；安装阶段会先把旧目录和服务文件放入同文件系统的临时回滚目录，更新后的服务启动失败时自动恢复旧版本。
+1. 从 [Sigstore 官方安装指南](https://docs.sigstore.dev/cosign/system_config/installation/)选择适用于主机架构的 Cosign，并确保面板服务和管理员的 PATH 可找到 `cosign`。Cosign 需要访问其信任根服务。
+2. 备份面板数据库和本地配置。SQLite 可使用面板数据库备份。PostgreSQL 应保留与本次更新对应的可恢复快照。
+3. 在面板首页检查新版本并确认，或在服务器上执行 `x-ui update`。开发渠道沿用 `dev-latest`，默认使用正式版。
+4. 更新器验证指定正式标签或开发分支的 GitHub Actions 身份，再比对当前架构归档的 SHA-256。Gitee 和 GitHub 可互为下载源，每次尝试都使用同源的签名、清单和归档。
+5. 下载完成后，更新器检查归档内容；解包并运行新版本的 `-v` 检查。只有这些检查通过才停止旧服务。面板会轮询当前操作的结果。
 
-Windows 构建可以通过 Release 下载，但面板自更新脚本目前只支持 Linux 服务安装，不会在 Windows 上执行静默替换。
+从 v3.13.0 首次迁移时，旧面板的 Web 更新入口仍会从仓库下载一次更新脚本。如果希望在执行之前自行验证，可用下节命令校验新版本归档，再从已验证的归档运行其中的 `update.sh`。升级到 v3.13.1 后，更新入口使用安装目录里的脚本。
 
-## GitHub Actions 发布
+## 独立验证归档
 
-`.github/workflows/release.yml` 负责构建 Linux 和 Windows 产物，并在发布阶段统一生成 `SHA256SUMS`：
-
-- 推送 `vMAJOR.MINOR.PATCH` 标签：读取 `docs/releases/release-notes.md` 中对应版本的说明，创建草稿 Release；全部归档和校验清单上传完成后再公开正式版。
-- 推送 `main`：更新固定的 `dev-latest` 预发布 Release，正文包含完整 `commit=<sha>` 标记，供 Dev 渠道比较提交。
-- Release 工作流使用 `GITHUB_TOKEN` 的 `contents: write` 权限，不需要额外的发布密钥。
-- 日常开发和自动构建统一在 `main` 分支；其他分支不会触发该发布工作流。正式发布需要显式创建版本标签。
-
-发布前检查：
+从同一 [GitHub Release](https://github.com/yuchen0x1/Xray-server-management-panel/releases)下载目标归档、`SHA256SUMS` 和 `SHA256SUMS.sigstore.json`。下面以正式版和 Linux amd64 为例。将标签和文件名改为实际目标。
 
 ```bash
-git tag -a v3.13.0 -m "Release v3.13.0"
-git push origin v3.13.0
+tag=v3.13.1
+asset=x-ui-linux-amd64.tar.gz
+cosign verify-blob --bundle SHA256SUMS.sigstore.json \
+  --certificate-identity "https://github.com/yuchen0x1/Xray-server-management-panel/.github/workflows/release.yml@refs/tags/$tag" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com SHA256SUMS &&
+grep -F "  $asset" SHA256SUMS | sha256sum --check --strict
 ```
 
-Release 发布后，应确认归档、`SHA256SUMS`、目标架构和 Release 类型均正确。工作流不会替用户配置代码签名证书。
+开发版验证时使用 `refs/heads/main` 身份。旧版本可能只有 SHA-256。签名无效或缺少签名时，新版 Linux 自动更新会停止并保留运行中的版本。
 
-## 安全边界
+## Windows、Docker 和首次安装
 
-- 下载地址只允许固定的 GitHub/Gitee 公共域名；脚本拒绝本地地址、IP 字面量和不安全路径。
-- 归档在验证 SHA-256 之前不会安装。
-- Release 资产使用 HTTPS 传输；校验清单与归档来自同一发布标签，并在主/回退镜像间自动切换。
-- 当前没有接入 Windows Authenticode 或 Linux 二进制签名验证。SHA-256 可以检测传输损坏和非预期替换，但不能替代签名验证；正式生产环境应在具备证书后再启用签名门禁。
-- 更新脚本由固定 `main` 分支的 `update.sh` 提供，因此修改更新脚本本身仍需要可信的代码仓库、分支保护和发布审查。
+- Windows amd64 可用 Cosign 验证同一清单，再用 PowerShell `Get-FileHash -Algorithm SHA256` 核对 ZIP。停止面板并备份数据库和配置后解包。证书依赖和保存位置见归档内说明。ZIP 的签名证明不提供 Authenticode。
+- Docker 和 NAS 在保留持久卷的前提下拉取指定版本的 GHCR 镜像并重建，按镜像标签和架构验收。面板内的 Linux 更新器适用于 systemd/OpenRC 服务安装。容器镜像签名由独立发布项跟进。
+- 首次安装脚本保留历史版本的 SHA-256 兼容路径。需要签名验收的部署应在启动任何归档程序前使用上面的独立验证步骤。
 
-## 失败处理与恢复
+## 失败处理
 
-下载失败、校验失败、归档结构错误和不支持的平台会在替换前退出，并通过状态接口报告失败。旧版本保持原位。
+下载、签名、摘要、兼容性或解包失败时，旧服务留在原位。服务替换开始后，如果新服务启动失败，脚本尝试恢复旧安装和服务文件，会在日志中报告回滚文件位置。数据库位于单独配置的数据目录。应用程序回滚不会撤销已提交的数据库迁移。
 
-如果服务停止后发生系统级故障，脚本会优先恢复同文件系统回滚目录中的旧安装。若主机在恢复过程中断电，使用服务器控制台或 SSH 重新运行安装脚本/指定版本安装；不要删除数据库目录。数据库位于配置的 `XUI_DB_FOLDER`，更新过程不应覆盖它。
+使用 `journalctl -u 'x-ui-web-update-*'` 查看通过 systemd 调度的更新日志。通过终端执行更新时，终端会显示签名校验、下载和失败阶段。经历断电或强制终止后，先检查安装父目录的 `.x-ui-update-backup.*` 和数据库备份，再执行恢复。
 
-## 测试与限制
+## 发布流程
 
-本地可验证：
+推送 `main` 生成开发预发行。正式版标签必须与 `internal/config/version` 一致并指向 `main` 的历史，发布等待完整 CI、Linux 和 Windows 归档矩阵，以及 Linux amd64 和 Windows amd64 解包启动检查。工作流生成并验证签名后，将资产上传到草稿再公开。已公开正式版的同名资产受工作流保护。
 
-- `bash -n update.sh`
-- 前端类型检查、Lint、Vitest 和生产构建
-- 发布工作流的 YAML 变更审查
-
-Windows 本地可执行 Go/CGo 构建、单元测试和隔离实例的 API 检查；Linux systemd 服务停止、归档替换、重启与回滚仍需在相应环境验收。本地构建通过不等同于跨版本更新安装通过。
+发布后检查 GitHub 下载、标签、签名和 CI，以及 Docker 架构与 Linux 安装 smoke。支持矩阵、维护节奏和已知边界见 [平台与维护](PLATFORMS.md)。

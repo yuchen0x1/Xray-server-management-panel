@@ -46,6 +46,7 @@ xui_update_old_folder=""
 xui_update_service_backup=""
 xui_update_rc_backup=""
 xui_update_control_script_backup=""
+xui_update_stage=""
 
 _write_update_status() {
     local state="$1"
@@ -72,8 +73,9 @@ _rollback_update_transaction() {
     if [[ -n "${xui_folder}" && -d "${xui_folder}" && "${xui_folder}" != "/" ]]; then
         rm -rf -- "${xui_folder}" > /dev/null 2>&1 || true
     fi
-    if [[ -n "${xui_update_old_folder}" && -d "${xui_update_old_folder}" ]]; then
-        mv -f -- "${xui_update_old_folder}" "${xui_folder}" > /dev/null 2>&1 || true
+    if ! mv -f -- "${xui_update_old_folder}" "${xui_folder}"; then
+        echo "Could not restore the previous installation. Backup retained at ${xui_update_backup_dir}." >&2
+        return 1
     fi
 
     if [[ "${release:-}" == "alpine" ]]; then
@@ -101,7 +103,7 @@ _rollback_update_transaction() {
         chmod +x /usr/bin/x-ui > /dev/null 2>&1 || true
     fi
 
-    rm -rf -- "${xui_update_backup_dir}" > /dev/null 2>&1 || true
+    echo "Rollback files retained at ${xui_update_backup_dir}." >&2
     xui_update_transaction_active=false
 }
 
@@ -115,6 +117,9 @@ _commit_update_transaction() {
 
 _report_update_exit() {
     local code=$?
+    if [[ -n "$xui_update_stage" ]]; then
+        rm -rf -- "$xui_update_stage"
+    fi
     if [[ "${code}" -ne 0 ]]; then
         _rollback_update_transaction
     fi
@@ -421,87 +426,56 @@ _region_fetch_latest_tag() {
     return 1
 }
 
-# Download the release tarball from the primary channel for the detected
-# region, with automatic fallback to the other channel.
-_region_download_release_tarball() {
-    local out="$1" tag="$2" region
-    local primary_base fallback_base try_url checksum_url checksum_file expected actual
-    region="$(detect_update_region)"
-    if [[ "$region" == "cn" ]]; then
-        primary_base="https://gitee.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/download"
-        fallback_base="https://github.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/download"
+_verify_release_manifest() {
+    local manifest="$1" bundle="$2" tag="$3" ref
+    if [[ "$tag" == "dev-latest" ]]; then
+        ref="refs/heads/main"
+    elif [[ "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+        ref="refs/tags/$tag"
     else
-        primary_base="https://github.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/download"
-        fallback_base="https://gitee.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/download"
+        return 1
     fi
-    for try_url in "${primary_base}/${tag}/x-ui-linux-$(arch).tar.gz" "${fallback_base}/${tag}/x-ui-linux-$(arch).tar.gz"; do
-        if ! _region_url_safe "$try_url"; then
-            echo -e "${red}Refusing unsafe download URL: ${try_url}${plain}" >&2
-            continue
-        fi
-        echo -e "Downloading $(basename "$try_url") (${tag}) from ${try_url} ..." >&2
-        rm -f "$out"
-        _region_curl -fLR --retry 5 --retry-delay 3 --connect-timeout 15 --speed-limit 1 --speed-time 300 -o "$out" "$try_url" > /dev/null 2>&1
-        if [[ $? -eq 0 && -s "$out" ]]; then
-            actual="$(sha256sum "$out" | awk '{print $1}')"
-            checksum_verified=false
-            checksum_file="${out}.SHA256SUMS"
-            for checksum_url in \
-                "${primary_base}/${tag}/SHA256SUMS" \
-                "${fallback_base}/${tag}/SHA256SUMS"; do
-                rm -f "$checksum_file"
-                if _region_url_safe "$checksum_url" && \
-                    _region_curl -fL --retry 5 --retry-delay 3 --connect-timeout 15 -o "$checksum_file" "$checksum_url" > /dev/null 2>&1 && \
-                    [[ -s "$checksum_file" ]]; then
-                    expected="$(awk -v asset="$(basename "$out")" '$2 == asset || $2 == "*" asset {print $1; exit}' "$checksum_file")"
-                    if [[ "$expected" =~ ^[0-9a-fA-F]{64}$ && "${actual,,}" == "${expected,,}" ]]; then
-                        checksum_verified=true
-                        break
-                    fi
-                fi
-            done
-            rm -f "$checksum_file"
-            if [[ "$checksum_verified" != true ]]; then
-                echo -e "${yellow}No trusted release checksum manifest matched the archive; refusing to install an unverified archive.${plain}" >&2
-                rm -f "$out"
-                continue
-            fi
-            echo -e "${green}Downloaded and verified $(basename "$try_url") successfully.${plain}" >&2
-            return 0
-        fi
-        echo -e "${yellow}Download from ${try_url} failed, trying the other channel ...${plain}" >&2
-    done
-    rm -f "$out"
-    return 1
+    cosign verify-blob --bundle "$bundle" \
+        --certificate-identity "https://github.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/.github/workflows/release.yml@$ref" \
+        --certificate-oidc-issuer https://token.actions.githubusercontent.com "$manifest"
 }
 
-# Fetch a repo file (raw) from the primary channel, falling back to the other.
-# $1 = output file, $2 = repo path, $3 = git ref (default: main).
-_region_fetch_raw_file() {
-    local out="$1" repo_path="$2" ref="${3:-main}" region
-    local primary_url fallback_url try_url
-    region="$(detect_update_region)"
-    if [[ "$region" == "cn" ]]; then
-        primary_url="https://gitee.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/raw/${ref}/${repo_path}"
-        fallback_url="https://raw.githubusercontent.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/${ref}/${repo_path}"
-    else
-        primary_url="https://raw.githubusercontent.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/${ref}/${repo_path}"
-        fallback_url="https://gitee.com/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/raw/${ref}/${repo_path}"
+_region_download_release_tarball() {
+    local out="$1" tag="$2" primary fallback source base asset expected actual work
+    [[ "$tag" == "dev-latest" || "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || return 1
+    asset="x-ui-linux-$(arch).tar.gz"
+    primary="https://github.com"
+    fallback="https://gitee.com"
+    if [[ "$(detect_update_region)" == "cn" ]]; then
+        primary="https://gitee.com"
+        fallback="https://github.com"
     fi
-    for try_url in "$primary_url" "$fallback_url"; do
-        if ! _region_url_safe "$try_url"; then
-            echo -e "${red}Refusing unsafe raw URL: ${try_url}${plain}" >&2
+    work="$(mktemp -d)" || return 1
+    for source in "$primary" "$fallback"; do
+        base="$source/${_REGION_REPO_OWNER}/${_REGION_REPO_NAME}/releases/download/$tag"
+        echo "Verifying release $tag from $source"
+        if ! _region_curl -fsSL --proto '=https' --proto-redir '=https' --retry 3 --max-time 60 \
+                -o "$work/SHA256SUMS" "$base/SHA256SUMS" ||
+            ! _region_curl -fsSL --proto '=https' --proto-redir '=https' --retry 3 --max-time 60 \
+                -o "$work/bundle.json" "$base/SHA256SUMS.sigstore.json" ||
+            ! _verify_release_manifest "$work/SHA256SUMS" "$work/bundle.json" "$tag"; then
             continue
         fi
-        echo -e "Fetching ${repo_path} (${ref}) from ${try_url} ..." >&2
-        rm -f "$out"
-        _region_curl -fLRo "$out" "$try_url" > /dev/null 2>&1
-        if [[ $? -eq 0 && -s "$out" ]]; then
+        expected="$(awk -v asset="$asset" '$2 == asset || $2 == "*" asset {print $1; exit}' "$work/SHA256SUMS")"
+        [[ "$expected" =~ ^[a-f0-9]{64}$ ]] || continue
+        echo "Downloading $asset from $source"
+        if ! _region_curl -fL --proto '=https' --proto-redir '=https' --retry 3 --connect-timeout 15 \
+                --speed-limit 1 --speed-time 120 -o "$work/$asset" "$base/$asset"; then
+            continue
+        fi
+        actual="$(sha256sum "$work/$asset")"
+        if [[ "${actual%% *}" == "$expected" ]] && mv -f -- "$work/$asset" "$out"; then
+            rm -rf -- "$work"
             return 0
         fi
-        echo -e "${yellow}Fetch from ${try_url} failed, trying the other channel ...${plain}" >&2
+        echo "Downloaded archive failed SHA-256 verification." >&2
     done
-    rm -f "$out"
+    rm -rf -- "$work"
     return 1
 }
 
@@ -1357,32 +1331,13 @@ _install_xui_service_unit() {
     return 0
 }
 
-# Downloads a service unit from the region-selected channel (Gitee for cn,
-# GitHub otherwise, with automatic fallback) into a temp file and installs it
-# through _install_xui_service_unit. $1 = repo-relative file name.
-_install_xui_service_unit_remote() {
-    local repo_path="$1"
-    local dl_tmp="${xui_service}/x-ui.service.dl.$$"
-    rm -f "$dl_tmp"
-    if ! _region_fetch_raw_file "$dl_tmp" "$repo_path"; then
-        rm -f "$dl_tmp"
-        return 1
-    fi
-    if ! _install_xui_service_unit "$dl_tmp" "false"; then
-        rm -f "$dl_tmp"
-        return 1
-    fi
-    rm -f "$dl_tmp"
-    return 0
-}
-
 update_x-ui() {
-    cd ${xui_folder%/x-ui}/
+    cd "${xui_folder%/x-ui}/" || _fail "ERROR: Cannot access the installation parent directory"
 
     load_xui_env
 
     if [ -f "${xui_folder}/x-ui" ]; then
-        current_xui_version=$(${xui_folder}/x-ui -v)
+        current_xui_version=$("${xui_folder}/x-ui" -v)
         echo -e "${green}Current x-ui version: ${current_xui_version}${plain}"
     else
         _fail "ERROR: Current x-ui version: unknown"
@@ -1402,16 +1357,12 @@ update_x-ui() {
         fi
     fi
     echo -e "Got x-ui latest version: ${tag_version}, beginning the installation..."
-    if ! _region_download_release_tarball "${xui_folder}-linux-$(arch).tar.gz" "${tag_version}"; then
-        _fail "ERROR: Failed to download x-ui, please be sure that your server can access Gitee or GitHub"
+    xui_update_stage="$(mktemp -d "${xui_folder%/x-ui}/.x-ui-update-stage.XXXXXX")" || _fail "ERROR: Cannot create an update workspace"
+    local release_archive="$xui_update_stage/release.tar.gz"
+    if ! _region_download_release_tarball "$release_archive" "${tag_version}"; then
+        _fail "ERROR: No signed release archive could be verified for the selected version and architecture"
     fi
-    if [[ ! -s ${xui_folder}-linux-$(arch).tar.gz ]]; then
-        rm ${xui_folder}-linux-$(arch).tar.gz -f > /dev/null 2>&1
-        _fail "ERROR: Downloaded x-ui release archive is empty, please be sure that your server can access GitHub"
-    fi
-
-    release_archive="${xui_folder}-linux-$(arch).tar.gz"
-    release_stage="$(mktemp -d "${TMPDIR:-/tmp}/x-ui-archive.XXXXXX")"
+    local release_stage="$xui_update_stage"
     if ! tar -tzf "$release_archive" > "${release_stage}/contents" 2> /dev/null; then
         rm -rf "$release_stage" "$release_archive"
         _fail "ERROR: Downloaded x-ui release archive is not a valid tar.gz file"
@@ -1428,7 +1379,23 @@ update_x-ui() {
         rm -rf "$release_stage" "$release_archive"
         _fail "ERROR: Downloaded x-ui release archive does not contain the panel binary"
     fi
-    rm -rf "$release_stage"
+    local required
+    for required in x-ui.sh update.sh x-ui.rc x-ui.service.debian x-ui.service.arch x-ui.service.rhel; do
+        if ! grep -Fxq "x-ui/$required" "${release_stage}/contents"; then
+            rm -rf -- "$release_stage" "$release_archive"
+            _fail "ERROR: The verified release is missing $required"
+        fi
+    done
+    if ! tar -xzf "$release_archive" -C "$release_stage"; then
+        _fail "ERROR: Failed to unpack the verified release"
+    fi
+    local staged_version
+    staged_version=$("$release_stage/x-ui/x-ui" -v) || _fail "ERROR: The verified panel binary cannot run on this host"
+    if [[ "$tag_version" != "dev-latest" && "$staged_version" != "${tag_version#v}" ]]; then
+        _fail "ERROR: The verified panel binary version does not match $tag_version"
+    fi
+
+    install_base
 
     if [[ -e ${xui_folder}/ ]]; then
         xui_update_backup_dir="$(mktemp -d "${xui_folder%/x-ui}/.x-ui-update-backup.XXXXXX")" || _fail "ERROR: Failed to create the update rollback workspace"
@@ -1439,43 +1406,16 @@ update_x-ui() {
         xui_update_service_backup="${xui_update_backup_dir}/x-ui.service"
         xui_update_rc_backup="${xui_update_backup_dir}/x-ui.rc"
         xui_update_control_script_backup="${xui_update_backup_dir}/x-ui-control.sh"
-        if ! mv -f -- "${xui_folder}" "${xui_update_old_folder}"; then
-            rm -rf -- "${xui_update_backup_dir}" > /dev/null 2>&1
-            _fail "ERROR: Failed to stage the previous x-ui installation for rollback"
-        fi
-        xui_update_transaction_active=true
         if [[ -f /usr/bin/x-ui ]]; then
             cp -f -- /usr/bin/x-ui "${xui_update_control_script_backup}" || _fail "ERROR: Failed to back up the x-ui control script"
         fi
-        if [[ "${release}" == "alpine" ]]; then
-            if [[ -f /etc/init.d/x-ui ]]; then
-                cp -f -- /etc/init.d/x-ui "${xui_update_rc_backup}" || _fail "ERROR: Failed to back up the x-ui startup unit"
-            fi
-        elif [[ -f "${xui_service}/x-ui.service" ]]; then
-            cp -f -- "${xui_service}/x-ui.service" "${xui_update_service_backup}" || _fail "ERROR: Failed to back up the x-ui service unit"
-        fi
         echo -e "${green}Stopping x-ui...${plain}"
         if [[ $release == "alpine" ]]; then
-            if [ -f "/etc/init.d/x-ui" ]; then
-                rc-service x-ui stop > /dev/null 2>&1
-                rc-update del x-ui > /dev/null 2>&1
-                echo -e "${green}Removing old service unit version...${plain}"
-                rm -f /etc/init.d/x-ui > /dev/null 2>&1
-            else
-                rm x-ui-linux-$(arch).tar.gz -f > /dev/null 2>&1
-                _fail "ERROR: x-ui service unit not installed."
-            fi
+            cp -f -- /etc/init.d/x-ui "${xui_update_rc_backup}" || _fail "ERROR: Failed to back up the x-ui startup unit"
+            rc-service x-ui stop > /dev/null 2>&1 || _fail "ERROR: Failed to stop the current x-ui service"
         else
-            if [ -f "${xui_service}/x-ui.service" ]; then
-                systemctl stop x-ui > /dev/null 2>&1
-                systemctl disable x-ui > /dev/null 2>&1
-                echo -e "${green}Removing old systemd unit version...${plain}"
-                rm ${xui_service}/x-ui.service -f > /dev/null 2>&1
-                systemctl daemon-reload > /dev/null 2>&1
-            else
-                rm x-ui-linux-$(arch).tar.gz -f > /dev/null 2>&1
-                _fail "ERROR: x-ui systemd unit not installed."
-            fi
+            cp -f -- "${xui_service}/x-ui.service" "${xui_update_service_backup}" || _fail "ERROR: Failed to back up the x-ui service unit"
+            systemctl stop x-ui > /dev/null 2>&1 || _fail "ERROR: Failed to stop the current x-ui service"
         fi
         # Kill any leftover mtg (MTProto) sidecars. x-ui runs them outside its own
         # lifecycle, so on Linux a stale one can survive the stop and keep holding
@@ -1483,18 +1423,21 @@ update_x-ui() {
         # The new panel respawns a clean mtg per inbound on next start.
         pkill -f 'mtg-linux-[^ ]* run ' > /dev/null 2>&1 || true
     else
-        rm x-ui-linux-$(arch).tar.gz -f > /dev/null 2>&1
         _fail "ERROR: x-ui not installed."
     fi
 
     echo -e "${green}Installing new x-ui version...${plain}"
-    tar zxvf x-ui-linux-$(arch).tar.gz > /dev/null 2>&1
-    if [[ $? -ne 0 ]]; then
-        rm x-ui-linux-$(arch).tar.gz -f > /dev/null 2>&1
-        _fail "ERROR: Failed to extract the x-ui release archive; the previous installation will be restored"
+    if ! mv -- "$xui_folder" "$xui_update_old_folder"; then
+        if [[ "$release" == "alpine" ]]; then
+            rc-service x-ui start
+        else
+            systemctl start x-ui
+        fi
+        _fail "ERROR: Failed to stage the previous installation"
     fi
-    rm x-ui-linux-$(arch).tar.gz -f > /dev/null 2>&1
-    cd x-ui > /dev/null 2>&1
+    xui_update_transaction_active=true
+    mv -- "$release_stage/x-ui" "$xui_folder" || _fail "ERROR: Could not activate the staged release"
+    cd "$xui_folder" > /dev/null 2>&1
     if [[ $? -ne 0 || ! -s x-ui ]]; then
         _fail "ERROR: Extracted x-ui archive is missing the x-ui binary; the previous installation will be restored"
     fi
@@ -1527,10 +1470,10 @@ update_x-ui() {
         chmod +x bin/mtg-linux-$(arch) > /dev/null 2>&1
     fi
 
-    echo -e "${green}Downloading and installing x-ui.sh script...${plain}"
+    echo -e "${green}Installing the verified x-ui.sh script...${plain}"
     local xui_script_temp="/usr/bin/x-ui-temp.$$"
     rm -f "${xui_script_temp}"
-    if ! _region_fetch_raw_file "${xui_script_temp}" "x-ui.sh"; then
+    if ! cp -- "${xui_folder}/x-ui.sh" "${xui_script_temp}"; then
         rm -f "${xui_script_temp}"
         _fail "ERROR: Failed to download x-ui.sh script, please be sure that your server can access Gitee or GitHub"
     fi
@@ -1557,10 +1500,10 @@ update_x-ui() {
     fi
 
     if [[ $release == "alpine" ]]; then
-        echo -e "${green}Downloading and installing startup unit x-ui.rc...${plain}"
+        echo -e "${green}Installing the verified startup unit x-ui.rc...${plain}"
         xui_rc_temp="/etc/init.d/x-ui.tmp.$$"
         rm -f "${xui_rc_temp}"
-        if ! _region_fetch_raw_file "${xui_rc_temp}" "x-ui.rc"; then
+        if ! cp -- "${xui_folder}/x-ui.rc" "${xui_rc_temp}"; then
             rm -f "${xui_rc_temp}"
             _fail "ERROR: Failed to download startup unit x-ui.rc, please be sure that your server can access Gitee or GitHub"
         fi
@@ -1615,26 +1558,8 @@ update_x-ui() {
                     ;;
             esac
 
-            # If service file not found in tar.gz, download from the
-            # region-selected channel (Gitee for cn, GitHub otherwise).
-            if [ "$service_installed" = false ]; then
-                echo -e "${yellow}Service files not found in tar.gz, downloading from the region-selected channel...${plain}"
-                case "${release}" in
-                    ubuntu | debian | armbian)
-                        service_unit_path="x-ui.service.debian"
-                        ;;
-                    arch | manjaro | parch)
-                        service_unit_path="x-ui.service.arch"
-                        ;;
-                    *)
-                        service_unit_path="x-ui.service.rhel"
-                        ;;
-                esac
-
-                if ! _install_xui_service_unit_remote "$service_unit_path"; then
-                    echo -e "${red}Failed to install x-ui.service from Gitee/GitHub${plain}"
-                    exit 1
-                fi
+            if [[ "$service_installed" == "false" ]]; then
+                _fail "ERROR: Failed to install the verified systemd unit"
             fi
         fi
         chown root:root ${xui_service}/x-ui.service > /dev/null 2>&1
@@ -1686,5 +1611,5 @@ update_x-ui() {
 }
 
 echo -e "${green}Running...${plain}"
-install_base
-update_x-ui $1
+_command_exists cosign || _fail "ERROR: Install Cosign from a trusted source before updating."
+update_x-ui

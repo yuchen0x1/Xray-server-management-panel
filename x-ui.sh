@@ -461,20 +461,11 @@ update() {
         fi
         return 0
     fi
-    # Fetch the updater from the region-selected channel (Gitee for cn,
-    # GitHub otherwise) into a temp file so a failing primary source can
-    # fall back to the other one before anything is executed.
-    local updater_tmp="${TMPDIR:-/tmp}/x-ui-updater.$$.sh"
-    if ! _region_fetch_raw_file "${updater_tmp}" "update.sh"; then
-        LOGE "Failed to download the updater, please make sure this machine can reach Gitee or GitHub"
-        return 1
-    fi
-    bash "${updater_tmp}"
-    local rc=$?
-    rm -f "${updater_tmp}"
-    if [[ $rc == 0 ]]; then
-        LOGI "Update is complete, Panel has automatically restarted "
+    if bash "${xui_folder}/update.sh"; then
+        LOGI "Update is complete, Panel has automatically restarted"
         before_show_menu
+    else
+        return 1
     fi
 }
 
@@ -487,19 +478,11 @@ update_dev() {
         fi
         return 0
     fi
-    # XUI_UPDATE_TAG tells update.sh to install the dev-latest pre-release
-    # instead of the latest stable tag.
-    local updater_tmp="${TMPDIR:-/tmp}/x-ui-updater.$$.sh"
-    if ! _region_fetch_raw_file "${updater_tmp}" "update.sh"; then
-        LOGE "Failed to download the updater, please make sure this machine can reach Gitee or GitHub"
-        return 1
-    fi
-    XUI_UPDATE_TAG="dev-latest" bash "${updater_tmp}"
-    local rc=$?
-    rm -f "${updater_tmp}"
-    if [[ $rc == 0 ]]; then
-        LOGI "Dev update is complete, Panel has automatically restarted "
+    if XUI_UPDATE_TAG="dev-latest" bash "${xui_folder}/update.sh"; then
+        LOGI "Dev update is complete, Panel has automatically restarted"
         before_show_menu
+    else
+        return 1
     fi
 }
 

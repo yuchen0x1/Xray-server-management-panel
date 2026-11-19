@@ -1792,14 +1792,14 @@ install_x-ui() {
     fi
     local xui_script_temp="/usr/bin/x-ui-temp.$$"
     rm -f "${xui_script_temp}"
-    if ! _region_fetch_raw_file "${xui_script_temp}" "x-ui.sh"; then
+    if ! tar -xOzf "${xui_folder}-linux-$(arch).tar.gz" x-ui/x-ui.sh > "${xui_script_temp}"; then
         rm -f "${xui_script_temp}"
-        echo -e "${red}Failed to download x-ui.sh${plain}"
+        echo -e "${red}Failed to read x-ui.sh from the release archive${plain}"
         exit 1
     fi
     if [[ ! -s "${xui_script_temp}" ]]; then
         rm -f "${xui_script_temp}"
-        echo -e "${red}Downloaded x-ui.sh is empty${plain}"
+        echo -e "${red}Release archive contains an empty x-ui.sh${plain}"
         exit 1
     fi
 
@@ -1883,7 +1883,9 @@ install_x-ui() {
     if [[ $release == "alpine" ]]; then
         xui_rc_temp="/etc/init.d/x-ui.tmp.$$"
         rm -f "${xui_rc_temp}"
-        if ! _region_fetch_raw_file "${xui_rc_temp}" "x-ui.rc"; then
+        if [[ -s x-ui.rc ]]; then
+            cp -- x-ui.rc "${xui_rc_temp}" || exit 1
+        elif ! _region_fetch_raw_file "${xui_rc_temp}" "x-ui.rc" "$tag_version"; then
             rm -f "${xui_rc_temp}"
             echo -e "${red}Failed to download x-ui.rc${plain}"
             exit 1

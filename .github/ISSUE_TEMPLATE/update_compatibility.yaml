@@ -1,0 +1,36 @@
+name: Update or platform compatibility
+description: Report a problem installing, starting, upgrading, or rolling back the panel.
+labels: []
+body:
+  - type: input
+    id: platform
+    attributes:
+      label: Platform and architecture
+      placeholder: Debian 12 amd64, systemd
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Installed version and target version
+    validations:
+      required: true
+  - type: dropdown
+    id: channel
+    attributes:
+      label: Deployment and update path
+      options:
+        - Linux Web or x-ui CLI
+        - Linux fresh install
+        - Docker or NAS
+        - Windows archive
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Failed step and redacted evidence
+      description: Include the exact message and whether the previous service recovered. Remove credentials and subscription links.
+    validations:
+      required: true

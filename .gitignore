@@ -80,3 +80,8 @@ docker-compose.override.yml
 .autonomous-upgrade/
 PROJECT_AUDIT_REPORT.md
 UPGRADE_PLAN.md
+
+# AI 会话工作目录与 Python 缓存
+.superpowers/
+__pycache__/
+*.pyc

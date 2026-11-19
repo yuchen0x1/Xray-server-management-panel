@@ -18,8 +18,29 @@ on:
       - "x-ui.service.arch"
       - "x-ui.service.rhel"
       - ".github/workflows/release.yml"
+      - "deploy/test/**"
+
+permissions:
+  contents: read
 
 jobs:
+  validate-tag:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Confirm stable version and branch
+        run: |
+          [[ "$GITHUB_REF_NAME" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          test "$GITHUB_REF_NAME" = "v$(cat internal/config/version)"
+          git merge-base --is-ancestor HEAD origin/main
+
+  stable-ci:
+    if: startsWith(github.ref, 'refs/tags/')
+    uses: ./.github/workflows/ci.yml
   build:
     permissions:
       contents: read
@@ -108,7 +129,7 @@ jobs:
           cp x-ui.service.debian x-ui/
           cp x-ui.service.arch x-ui/
           cp x-ui.service.rhel x-ui/
-          cp x-ui.sh x-ui/
+          cp x-ui.sh x-ui.rc update.sh LICENSE x-ui/
           mv x-ui/xui-release x-ui/x-ui
           mkdir x-ui/bin
           cd x-ui/bin
@@ -174,6 +195,10 @@ jobs:
 
       - name: Package
         run: tar -zcvf x-ui-linux-${{ matrix.platform }}.tar.gz x-ui
+
+      - name: Smoke test the Linux amd64 archive
+        if: matrix.platform == 'amd64'
+        run: python3 deploy/test/smoke-archive.py x-ui-linux-amd64.tar.gz
 
       - name: Upload files to Artifacts
         uses: actions/upload-artifact@v7
@@ -288,12 +313,17 @@ jobs:
 
           cd ..
           Copy-Item -Path ..\windows_files\* -Destination . -Recurse
+          Copy-Item ..\LICENSE .
           cd ..
 
       - name: Package to Zip
         shell: pwsh
         run: |
           Compress-Archive -Path .\x-ui -DestinationPath "x-ui-windows-amd64.zip"
+
+      - name: Smoke test the Windows archive
+        shell: pwsh
+        run: python deploy/test/smoke-archive.py x-ui-windows-amd64.zip
 
       - name: Upload files to Artifacts
         uses: actions/upload-artifact@v7
@@ -306,10 +336,20 @@ jobs:
     needs:
       - build
       - build-windows
-    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
+      - validate-tag
+      - stable-ci
+    if: >-
+      !cancelled() && github.event_name == 'push' &&
+      needs.build.result == 'success' && needs.build-windows.result == 'success' &&
+      (github.ref == 'refs/heads/main' ||
+        (needs.validate-tag.result == 'success' && needs.stable-ci.result == 'success'))
     runs-on: ubuntu-latest
+    concurrency:
+      group: publish-${{ github.ref }}
+      cancel-in-progress: false
     permissions:
       contents: write
+      id-token: write
     env:
       GH_REPO: ${{ github.repository }}
     steps:
@@ -325,7 +365,20 @@ jobs:
 
       - name: Create checksum manifest
         working-directory: release-assets
-        run: sha256sum x-ui-* > SHA256SUMS
+        run: |
+          sha256sum x-ui-linux-{amd64,arm64,armv7,armv6,386,armv5,s390x}.tar.gz x-ui-windows-amd64.zip > SHA256SUMS
+          sha256sum --check --strict SHA256SUMS
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@ba7bc0a3fef59531c69a25acd34668d6d3fe6f22 # v4.1.0
+
+      - name: Sign and verify the checksum manifest
+        working-directory: release-assets
+        run: |
+          cosign sign-blob --yes --bundle SHA256SUMS.sigstore.json SHA256SUMS
+          cosign verify-blob --bundle SHA256SUMS.sigstore.json \
+            --certificate-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/release.yml@${GITHUB_REF}" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com SHA256SUMS
 
       - name: Publish stable release
         if: startsWith(github.ref, 'refs/tags/v')
@@ -337,13 +390,18 @@ jobs:
           awk -v tag="$RELEASE_TAG" '$1 == "##" { if (found) exit; if ($2 == tag) found = 1 } found { print }' \
             "$GITHUB_WORKSPACE/docs/releases/release-notes.md" > "$RUNNER_TEMP/release-notes.md"
           test -s "$RUNNER_TEMP/release-notes.md"
-          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+          if draft=$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft); then
+            if [[ "$draft" != true ]]; then
+              echo "Refusing to overwrite the published release $RELEASE_TAG" >&2
+              exit 1
+            fi
+          else
             gh release create "$RELEASE_TAG" \
               --title "3X-UI $RELEASE_TAG" \
               --notes-file "$RUNNER_TEMP/release-notes.md" \
               --draft --verify-tag
           fi
-          gh release upload "$RELEASE_TAG" x-ui-* SHA256SUMS --clobber
+          gh release upload "$RELEASE_TAG" x-ui-* SHA256SUMS SHA256SUMS.sigstore.json --clobber
           gh release edit "$RELEASE_TAG" \
             --notes-file "$RUNNER_TEMP/release-notes.md" \
             --draft=false --latest
@@ -356,6 +414,11 @@ jobs:
           RELEASE_COMMIT: ${{ github.sha }}
         working-directory: release-assets
         run: |
+          current_main=$(gh api "repos/$GH_REPO/branches/main" --jq .commit.sha)
+          if [[ "$current_main" != "$RELEASE_COMMIT" ]]; then
+            echo "A newer main commit superseded this development build"
+            exit 0
+          fi
           printf 'commit=%s\n\n' "$RELEASE_COMMIT" > "$RUNNER_TEMP/dev-release-notes.md"
           awk '$1 == "##" { if (found) exit; if ($2 == "dev-latest") found = 1 } found { print }' \
             "$GITHUB_WORKSPACE/docs/releases/release-notes.md" >> "$RUNNER_TEMP/dev-release-notes.md"
@@ -375,5 +438,5 @@ jobs:
               --notes-file "$RUNNER_TEMP/dev-release-notes.md" \
               --prerelease
           fi
-          gh release upload "$RELEASE_TAG" x-ui-* SHA256SUMS --clobber
+          gh release upload "$RELEASE_TAG" x-ui-* SHA256SUMS SHA256SUMS.sigstore.json --clobber
 

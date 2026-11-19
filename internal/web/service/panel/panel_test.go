@@ -37,9 +37,6 @@ func TestPanelUpdateSource(t *testing.T) {
 	if panelRepository != "yuchen0x1/Xray-server-management-panel" {
 		t.Fatalf("panel repository = %q, want yuchen0x1/Xray-server-management-panel", panelRepository)
 	}
-	if panelUpdaterURL != "https://raw.githubusercontent.com/yuchen0x1/Xray-server-management-panel/main/update.sh" {
-		t.Fatalf("panel updater URL points to %q", panelUpdaterURL)
-	}
 	if panelGitHubAPI != "https://api.github.com/repos/yuchen0x1/Xray-server-management-panel" {
 		t.Fatalf("panel GitHub API points to %q", panelGitHubAPI)
 	}
@@ -51,15 +48,6 @@ func TestCompareVersionStringsRejectsUnexpectedFormats(t *testing.T) {
 	}
 	if _, ok := compareVersionStrings("v2.9", "2.9.3"); ok {
 		t.Fatal("expected short version to be rejected")
-	}
-}
-
-func TestShellQuote(t *testing.T) {
-	if got := shellQuote("/usr/bin/curl"); got != "'/usr/bin/curl'" {
-		t.Fatalf("unexpected quote result: %s", got)
-	}
-	if got := shellQuote("/tmp/a'b"); got != "'/tmp/a'\\''b'" {
-		t.Fatalf("unexpected quote result with single quote: %s", got)
 	}
 }
 

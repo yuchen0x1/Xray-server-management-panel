@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -40,11 +39,8 @@ type PanelUpdateInfo struct {
 }
 
 const (
-	panelRepository      = "yuchen0x1/Xray-server-management-panel"
-	panelRepositoryRaw   = "https://raw.githubusercontent.com/" + panelRepository + "/main"
-	panelUpdaterURL      = panelRepositoryRaw + "/update.sh"
-	panelGitHubAPI       = "https://api.github.com/repos/" + panelRepository
-	maxPanelUpdaterBytes = 2 << 20
+	panelRepository = "yuchen0x1/Xray-server-management-panel"
+	panelGitHubAPI  = "https://api.github.com/repos/" + panelRepository
 	// devReleaseTag is the fixed-tag rolling pre-release the CI force-moves to the
 	// newest main commit; the dev update channel installs from it.
 	devReleaseTag = "dev-latest"
@@ -236,19 +232,21 @@ func (s *PanelService) startUpdate(useDev bool) (int64, error) {
 		return 0, fmt.Errorf("bash is required to run the panel updater: %w", err)
 	}
 
-	scriptPath, err := downloadPanelUpdater()
-	if err != nil {
-		return 0, err
+	if _, err := exec.LookPath("cosign"); err != nil {
+		return 0, fmt.Errorf("Cosign is required to verify release signatures: %w", err)
 	}
 
 	statusFile := config.GetUpdateStatusFilePath()
 
 	mainFolder, serviceFolder := resolveUpdateFolders()
+	scriptPath := filepath.Join(mainFolder, "update.sh")
+	if info, err := os.Stat(scriptPath); err != nil || !info.Mode().IsRegular() {
+		return 0, fmt.Errorf("the installed panel updater is missing: %s", scriptPath)
+	}
 	updateTag := ""
 	if useDev {
 		updateTag = devReleaseTag
 	}
-	updateScript := fmt.Sprintf("set -e; trap 'rm -f %s' EXIT; %s %s", shellQuote(scriptPath), shellQuote(bash), shellQuote(scriptPath))
 	runIDEnv := "XUI_UPDATE_RUN_ID=" + strconv.FormatInt(runID, 10)
 	statusFileEnv := "XUI_UPDATE_STATUS_FILE=" + statusFile
 
@@ -261,14 +259,13 @@ func (s *PanelService) startUpdate(useDev bool) (int64, error) {
 			"--setenv", "XUI_UPDATE_TAG="+updateTag,
 			"--setenv", runIDEnv,
 			"--setenv", statusFileEnv,
-			bash, "-lc", updateScript,
+			bash, scriptPath,
 		)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			output := strings.TrimSpace(string(out))
 			if !strings.Contains(output, "System has not been booted with systemd") &&
 				!strings.Contains(output, "Failed to connect to bus") {
-				_ = os.Remove(scriptPath)
 				return 0, fmt.Errorf("failed to start panel update job: %w: %s", err, output)
 			}
 			logger.Warning("systemd-run is unavailable, falling back to detached update process:", output)
@@ -279,7 +276,7 @@ func (s *PanelService) startUpdate(useDev bool) (int64, error) {
 		}
 	}
 
-	cmd := exec.CommandContext(context.Background(), bash, "-lc", updateScript)
+	cmd := exec.CommandContext(context.Background(), bash, scriptPath)
 	cmd.Env = append(os.Environ(),
 		"XUI_MAIN_FOLDER="+mainFolder,
 		"XUI_SERVICE="+serviceFolder,
@@ -289,7 +286,6 @@ func (s *PanelService) startUpdate(useDev bool) (int64, error) {
 	)
 	setDetachedProcess(cmd)
 	if err := cmd.Start(); err != nil {
-		_ = os.Remove(scriptPath)
 		return 0, fmt.Errorf("failed to start panel update job: %w", err)
 	}
 	if err := cmd.Process.Release(); err != nil {
@@ -355,51 +351,6 @@ func releaseUpdateSlot() {
 	updateMu.Lock()
 	updateRunning = false
 	updateMu.Unlock()
-}
-
-func downloadPanelUpdater() (string, error) {
-	client := (&service.SettingService{}).NewProxiedHTTPClient(15 * time.Second)
-	req, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, panelUpdaterURL, nil)
-	if reqErr != nil {
-		return "", fmt.Errorf("download panel updater: %w", reqErr)
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("download panel updater: %w", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("download panel updater: unexpected HTTP %d", resp.StatusCode)
-	}
-
-	file, err := os.CreateTemp("", "3x-ui-update-*.sh")
-	if err != nil {
-		return "", err
-	}
-	path := file.Name()
-	ok := false
-	defer func() {
-		_ = file.Close()
-		if !ok {
-			_ = os.Remove(path)
-		}
-	}()
-
-	n, err := io.Copy(file, io.LimitReader(resp.Body, maxPanelUpdaterBytes+1))
-	if err != nil {
-		return "", fmt.Errorf("write panel updater: %w", err)
-	}
-	if n == 0 {
-		return "", fmt.Errorf("panel updater download is empty")
-	}
-	if n > maxPanelUpdaterBytes {
-		return "", fmt.Errorf("panel updater exceeds %d bytes", maxPanelUpdaterBytes)
-	}
-	if err := file.Chmod(0o700); err != nil {
-		return "", err
-	}
-	ok = true
-	return path, nil
 }
 
 func fetchLatestPanelVersion() (string, error) {
@@ -550,8 +501,4 @@ func parseVersionParts(version string) ([3]int, bool) {
 
 func normalizeVersionTag(version string) string {
 	return strings.TrimPrefix(strings.TrimSpace(version), "v")
-}
-
-func shellQuote(value string) string {
-	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"
 }

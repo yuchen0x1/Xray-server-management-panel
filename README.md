@@ -76,6 +76,8 @@ v3.13.0 聚焦观测能力、订阅缓存、本地备份保留与入站运维体
 
 ## 四、技术栈
 
+服务器安装、便携版、浏览器和容器的功能与维护范围见 [平台与维护](docs/PLATFORMS.md)。安装服务升级、签名校验和回退见 [更新指南](docs/AUTO_UPDATE.md)。
+
 - **后端**：Go 1.27.4+（以 `go.mod` 为准）、Gin、GORM、SQLite、PostgreSQL、go-i18n、gopsutil、gorilla/websocket
 - **代理核心**：Xray-core，含 MTProto sidecar 支持
 - **前端**：React 19、TypeScript 6、Vite 8、Ant Design 6、React Router、TanStack Query、Zod、i18next

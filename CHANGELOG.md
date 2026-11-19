@@ -10,6 +10,12 @@ are maintained in [docs/releases/release-notes.md](docs/releases/release-notes.m
 
 - 暂无新的未发布变更。
 
+## v3.13.1 — 2026-11-18
+
+- Sign release checksums with GitHub Actions OIDC and Sigstore. Gate stable publication on matching version tags, CI and archive startup checks.
+- Use the installed Linux updater and verify the signed archive before stopping the current service.
+- Unpack the release on the installation filesystem before activation and retain recovery files after a failed activation.
+
 ## v3.13.0 — 2026-11-16
 
 - Complete a source, build, release-chain and open-source comparison audit;
