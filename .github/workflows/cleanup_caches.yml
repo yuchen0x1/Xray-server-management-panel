@@ -20,7 +20,7 @@ jobs:
           echo "Deleting caches older than: $CUTOFF_DATE"
 
           CACHE_IDS=$(gh api --paginate "repos/$GH_REPO/actions/caches?per_page=100" \
-            --jq ".actions_caches[] | select(.last_accessed_at < \"$CUTOFF_DATE\") | .id")
+            --jq ".actions_caches[] | select(.last_accessed_at < \"$CUTOFF_DATE\") | .id" | sort -u)
 
           if [ -z "$CACHE_IDS" ]; then
             echo "No old caches found to delete."
@@ -41,7 +41,7 @@ jobs:
           CUTOFF_DATE=$(date -u -d "7 days ago" +%Y-%m-%dT%H:%M:%SZ)
           echo "Deleting completed-run artifacts created before: $CUTOFF_DATE"
           ARTIFACTS=$(gh api --paginate "repos/$GH_REPO/actions/artifacts?per_page=100" \
-            --jq ".artifacts[] | select(.created_at < \"$CUTOFF_DATE\") | [.id, .workflow_run.id] | @tsv")
+            --jq ".artifacts[] | select(.created_at < \"$CUTOFF_DATE\") | [.id, .workflow_run.id] | @tsv" | sort -u)
 
           if [ -z "$ARTIFACTS" ]; then
             echo "No old artifacts found to delete."
