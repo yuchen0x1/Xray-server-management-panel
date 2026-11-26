@@ -10,6 +10,20 @@ are maintained in [docs/releases/release-notes.md](docs/releases/release-notes.m
 
 - 暂无新的未发布变更。
 
+## v3.13.2 — 2026-11-27
+
+- Pin Gorilla WebSocket to the upstream cryptographic masking-key fix for GO-2026-6278 (CVE-2026-6600).
+- Preserve each resource invalidation in a WebSocket burst and refresh shared defaults after settings changes.
+- Correct MTProto IPv6 bind addresses, synchronize process lifecycle reads, account for first/reset traffic samples, and discard samples from replaced processes.
+- Preserve existing Geo data during failed or empty downloads and restart Xray only after an actual replacement.
+- Resolve forwarded client addresses from the trusted end of the proxy chain to protect login rate limits and audit attribution.
+- Issue a current-epoch session after credential updates and reject null VMess external configurations without a panic.
+- Commit account credentials and their documented two-factor reset together, so a failed password change cannot silently disable two-factor authentication.
+- Integrate the TUIC response-stream regression fix from PR #26 and validate development archive versions correctly in packaging smoke tests.
+- Synchronize both OpenAPI consumers and localized API operation references; exclude WebSocket event descriptions from HTTP paths.
+- Keep workflow artifacts for seven days and clean obsolete artifacts only after their workflow has completed.
+- Publish complete signed release archives before promoting the stable release to latest.
+
 ## v3.13.1 — 2026-11-18
 
 - Sign release checksums with GitHub Actions OIDC and Sigstore. Gate stable publication on matching version tags, CI and archive startup checks.

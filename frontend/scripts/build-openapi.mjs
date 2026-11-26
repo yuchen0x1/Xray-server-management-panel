@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { isDeepStrictEqual } from 'node:util';
 
 import { sections } from '../src/pages/api-docs/endpoints.ts';
 import { EXAMPLES } from '../src/generated/examples.ts';
@@ -9,6 +10,7 @@ import { SCHEMAS } from '../src/generated/schemas.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const outPath = join(__dirname, '..', 'public', 'openapi.json');
+const docsRoot = join(__dirname, '..', '..', 'docs');
 
 const PANEL_VERSION = process.env.X_UI_VERSION || '3.x';
 
@@ -193,11 +195,12 @@ function buildOperation(ep, tag) {
   return op;
 }
 
-function buildSpec() {
+export function buildSpec() {
   const paths = {};
   for (const section of sections) {
     const tag = section.title;
     for (const ep of section.endpoints) {
+      if (ep.method === 'WS') continue;
       const openApiPath = ginPathToOpenApi(ep.path);
       if (!paths[openApiPath]) paths[openApiPath] = {};
       paths[openApiPath][ep.method.toLowerCase()] = buildOperation(ep, tag);
@@ -230,13 +233,79 @@ function buildSpec() {
   };
 }
 
-const spec = buildSpec();
-writeFileSync(outPath, JSON.stringify(spec, null, 2) + '\n');
+export function syncOpenApiSpec(spec, paths, { check = false } = {}) {
+  if (check) {
+    const stale = paths.filter((path) => {
+      try {
+        return !isDeepStrictEqual(JSON.parse(readFileSync(path, 'utf8')), spec);
+      } catch (error) {
+        if (error.code === 'ENOENT' || error instanceof SyntaxError) return true;
+        throw error;
+      }
+    });
+    if (stale.length > 0) {
+      throw new Error(`[openapi] stale copies: ${stale.join(', ')}. Run npm --prefix frontend run gen:api.`);
+    }
+    return;
+  }
 
-const pathCount = Object.keys(spec.paths).length;
-let opCount = 0;
-for (const ops of Object.values(spec.paths)) opCount += Object.keys(ops).length;
-console.log(`[openapi] wrote ${outPath}`);
-console.log(`[openapi] paths: ${pathCount}, operations: ${opCount}, tags: ${spec.tags.length}`);
+  const content = JSON.stringify(spec, null, 2) + '\n';
+  for (const path of paths) writeFileSync(path, content);
+}
 
-void pathToFileURL;
+export function syncOpenApiPages(spec, contentRoot, { check = false } = {}) {
+  const operationsByTag = new Map((spec.tags ?? []).map(({ name }) => [name, []]));
+  for (const [path, operations] of Object.entries(spec.paths)) {
+    for (const [method, operation] of Object.entries(operations)) {
+      for (const tag of operation.tags ?? []) {
+        const taggedOperations = operationsByTag.get(tag);
+        if (!taggedOperations) throw new Error(`[openapi] undeclared tag: ${tag}`);
+        taggedOperations.push({ path, method });
+      }
+    }
+  }
+
+  const updates = [];
+  const locales = readdirSync(contentRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory());
+  if (locales.length === 0) throw new Error(`[openapi] no documentation locales in ${contentRoot}`);
+  for (const locale of locales) {
+    for (const [tag, operations] of operationsByTag) {
+      const slug = tag.toLowerCase().replace(/\s+/g, '-');
+      const path = join(contentRoot, locale.name, 'reference', 'api', `${slug}.mdx`);
+      const content = readFileSync(path, 'utf8');
+      const matches = [...content.matchAll(/\boperations=\{(\[[^\r\n]*\])\}/g)];
+      if (matches.length !== 1) throw new Error(`[openapi] expected one operations array in ${path}`);
+      const match = matches[0];
+      if (isDeepStrictEqual(JSON.parse(match[1]), operations)) continue;
+      const start = match.index + match[0].indexOf(match[1]);
+      const updated = content.slice(0, start) + JSON.stringify(operations) + content.slice(start + match[1].length);
+      updates.push({ path, content: updated });
+    }
+  }
+
+  if (check && updates.length > 0) {
+    throw new Error(`[openapi] stale documentation operations: ${updates.map(({ path }) => path).join(', ')}. Run npm --prefix frontend run gen:api.`);
+  }
+  if (!check) {
+    for (const { path, content } of updates) writeFileSync(path, content);
+  }
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const spec = buildSpec();
+  const check = process.argv.includes('--check');
+  const includeDocs = check || existsSync(docsRoot);
+  const outPaths = includeDocs ? [outPath, join(docsRoot, 'public', 'openapi.json')] : [outPath];
+  try {
+    syncOpenApiSpec(spec, outPaths, { check });
+    if (includeDocs) syncOpenApiPages(spec, join(docsRoot, 'content', 'docs'), { check });
+    const pathCount = Object.keys(spec.paths).length;
+    let opCount = 0;
+    for (const ops of Object.values(spec.paths)) opCount += Object.keys(ops).length;
+    for (const path of outPaths) console.log(`[openapi] ${check ? 'checked' : 'wrote'} ${path}`);
+    console.log(`[openapi] paths: ${pathCount}, operations: ${opCount}, tags: ${spec.tags.length}`);
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 1;
+  }
+}

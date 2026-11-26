@@ -44,6 +44,16 @@ def check_http(base_url, process):
     raise RuntimeError("Timed out waiting for the packaged panel")
 
 
+def expected_panel_version(base_version, environment):
+    ref = environment.get("GITHUB_REF", "")
+    if not ref or ref.startswith("refs/tags/"):
+        return base_version
+    commit = environment.get("GITHUB_SHA", "")
+    if not re.fullmatch(r"[0-9a-fA-F]{40}", commit):
+        raise RuntimeError("A non-tag CI archive requires a valid GITHUB_SHA")
+    return "dev+" + commit[:8]
+
+
 def smoke(archive):
     with tempfile.TemporaryDirectory(prefix="x-ui-smoke-") as temporary:
         directory = Path(temporary)
@@ -61,7 +71,8 @@ def smoke(archive):
             raise RuntimeError("Missing project license")
         subprocess.run([str(xray), "version"], cwd=panel, check=True, timeout=15)
         version = subprocess.check_output([str(executable), "-v"], cwd=panel, text=True).strip()
-        expected = (Path(__file__).resolve().parents[2] / "internal/config/version").read_text().strip()
+        base_version = (Path(__file__).resolve().parents[2] / "internal/config/version").read_text().strip()
+        expected = expected_panel_version(base_version, os.environ)
         if version != expected:
             raise RuntimeError(f"Packaged version {version!r} differs from {expected!r}")
         with socket.socket() as listener:

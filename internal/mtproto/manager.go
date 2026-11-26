@@ -76,7 +76,7 @@ func (inst Instance) bindTo() string {
 	if listen == "" {
 		listen = "0.0.0.0"
 	}
-	return fmt.Sprintf("%s:%d", listen, inst.Port)
+	return net.JoinHostPort(listen, strconv.Itoa(inst.Port))
 }
 
 // structuralFingerprint changes whenever a value outside the [secrets] section
@@ -402,6 +402,7 @@ func (m *Manager) StopAll() {
 func (m *Manager) CollectTraffic() ([]Traffic, []string) {
 	type snap struct {
 		id       int
+		owner    *managed
 		apiPort  int
 		apiToken string
 		tag      string
@@ -415,7 +416,7 @@ func (m *Manager) CollectTraffic() ([]Traffic, []string) {
 		}
 		lastCopy := make(map[string]clientCounters, len(cur.last))
 		maps.Copy(lastCopy, cur.last)
-		snaps = append(snaps, snap{id: id, apiPort: cur.apiPort, apiToken: cur.apiToken, tag: cur.tag, last: lastCopy})
+		snaps = append(snaps, snap{id: id, owner: cur, apiPort: cur.apiPort, apiToken: cur.apiToken, tag: cur.tag, last: lastCopy})
 	}
 	m.mu.Unlock()
 
@@ -427,33 +428,34 @@ func (m *Manager) CollectTraffic() ([]Traffic, []string) {
 			continue
 		}
 		newLast := make(map[string]clientCounters, len(users))
+		var deltas []Traffic
+		var active []string
 		for email, u := range users {
 			up := u.BytesIn
 			down := u.BytesOut
 			newLast[email] = clientCounters{up: up, down: down}
 			if u.Connections > 0 {
-				online = append(online, email)
+				active = append(active, email)
 			}
-			prev, had := s.last[email]
-			if !had {
-				continue
-			}
+			prev := s.last[email]
 			du := up - prev.up
 			dd := down - prev.down
 			if du < 0 {
-				du = 0
+				du = max(up, 0)
 			}
 			if dd < 0 {
-				dd = 0
+				dd = max(down, 0)
 			}
 			if du > 0 || dd > 0 {
-				out = append(out, Traffic{Tag: s.tag, Email: email, Up: du, Down: dd})
+				deltas = append(deltas, Traffic{Tag: s.tag, Email: email, Up: du, Down: dd})
 			}
 		}
 
 		m.mu.Lock()
-		if cur, ok := m.procs[s.id]; ok {
+		if cur, ok := m.procs[s.id]; ok && cur == s.owner {
 			cur.last = newLast
+			out = append(out, deltas...)
+			online = append(online, active...)
 		}
 		m.mu.Unlock()
 	}
@@ -715,6 +717,9 @@ func scrapeStats(port int, token string) (map[string]statsUser, bool) {
 		return nil, false
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, false
+	}
 	var parsed struct {
 		Users map[string]statsUser `json:"users"`
 	}

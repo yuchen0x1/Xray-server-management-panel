@@ -2047,6 +2047,38 @@ func (s *ServerService) IsValidGeofileName(filename string) bool {
 	return matched
 }
 
+func replaceGeofile(destPath string, body io.Reader) error {
+	mode := os.FileMode(0o644)
+	if info, err := os.Stat(destPath); err == nil {
+		mode = info.Mode().Perm()
+	}
+	file, err := os.CreateTemp(filepath.Dir(destPath), "."+filepath.Base(destPath)+"-*.tmp")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = file.Close()
+		_ = os.Remove(file.Name())
+	}()
+	n, err := io.Copy(file, body)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return errors.New("downloaded geofile is empty")
+	}
+	if err := file.Chmod(mode); err != nil {
+		return err
+	}
+	if err := file.Sync(); err != nil {
+		return err
+	}
+	if err := file.Close(); err != nil {
+		return err
+	}
+	return os.Rename(file.Name(), destPath)
+}
+
 func (s *ServerService) UpdateGeofile(fileName string) error {
 	type geofileEntry struct {
 		URL      string
@@ -2069,6 +2101,7 @@ func (s *ServerService) UpdateGeofile(fileName string) error {
 	}
 
 	client := s.settingService.NewProxiedHTTPClient(0)
+	updated := false
 
 	downloadFile := func(url, destPath string) error {
 		var req *http.Request
@@ -2122,17 +2155,11 @@ func (s *ServerService) UpdateGeofile(fileName string) error {
 			return common.NewErrorf("Failed to download Geofile from %s: received status code %d", url, resp.StatusCode)
 		}
 
-		file, err := os.Create(destPath)
-		if err != nil {
-			return common.NewErrorf("Failed to create Geofile %s: %v", destPath, err)
-		}
-		defer file.Close()
-
-		_, err = io.Copy(file, resp.Body)
-		if err != nil {
+		if err := replaceGeofile(destPath, resp.Body); err != nil {
 			return common.NewErrorf("Failed to save Geofile %s: %v", destPath, err)
 		}
 
+		updated = true
 		updateFileModTime()
 		return nil
 	}
@@ -2155,9 +2182,10 @@ func (s *ServerService) UpdateGeofile(fileName string) error {
 		}
 	}
 
-	err := s.RestartXrayService()
-	if err != nil {
-		errorMessages = append(errorMessages, fmt.Sprintf("Updated Geofile '%s' but Failed to start Xray: %v", fileName, err))
+	if updated {
+		if err := s.RestartXrayService(); err != nil {
+			errorMessages = append(errorMessages, fmt.Sprintf("Updated Geofile '%s' but Failed to start Xray: %v", fileName, err))
+		}
 	}
 
 	if len(errorMessages) > 0 {

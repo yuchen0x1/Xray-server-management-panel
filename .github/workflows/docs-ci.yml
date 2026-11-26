@@ -5,10 +5,18 @@ on:
     branches: [main]
     paths:
       - 'docs/**'
+      - 'frontend/scripts/build-openapi.mjs'
+      - 'frontend/src/pages/api-docs/endpoints.ts'
+      - 'frontend/src/generated/**'
+      - 'frontend/public/openapi.json'
       - '.github/workflows/docs-ci.yml'
   pull_request:
     paths:
       - 'docs/**'
+      - 'frontend/scripts/build-openapi.mjs'
+      - 'frontend/src/pages/api-docs/endpoints.ts'
+      - 'frontend/src/generated/**'
+      - 'frontend/public/openapi.json'
       - '.github/workflows/docs-ci.yml'
 
 permissions:
@@ -33,6 +41,11 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
           cache-dependency-path: docs/pnpm-lock.yaml
+
+      - name: Check OpenAPI copies and generator regression tests
+        run: |
+          node ../frontend/scripts/build-openapi.mjs --check
+          node --test scripts/check-openapi.test.mjs
 
       - run: pnpm install --frozen-lockfile
 

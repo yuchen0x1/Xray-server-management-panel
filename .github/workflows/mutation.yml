@@ -60,3 +60,4 @@ jobs:
           name: mutation-${{ matrix.name }}
           path: mutation-${{ matrix.name }}.json
           if-no-files-found: ignore
+          retention-days: 7

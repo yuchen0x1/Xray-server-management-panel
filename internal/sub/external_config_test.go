@@ -49,6 +49,17 @@ func TestApplyRemarkToLinkVmessSetsPs(t *testing.T) {
 	}
 }
 
+func TestApplyRemarkToLinkVmessRejectsNonObject(t *testing.T) {
+	for _, payload := range []string{"null", "[]", `"text"`, "42", "true"} {
+		t.Run(payload, func(t *testing.T) {
+			link := "vmess://" + base64.StdEncoding.EncodeToString([]byte(payload))
+			if got := applyRemarkToLink(link, "custom name"); got != link {
+				t.Fatalf("invalid VMess link changed: got %q, want %q", got, link)
+			}
+		})
+	}
+}
+
 func TestApplyRemarkEmptyKeepsLinkVerbatim(t *testing.T) {
 	link := "trojan://pass@1.2.3.4:8443?security=tls#orig"
 	if out := applyRemarkToLink(link, ""); out != link {

@@ -197,6 +197,7 @@ func (a *SettingController) updateUser(c *gin.Context) {
 	if err == nil {
 		user.Username = form.NewUsername
 		user.Password, _ = crypto.HashPasswordAsBcrypt(form.NewPassword)
+		user.LoginEpoch++
 		if saveErr := session.SetLoginUser(c, user); saveErr != nil {
 			err = saveErr
 		}

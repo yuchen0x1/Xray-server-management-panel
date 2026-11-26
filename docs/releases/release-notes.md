@@ -4,6 +4,8 @@
 
 | 版本                                                                                      | 发布日期   | 主要变化                                         |
 | ----------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------ |
+| [v3.13.2](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.13.2) | 2026-11-27 | 安全与运行时修复、完整发行包及构建缓存治理 |
+| [v3.13.1](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.13.1) | 2026-11-20 | 发布验证未完成，无发行附件，请使用 v3.13.2 |
 | [v3.13.0](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.13.0) | 2026-11-16 | 观测、订阅、备份与入站运维体验增强                 |
 | [v3.12.1](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.12.1) | 2026-11-13 | 一致性备份、恢复确认、更新校验和 Docker 架构修复 |
 | [v3.12.0](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.12.0) | 2026-11-10 | API 令牌权限与有效期、TUIC 和通知安全加固        |
@@ -15,6 +17,82 @@
 ## 未发布
 
 - 暂无新的未发布变更。
+
+## v3.13.2 — 2026-11-27
+
+### 📢 版本概述
+
+本次更新修复了反向代理来源地址识别、MTProto IPv6 监听与流量统计、Geo 数据下载和页面缓存刷新等问题，并修正发布包验证流程。发行附件上传及签名验证成功后才会将此版本设为最新稳定版，替代没有发行附件的 v3.13.1。
+
+### 🔧 改进与优化
+
+- 网站与面板使用同一份生成的 OpenAPI 规范，并同步四种语言 API 页的操作引用，避免网站遗漏已支持的接口或引用旧参数名。
+- 开发版归档按实际提交版本校验；正式版继续严格校验稳定版本号，Linux 与 Windows 均保留归档启动检查。
+- Actions 构建产物保留 7 天，自动清理超过保留期且工作流已结束的产物；历史 Release 附件不受清理影响。
+
+### 🐛 问题修复
+
+- 连续收到不同资源的 WebSocket 通知时，各类页面数据均能刷新；设置保存成功后同步刷新客户端与入站页面共享的默认配置。
+- 修复 MTProto 裸 IPv6 地址无法监听的问题，同步子进程状态访问，补计首次采样及计数器重置后的流量，并丢弃进程替换前的过期统计。
+- Geo 数据下载中断或内容为空时保留原文件；只有实际替换数据后才重启 Xray。
+- 修改账户凭据后，API 返回的会话使用正确的登录代次；页面原有重新登录流程保持不变。
+- 非法 VMess 外链包含 JSON null 时不再导致订阅请求 panic。
+- 整合 PR #26 的 TUIC 测试流读取修复，避免测试提前取消响应流影响后续回显验证。
+
+### 🔒 安全与兼容性
+
+- 将 Gorilla WebSocket 锁定到上游修复提交，解决 GO-2026-6278 / CVE-2026-6600 的客户端掩码随机数问题。
+- 对已配置的可信反向代理，从可信端解析转发链，防止客户端伪造前缀影响登录限流和审计来源地址。
+- 账户凭据与双因素认证重置在同一事务提交，避免改密失败却提前关闭双因素认证；成功改密后的既有重置策略不变。
+- 复核 CodeQL 的 UDP 缓冲区、证书路径及订阅 ETag 告警：分别已有严格大小上限、属于管理员证书路径功能及非密码内容摘要；记录误报理由，保留既有功能。
+- 保留 SHA256SUMS 与 Sigstore 发布者签名。Linux 在线更新需先通过可信渠道安装 Cosign，并确保面板服务可以找到它。
+
+### 📦 下载与安装
+
+| 文件名 | 平台 / 架构 | 说明 |
+| --- | --- | --- |
+| x-ui-linux-amd64.tar.gz | Linux x64 | 服务安装与升级归档 |
+| x-ui-linux-arm64.tar.gz | Linux arm64 | 服务安装与升级归档 |
+| x-ui-linux-armv7.tar.gz | Linux ARMv7 | 服务安装与升级归档 |
+| x-ui-linux-armv6.tar.gz | Linux ARMv6 | 服务安装与升级归档 |
+| x-ui-linux-armv5.tar.gz | Linux ARMv5 | 服务安装与升级归档 |
+| x-ui-linux-386.tar.gz | Linux x86 | 服务安装与升级归档 |
+| x-ui-linux-s390x.tar.gz | Linux s390x | 服务安装与升级归档 |
+| x-ui-windows-amd64.zip | Windows x64 | 便携归档，手动升级 |
+| SHA256SUMS | 通用 | 发行归档的 SHA-256 校验清单 |
+| SHA256SUMS.sigstore.json | 通用 | 校验清单的 Sigstore 签名及验证材料 |
+
+- 首次安装见 [项目说明](https://github.com/yuchen0x1/Xray-server-management-panel#readme)。
+- 已安装的 Linux 用户可在满足 Cosign 要求后使用面板更新功能或安装脚本升级；Windows 用户验证归档后停止面板，再替换程序文件。
+
+### 🔄 升级与数据迁移
+
+- 本版本没有新增数据库迁移。升级前备份数据库、配置及当前程序；保留现有数据目录和环境配置。
+- 已有版本仍通过本仓库的 latest 发布入口发现新版本，此入口在完整附件就绪后切换。
+- Docker 用户拉取对应版本镜像并重建容器；回退时使用升级前的程序与相匹配的数据备份。
+- v3.13.1 的公开发布没有发行附件，请直接使用本版本。
+
+### 🧪 验证结果
+
+- 本地 `make verify` 完整通过，涵盖生成文件一致性、Go 与前端代码检查、类型检查、完整测试、生产构建及 Storybook 构建。
+- 修复后 `govulncheck` 未发现漏洞；前端生产及开发依赖 `npm audit` 均为 0 漏洞；暂存变更凭据扫描通过。
+- 前端完整测试通过：89 个文件、983 项测试；类型检查、ESLint 及全部 13 种语言的翻译键检查通过。
+- MTProto 竞态检测与订阅、TUIC、Geo 下载、代理来源地址等针对性回归测试通过。
+- 稳定版发布由完整 CI、Linux 与 Windows 归档启动检查、校验清单及签名验证共同把关。
+- Linux 非 amd64 架构仅完成交叉构建；未进行真实跨网络吞吐或长期运行测试。
+
+### ⚠️ 已知问题
+
+- Windows 不支持面板内自动更新，需要手动替换程序。新版本提示仍可用。
+- Linux 在线更新依赖可用的 Cosign；缺少时会拒绝更新，请先按 [更新指南](https://github.com/yuchen0x1/Xray-server-management-panel/blob/main/docs/AUTO_UPDATE.md) 完成配置。
+
+---
+
+**项目地址：** https://github.com/yuchen0x1/Xray-server-management-panel
+
+**问题反馈：** https://github.com/yuchen0x1/Xray-server-management-panel/issues
+
+**版本下载：** https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.13.2
 
 ## v3.13.1 — 2026-11-18
 

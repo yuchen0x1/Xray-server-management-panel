@@ -88,7 +88,10 @@ jobs:
         run: npm run gen
         working-directory: frontend
       - name: Fail if generated files are stale (run 'npm run gen' and commit)
-        run: git diff --exit-code -- frontend/src/generated frontend/public/openapi.json
+        run: |
+          git diff --exit-code -- frontend/src/generated frontend/public/openapi.json docs/public/openapi.json docs/content/docs
+          node frontend/scripts/build-openapi.mjs --check
+          node --test docs/scripts/check-openapi.test.mjs
 
   govulncheck:
     runs-on: ubuntu-latest

@@ -32,3 +32,27 @@ func TestGetRemoteIpHonorsForwardedHeadersFromTrustedLoopbackProxy(t *testing.T)
 		t.Fatalf("remote IP = %q, want forwarded client IP", got)
 	}
 }
+
+func TestGetRemoteIpRejectsSpoofedForwardedPrefix(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	for _, tt := range []struct {
+		name   string
+		header string
+		want   string
+	}{
+		{name: "forged prefix", header: "192.0.2.99, 198.51.100.8", want: "198.51.100.8"},
+		{name: "multiple trusted proxies", header: "192.0.2.99, 198.51.100.8, 127.0.0.1, ::1", want: "198.51.100.8"},
+		{name: "malformed nearest hop", header: "192.0.2.99, unknown", want: "127.0.0.1"},
+		{name: "all hops trusted", header: "127.0.0.1, ::1", want: "127.0.0.1"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			c, _ := gin.CreateTestContext(httptest.NewRecorder())
+			c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
+			c.Request.RemoteAddr = "127.0.0.1:12345"
+			c.Request.Header.Set("X-Forwarded-For", tt.header)
+			if got := getRemoteIp(c); got != tt.want {
+				t.Fatalf("remote IP = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

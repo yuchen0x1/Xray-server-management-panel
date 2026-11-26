@@ -7,25 +7,26 @@ import { isRecentLocalInvalidate } from '@/api/invalidationTracker';
 
 type Handler = (payload: unknown) => void;
 
-let invalidateTimer: number | null = null;
-
 export function useWebSocketBridge() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
     const client = getSharedWebSocketClient();
+    let invalidateTimer: number | null = null;
+    const pendingInvalidations = new Set<'inbounds' | 'clients'>();
 
     const onInvalidate: Handler = (payload) => {
       const p = payload as { type?: string } | undefined;
       if (!p || (p.type !== 'inbounds' && p.type !== 'clients')) return;
+      pendingInvalidations.add(p.type);
       if (invalidateTimer != null) clearTimeout(invalidateTimer);
       invalidateTimer = window.setTimeout(() => {
         invalidateTimer = null;
+        const resources = [...pendingInvalidations];
+        pendingInvalidations.clear();
         if (isRecentLocalInvalidate()) return;
-        if (p.type === 'inbounds') {
-          queryClient.invalidateQueries({ queryKey: ['inbounds'] });
-        } else {
-          queryClient.invalidateQueries({ queryKey: ['clients'] });
+        for (const resource of resources) {
+          queryClient.invalidateQueries({ queryKey: keys[resource].root() });
         }
       }, 200);
     };
@@ -60,6 +61,7 @@ export function useWebSocketBridge() {
         clearTimeout(invalidateTimer);
         invalidateTimer = null;
       }
+      pendingInvalidations.clear();
     };
   }, [queryClient]);
 }

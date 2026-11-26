@@ -129,7 +129,13 @@ func audit3ReceivePacket(c *clientquic.Conn, mode uint8, duration time.Duration)
 		return nil, nil, err
 	}
 	p, err := readPacketPayload(r, h)
-	return h, p, err
+	if err != nil {
+		return nil, nil, err
+	}
+	if _, err := io.Copy(io.Discard, r); err != nil {
+		return nil, nil, err
+	}
+	return h, p, nil
 }
 
 func TestAudit3UDPAssociationMustRecoverAfterBridgeReadFailure(t *testing.T) {

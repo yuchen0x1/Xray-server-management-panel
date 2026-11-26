@@ -13,19 +13,55 @@ jobs:
       - name: Delete caches older than 1 day
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          CUTOFF_DATE=$(date -d "1 days ago" -Ins --utc | sed 's/+0000/Z/')
+          set -euo pipefail
+          CUTOFF_DATE=$(date -u -d "1 day ago" +%Y-%m-%dT%H:%M:%SZ)
           echo "Deleting caches older than: $CUTOFF_DATE"
 
-          CACHE_IDS=$(gh api --paginate repos/${{ github.repository }}/actions/caches \
-            --jq ".actions_caches[] | select(.last_accessed_at < \"$CUTOFF_DATE\") | .id" 2>/dev/null)
+          CACHE_IDS=$(gh api --paginate "repos/$GH_REPO/actions/caches?per_page=100" \
+            --jq ".actions_caches[] | select(.last_accessed_at < \"$CUTOFF_DATE\") | .id")
 
           if [ -z "$CACHE_IDS" ]; then
             echo "No old caches found to delete."
           else
-            echo "$CACHE_IDS" | while read CACHE_ID; do
+            while read -r CACHE_ID; do
               echo "Deleting cache: $CACHE_ID"
-              gh api -X DELETE repos/${{ github.repository }}/actions/caches/$CACHE_ID
-            done
+              gh api -X DELETE "repos/$GH_REPO/actions/caches/$CACHE_ID"
+            done <<< "$CACHE_IDS"
             echo "Old caches deleted successfully."
+          fi
+
+      - name: Delete artifacts older than 7 days from completed runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          CUTOFF_DATE=$(date -u -d "7 days ago" +%Y-%m-%dT%H:%M:%SZ)
+          echo "Deleting completed-run artifacts created before: $CUTOFF_DATE"
+          ARTIFACTS=$(gh api --paginate "repos/$GH_REPO/actions/artifacts?per_page=100" \
+            --jq ".artifacts[] | select(.created_at < \"$CUTOFF_DATE\") | [.id, .workflow_run.id] | @tsv")
+
+          if [ -z "$ARTIFACTS" ]; then
+            echo "No old artifacts found to delete."
+          else
+            declare -A RUN_STATUSES
+            while IFS=$'\t' read -r ARTIFACT_ID RUN_ID; do
+              if [[ ! "$ARTIFACT_ID" =~ ^[0-9]+$ || ! "$RUN_ID" =~ ^[0-9]+$ ]]; then
+                echo "Invalid artifact or workflow run ID" >&2
+                exit 1
+              fi
+              if [[ -z "${RUN_STATUSES[$RUN_ID]+set}" ]]; then
+                RUN_STATUSES[$RUN_ID]=$(gh api "repos/$GH_REPO/actions/runs/$RUN_ID" --jq .status)
+              fi
+              RUN_STATUS=${RUN_STATUSES[$RUN_ID]}
+              if [[ "$RUN_STATUS" != completed ]]; then
+                echo "Keeping artifact $ARTIFACT_ID from $RUN_STATUS run $RUN_ID"
+                continue
+              fi
+              echo "Deleting artifact: $ARTIFACT_ID"
+              gh api -X DELETE "repos/$GH_REPO/actions/artifacts/$ARTIFACT_ID"
+            done <<< "$ARTIFACTS"
+            echo "Old completed-run artifacts deleted successfully."
           fi

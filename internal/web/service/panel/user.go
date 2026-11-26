@@ -124,19 +124,32 @@ func (s *UserService) UpdateUser(id int, username string, password string) error
 		return err
 	}
 
-	if twoFactorEnable {
-		_ = s.settingService.SetTwoFactorEnable(false)
-		_ = s.settingService.SetTwoFactorToken("")
-	}
-
-	return db.Model(model.User{}).
-		Where("id = ?", id).
-		Updates(map[string]any{
-			"username":    username,
-			"password":    hashedPassword,
-			"login_epoch": gorm.Expr("login_epoch + 1"),
-		}).
-		Error
+	return db.Transaction(func(tx *gorm.DB) error {
+		result := tx.Model(model.User{}).
+			Where("id = ?", id).
+			Updates(map[string]any{
+				"username":    username,
+				"password":    hashedPassword,
+				"login_epoch": gorm.Expr("login_epoch + 1"),
+			})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		if twoFactorEnable {
+			for _, setting := range []model.Setting{
+				{Key: "twoFactorEnable", Value: "false"},
+				{Key: "twoFactorToken", Value: ""},
+			} {
+				if err := tx.Model(model.Setting{}).Where("key = ?", setting.Key).Update("value", setting.Value).Error; err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
 }
 
 func (s *UserService) UpdateFirstUser(username string, password string) error {

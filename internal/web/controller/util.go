@@ -23,14 +23,20 @@ func getRemoteIp(c *gin.Context) string {
 		return "unknown"
 	}
 
-	if isTrustedProxy(remoteIP) {
+	trusted := trustedProxyCIDRs()
+	if isTrustedProxyIn(remoteIP, trusted) {
 		if ip, ok := extractTrustedIP(c.GetHeader("X-Real-IP")); ok {
 			return ip
 		}
 
 		if xff := c.GetHeader("X-Forwarded-For"); xff != "" {
-			for part := range strings.SplitSeq(xff, ",") {
-				if ip, ok := extractTrustedIP(part); ok {
+			parts := strings.Split(xff, ",")
+			for i := len(parts) - 1; i >= 0; i-- {
+				ip, ok := extractTrustedIP(parts[i])
+				if !ok {
+					return remoteIP
+				}
+				if i == 0 || !isTrustedProxyIn(ip, trusted) {
 					return ip
 				}
 			}
@@ -46,12 +52,15 @@ func isTrustedForwardedRequest(c *gin.Context) bool {
 }
 
 func isTrustedProxy(ip string) bool {
+	return isTrustedProxyIn(ip, trustedProxyCIDRs())
+}
+
+func isTrustedProxyIn(ip, trusted string) bool {
 	addr, err := netip.ParseAddr(ip)
 	if err != nil {
 		return false
 	}
 
-	trusted := trustedProxyCIDRs()
 	for value := range strings.SplitSeq(trusted, ",") {
 		value = strings.TrimSpace(value)
 		if value == "" {

@@ -198,13 +198,16 @@ jobs:
 
       - name: Smoke test the Linux amd64 archive
         if: matrix.platform == 'amd64'
-        run: python3 deploy/test/smoke-archive.py x-ui-linux-amd64.tar.gz
+        run: |
+          python3 -m unittest discover -s deploy/test -p 'test_*.py'
+          python3 deploy/test/smoke-archive.py x-ui-linux-amd64.tar.gz
 
       - name: Upload files to Artifacts
         uses: actions/upload-artifact@v7
         with:
           name: x-ui-linux-${{ matrix.platform }}
           path: ./x-ui-linux-${{ matrix.platform }}.tar.gz
+          retention-days: 7
 
   # =================================
   #  Windows Build
@@ -323,13 +326,17 @@ jobs:
 
       - name: Smoke test the Windows archive
         shell: pwsh
-        run: python deploy/test/smoke-archive.py x-ui-windows-amd64.zip
+        run: |
+          python -m unittest discover -s deploy/test -p 'test_*.py'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python deploy/test/smoke-archive.py x-ui-windows-amd64.zip
 
       - name: Upload files to Artifacts
         uses: actions/upload-artifact@v7
         with:
           name: x-ui-windows-amd64
           path: ./x-ui-windows-amd64.zip
+          retention-days: 7
 
   publish-release:
     name: Publish verified release assets
@@ -387,7 +394,14 @@ jobs:
           RELEASE_TAG: ${{ github.ref_name }}
         working-directory: release-assets
         run: |
-          awk -v tag="$RELEASE_TAG" '$1 == "##" { if (found) exit; if ($2 == tag) found = 1 } found { print }' \
+          awk -v tag="$RELEASE_TAG" '
+            $1 == "##" {
+              if (found) exit
+              if ($2 == tag) found = 1
+              next
+            }
+            found && (NF || content) { sub(/^### /, "## "); print; content = 1 }
+          ' \
             "$GITHUB_WORKSPACE/docs/releases/release-notes.md" > "$RUNNER_TEMP/release-notes.md"
           test -s "$RUNNER_TEMP/release-notes.md"
           if draft=$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft); then

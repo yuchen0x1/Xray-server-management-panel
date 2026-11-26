@@ -1,11 +1,40 @@
 package mtproto
 
 import (
+	"net"
 	"strings"
 	"testing"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 )
+
+func TestInstanceBindTo(t *testing.T) {
+	cases := []struct {
+		name   string
+		listen string
+		want   string
+	}{
+		{name: "default", want: "0.0.0.0:8443"},
+		{name: "ipv4", listen: "127.0.0.1", want: "127.0.0.1:8443"},
+		{name: "ipv6 wildcard", listen: "::", want: "[::]:8443"},
+		{name: "ipv6 address", listen: "2001:db8::1", want: "[2001:db8::1]:8443"},
+		{name: "ipv6 zone", listen: "fe80::1%eth0", want: "[fe80::1%eth0]:8443"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			inst := Instance{Listen: tc.listen, Port: 8443}
+			if got := inst.bindTo(); got != tc.want {
+				t.Fatalf("bindTo() = %q, want %q", got, tc.want)
+			}
+			if _, _, err := net.SplitHostPort(inst.bindTo()); err != nil {
+				t.Fatalf("invalid bind address: %v", err)
+			}
+			if got := renderConfig(inst, 5000, ""); !strings.Contains(got, `bind-to = "`+tc.want+`"`) {
+				t.Fatalf("config does not contain expected bind address %q:\n%s", tc.want, got)
+			}
+		})
+	}
+}
 
 func TestInstanceFromInbound(t *testing.T) {
 	aliceSecret := "ee0123456789abcdef0123456789abcdef6578616d706c652e636f6d"
