@@ -6,9 +6,9 @@
 
 <!-- github-release:start -->
 
-**[v3.13.1](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.13.1)** · 2026-11-19
+**[v3.13.0](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.13.0)** · 2026-11-16
 
-Sign release checksums with GitHub Actions OIDC and Sigstore. Gate stable publication on matching version tags, CI and archive startup checks.
+v3.13.0 聚焦观测能力、订阅缓存、本地备份保留与入站运维体验。新增受认证保护的低基数 Prometheus 指标、可选本地备份保留策略，以及订阅请求 ETag/304 支持；同时修复入站分享链接复制与 LDAP 同步异常中断问题。此版本没有数据库迁移，也没有引入破坏性配置变更。
 
 [全部发行记录](https://github.com/yuchen0x1/Xray-server-management-panel/releases)
 
