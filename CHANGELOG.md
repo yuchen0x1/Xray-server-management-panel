@@ -12,7 +12,7 @@ are maintained in [docs/releases/release-notes.md](docs/releases/release-notes.m
 
 ## v3.13.2 — 2026-11-27
 
-- Pin Gorilla WebSocket to the upstream cryptographic masking-key fix for GO-2026-6278 (CVE-2026-6600).
+- Pin Gorilla WebSocket to the upstream cryptographic masking-key fix for GO-2026-6278 (GHSA-w67g-5rqw-f597).
 - Preserve each resource invalidation in a WebSocket burst and refresh shared defaults after settings changes.
 - Correct MTProto IPv6 bind addresses, synchronize process lifecycle reads, account for first/reset traffic samples, and discard samples from replaced processes.
 - Preserve existing Geo data during failed or empty downloads and restart Xray only after an actual replacement.
