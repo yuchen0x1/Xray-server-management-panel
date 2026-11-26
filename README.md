@@ -6,9 +6,9 @@
 
 <!-- github-release:start -->
 
-**[v3.13.0](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.13.0)** · 2026-11-16
+**[v3.13.2](https://github.com/yuchen0x1/Xray-server-management-panel/releases/tag/v3.13.2)** · 2026-11-26
 
-v3.13.0 聚焦观测能力、订阅缓存、本地备份保留与入站运维体验。新增受认证保护的低基数 Prometheus 指标、可选本地备份保留策略，以及订阅请求 ETag/304 支持；同时修复入站分享链接复制与 LDAP 同步异常中断问题。此版本没有数据库迁移，也没有引入破坏性配置变更。
+本次更新修复了反向代理来源地址识别、MTProto IPv6 监听与流量统计、Geo 数据下载和页面缓存刷新等问题，并修正发布包验证流程。发行附件上传及签名验证成功后才会将此版本设为最新稳定版，替代没有发行附件的 v3.13.1。
 
 [全部发行记录](https://github.com/yuchen0x1/Xray-server-management-panel/releases)
 
